@@ -1,0 +1,106 @@
+<?php
+
+namespace backend\models;
+
+use Yii;
+use yii\db\ActiveRecord;
+
+date_default_timezone_set('Asia/Bangkok');
+
+class Computerlist extends \common\models\ComputerList
+{
+//    public function behaviors()
+//    {
+//        return [
+//            'timestampcdate' => [
+//                'class' => \yii\behaviors\AttributeBehavior::className(),
+//                'attributes' => [
+//                    ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
+//                ],
+//                'value' => time(),
+//            ],
+//            'timestampudate' => [
+//                'class' => \yii\behaviors\AttributeBehavior::className(),
+//                'attributes' => [
+//                    ActiveRecord::EVENT_BEFORE_INSERT => 'updated_at',
+//                ],
+//                'value' => time(),
+//            ],
+//            'timestampcby' => [
+//                'class' => \yii\behaviors\AttributeBehavior::className(),
+//                'attributes' => [
+//                    ActiveRecord::EVENT_BEFORE_INSERT => 'created_by',
+//                ],
+//                'value' => Yii::$app->user->id,
+//            ],
+//            'timestamuby' => [
+//                'class' => \yii\behaviors\AttributeBehavior::className(),
+//                'attributes' => [
+//                    ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_by',
+//                ],
+//                'value' => Yii::$app->user->id,
+//            ],
+////            'timestampcompany' => [
+////                'class' => \yii\behaviors\AttributeBehavior::className(),
+////                'attributes' => [
+////                    ActiveRecord::EVENT_BEFORE_INSERT => 'company_id',
+////                ],
+////                'value' => isset($_SESSION['user_company_id']) ? $_SESSION['user_company_id'] : 1,
+////            ],
+////            'timestampbranch' => [
+////                'class' => \yii\behaviors\AttributeBehavior::className(),
+////                'attributes' => [
+////                    ActiveRecord::EVENT_BEFORE_INSERT => 'branch_id',
+////                ],
+////                'value' => isset($_SESSION['user_branch_id']) ? $_SESSION['user_branch_id'] : 1,
+////            ],
+//            'timestampupdate' => [
+//                'class' => \yii\behaviors\AttributeBehavior::className(),
+//                'attributes' => [
+//                    ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
+//                ],
+//                'value' => time(),
+//            ],
+//        ];
+//    }
+
+    public function checkAccess($user_id, $mac_address)
+    {
+        $res = 0;
+       // $model = Computerlist::find()->where(['mac_addess' => $mac_address])->one();
+        $model = Computerlist::find()->where(['ip_address' => $mac_address])->one();
+        if ($model) {
+            $list = explode(',', $model->userid);
+            if (count($list) > 0) {
+                for ($i = 0; $i <= count($list) - 1; $i++) {
+                    if ($list[$i] == $user_id) {
+                        $res = 1;
+                    }
+                }
+            }
+        }
+        return $res;
+    }
+//    public static function findName($id)
+//    {
+//        $model = Car::find()->select('name')->where(['id' => $id])->one();
+//        return $model != null ? $model->name : '';
+//    }
+//
+//    public static function findRouteId($id)
+//    {
+//        $model = \common\models\QueryCarRoute::find()->where(['id' => $id])->one();
+//        return $model != null ? $model->delivery_route_id : 0;
+//    }
+//
+//    public static function findRouteName($id)
+//    {
+//        $model = \common\models\QueryCarRoute::find()->where(['id' => $id])->one();
+//        return $model != null ? $model->route_code : '';
+//    }
+//    public function findUnitid($code){
+//        $model = Unit::find()->where(['name'=>$code])->one();
+//        return count($model)>0?$model->id:0;
+//    }
+
+}
