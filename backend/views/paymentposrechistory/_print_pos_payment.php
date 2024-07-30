@@ -394,8 +394,14 @@ $mpdf->AddPageByArray([
                                                 <td>
                                                     <?php if ($k == 0): ?>
                                                         <?php if ($find_order[$i]['slip_doc'] != null || $find_order[$i]['slip_doc'] != ''): ?>
-                                                            <a href="<?= \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . $find_order[$i]['slip_doc'] ?>"
-                                                               target="_blank" style="color: red">view</a>
+                                                            <?php if (file_exists('../web/uploads/files/receive/' . $find_order[$i]['slip_doc'])): ?>
+                                                                <a href="<?= \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . $find_order[$i]['slip_doc'] ?>"
+                                                                   target="_blank" style="color: red">view</a>
+                                                            <?php else: ?>
+                                                                <a href="<?= \Yii::$app->urlManagerFrontend->getBaseUrl() . '/uploads/files/receive/' . $find_order[$i]['slip_doc'] ?>"
+                                                                   target="_blank" style="color: red">view</a>
+                                                            <?php endif; ?>
+
                                                         <?php endif; ?>
                                                     <?php endif; ?>
                                                 </td>

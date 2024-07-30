@@ -57,6 +57,17 @@ return [
                 'module/<module:\w+>/<controller:\w+>/<action:\w+>' => '<module>/<controller>/<action>',
             ],
         ],
+        'urlManagerBackend' => [
+            'class' => 'yii\web\urlManager',
+            'baseUrl' => '/icesystem/backend/web',
+            'scriptUrl'=>'/icesystem/backend/web/index.php',
+//            'baseUrl' => 'http://app.sst.ac.th',
+//            'scriptUrl' => 'http://app.sst.ac.th/index.php',
+//            'baseUrl' => 'http://app.sst.ac.th',
+//            'scriptUrl' => 'http://app.sst.ac.th/index.php',
+            'enablePrettyUrl' => false,
+            'showScriptName' => true,
+        ],
         /*
         'urlManager' => [
             'enablePrettyUrl' => true,

@@ -189,7 +189,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="row">
         <div class="col-lg-12" style="text-align: right;">
             FM-WAT-03 แก้ไขครั้งที่: 01 <br />
-            ประกาศใช้วันที่: 01/01/2565
+            วันที่ประกาศใช้: 01/01/2565
         </div>
     </div>
 </div>

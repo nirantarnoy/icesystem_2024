@@ -322,6 +322,24 @@ class PaymentreceiveController extends Controller
                                 $status = true;
                                 // $this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
                                 $data = ['pay successfully'];
+
+                                if ($base64_string != null && $i == 0) {
+
+                                    $newfile = time() . ".jpg";
+                                    $outputfile = '../web/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
+                                    //$outputfile = \Yii::$app->urlManagerBackend->getBaseUrl() . '/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
+
+                                    $filehandler = fopen($outputfile, 'wb');
+                                    // fwrite($filehandler, base64_decode(trim($base64_string[$xp])));
+                                    fwrite($filehandler, base64_decode(trim($base64_string)));
+                                    // we could add validation here with ensuring count($data)>1
+
+                                    // clean up the file resource
+                                    fclose($filehandler);
+
+                                   \backend\models\Paymentreceive::updateAll(['slip_doc'=>$newfile],['id'=>$check_record->id]);
+
+                                }
                             }
                             // }
                         } else {
@@ -485,12 +503,15 @@ class PaymentreceiveController extends Controller
         $data = [];
         if ($id && $order_id) {
             //if (\common\models\PaymentReceive::updateAll(['status'=>100],['id' => $id])) {
+           // $model = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id' => $id, 'order_id' => $order_id])->andFilterWhere(['>', 'payment_amount', 0])->one();
             $model = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id' => $id, 'order_id' => $order_id])->andFilterWhere(['>', 'payment_amount', 0])->one();
             if ($model) {
                 // $model->payment_amount = ($model->payment_amount - $cancel_amount);
                 $model->payment_amount = 0;
                 $model->status = 3;
-                $model->save(false);
+                if($model->save(false)){
+                    \backend\models\Orders::updateAll(['payment_status' => 0], ['id' => $order_id]);
+                }
             }
             $status = true;
             array_push($data, ['message' => 'Cancel completed']);

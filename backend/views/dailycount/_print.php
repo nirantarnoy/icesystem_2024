@@ -333,7 +333,7 @@ if ($from_date != null && $to_date != null && $find_emp_user_id != null) {
         <tr>
             <td style="text-align: right;border: 0px;">
                 FM-WAT-04 แก้ไขครั้งที่: 01 <br />
-                ประกาศใช้วันที่: 01/01/2565
+                วันที่ประกาศใช้: 01/01/2565
             </td>
         </tr>
     </table>

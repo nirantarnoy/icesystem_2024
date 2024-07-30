@@ -15,6 +15,7 @@ $total_amount = 0;
     <div class="assetrental-form">
 
         <?php $form = ActiveForm::begin(); ?>
+        <input type="hidden" class="remove-list" name="removelist" value="">
         <div class="row">
             <div class="col-lg-3">
                 <?= $form->field($model, 'journal_no')->textInput(['maxlength' => true, 'readonly' => 'readonly']) ?>
@@ -145,7 +146,7 @@ $total_amount = 0;
                                     </td>
                                     <td>
                                         <input type="hidden" class="form-control line-asset-id" name="line_asset_id[]"
-                                               value="<?= $value->id ?>" readonly>
+                                               value="<?= $value->asset_id ?>" readonly>
                                         <input type="text" class="form-control line-asset-code" name="line_asset_code[]"
                                                value="<?= \backend\models\Assetsitem::findCode($value->asset_id) ?>"
                                                readonly>
@@ -181,7 +182,7 @@ $total_amount = 0;
                                         </div>
                                     </td>
                                     <td style="text-align: center">
-                                        <div class="btn btn-sm btn-danger" onclick="removeline($(this))">ลบ</div>
+                                        <div class="btn btn-sm btn-danger" data-var="<?=$value->id?>" onclick="removeline($(this))">ลบ</div>
                                         <input type="hidden" class="line-return-status" name="line_return_status[]"
                                                value="<?= $value->return_status ?>">
                                     </td>
@@ -349,6 +350,7 @@ $url_to_find_asset = \yii\helpers\Url::to(['assetrental/findasset'], true);
 
 $js = <<<JS
 var selecteditem = [];
+var removelist = [];
 $(function(){
     $(".btn-emp-selected").click(function () {
         var linenum = 0;
@@ -379,10 +381,10 @@ $(function(){
                 var asset_rent_price = selecteditem[i]['asset_rent_price'];
                // alert(asset_code);
                 //alert(line_prod_id);
-                // if(check_dup(line_prod_id) == 1){
-                //         alert("มีรายการสินและคำสั่งซื้อนี้ " +line_prod_code+ " มีในรายการแล้ว");
-                //         return false;
-                // }
+                if(check_dup(asset_id) == 1){
+                        alert("มีรายการ " +asset_code+ " ในรายการแล้ว");
+                        return false;
+                }
                 
                 var tr = $("#table-list tbody tr:last");
                 
@@ -444,6 +446,17 @@ $(function(){
     
    });
 });
+function check_dup(asset_id){
+    var res = 0;
+    if(asset_id > 0){
+       $("#table-list tbody tr").each(function(){
+           if($(this).closest('tr').find('.line-asset-id').val() == asset_id){
+               res = 1;
+           }
+       });
+    }
+    return res;
+}
 // function selectallcash(){
 //     $(".table-list tbody tr").each(function(){
 //         $(this).closest('tr').find('.line-payment-type').val(0);
@@ -617,7 +630,14 @@ function removeline(e){
                     });
                    
                  }else{
-                   e.parent().parent().remove();
+                    var recid = e.attr("data-var");
+                     if(recid > 0){
+                         //alert(recid);
+                         removelist.push(recid);
+                         e.parent().parent().remove();
+                     }
+                     $(".remove-list").val(removelist);
+                  // e.parent().parent().remove();
                }
                
                var line_order_id = e.closest("tr").find(".line-order-selected-id").val();
@@ -631,11 +651,7 @@ function removeline(e){
                        }
                    }
                }
-              
-               
           }
-          
-          caltaxinvoice();
           
       var linenum = 0;
        $("#table-list tbody tr").each(function () {

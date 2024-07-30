@@ -97,9 +97,9 @@ class ProductionController extends Controller
         if ($product_id && $warehouse_id && $qty) {
 
             //$main_warehouse = \backend\models\Warehouse::findPrimary($company_id, $branch_id);
-            $warehouse_id = 6; // หนองขาหยั่ง
-  //          $warehouse_id = 5; // บางกระทึก
-  //          $warehouse_id = 16; // อ้อมหน้อย
+    //        $warehouse_id = 6; // หนองขาหยั่ง
+            $warehouse_id = 5; // บางกระทึก
+    //        $warehouse_id = 16; // อ้อมหน้อย
             $model_journal = new \backend\models\Stockjournal();
             if ($production_type == 1) {
                 sleep(3);
@@ -187,7 +187,8 @@ class ProductionController extends Controller
         if ($product_id && $warehouse_id && $qty) {
 
             //$main_warehouse = \backend\models\Warehouse::findPrimary($company_id, $branch_id);
-            $warehouse_id = 6; // หนองขาหยั่ง
+       //     $warehouse_id = 6; // หนองขาหยั่ง
+            $warehouse_id = 5; // bkt
             $model_journal = new \backend\models\Stockjournal();
             if ($production_type == 1) {
                 sleep(3);
@@ -253,7 +254,7 @@ class ProductionController extends Controller
         $datalist = $req_data['data'];
         $warehouse_id = $req_data['warehouse_id'];
         $user_id = $req_data['user_id'];
-
+        $production_type = $req_data['production_type'];
 
         $data = [];
         $status = false;
@@ -309,6 +310,7 @@ class ProductionController extends Controller
                     $model->company_id = $company_id;
                     $model->branch_id = $branch_id;
                     $model->created_by = $user_id;
+                    $model->transfer_branch_id = $datalist[$i]['transfer_branch_id'];
                     if ($model->save(false)) {
                         $status = 1;
                         $this->updateSummary($datalist[$i]['product_id'], $warehouse_id, $datalist[$i]['qty']);
@@ -1779,7 +1781,8 @@ class ProductionController extends Controller
             $t = 0; // nky
           //  $t = 75; // bkt
             if ($company_id == 1 && $branch_id == 1) {
-                $t = $mac_id == 1 ? 15 : 16;
+              //  $t = $mac_id == 1 ? 15 : 16; // nky
+                $t = $mac_id == 1 ? 1 : 2; // omnoi
                 if ($mac_id == 3) {
                     $t = 3;
                 }
@@ -2114,6 +2117,7 @@ class ProductionController extends Controller
                         $model->company_id = $company_id;
                         $model->branch_id = $branch_id;
                         $model->created_by = $user_id;
+                        $model->lot_no =  $datalist[$i]['taypay_no']; // for mobile prodrec specific taypay_no
                         $model->status = 0;
                         if ($model->save(false)) {
                             $status = 1;

@@ -40,6 +40,22 @@ use yii\widgets\ActiveForm;
 
             ?>
         </div>
+        <div class="col-lg-3">
+            <?php
+            $check_role = \backend\models\User::checkhasrole(\Yii::$app->user->id, 'System Administrator');
+            if ($check_role) {
+                echo \kartik\select2\Select2::widget([
+                    'value' => $viewstatus2,
+                    'name' => 'viewstatus2',
+                    'data' => \yii\helpers\ArrayHelper::map(\backend\helpers\ViewstatusType2::asArrayObject(), 'id', 'name'),
+                    'options' => [
+                        'onchange' => 'this.form.submit();',
+                    ],
+                ]);
+            }
+
+            ?>
+        </div>
     </div>
 
     <?php ActiveForm::end(); ?>

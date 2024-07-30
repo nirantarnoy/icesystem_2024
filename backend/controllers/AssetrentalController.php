@@ -134,18 +134,42 @@ class AssetrentalController extends Controller
             $line_use_status = \Yii::$app->request->post('line_use_status');
             $line_return_status = \Yii::$app->request->post('line_return_status');
 
+            $removelist = \Yii::$app->request->post('removelist');
+
             if($model->save(false)){
                 if($line_asset_id != null){
-                    \common\models\AssetRentalLine::deleteAll(['asset_rental_id' => $model->id]);
+                   // \common\models\AssetRentalLine::deleteAll(['asset_rental_id' => $model->id]);
                     for($x=0;$x<=count($line_asset_id)-1;$x++){
-                        $model_line = new \common\models\AssetRentalLine();
-                        $model_line->asset_rental_id = $model->id;
-                        $model_line->asset_id = $line_asset_id[$x];
-                        $model_line->remark = $line_size[$x];
-                        $model_line->price = $line_price[$x];
-                        $model_line->use_status = $line_use_status[$x];
-                        $model_line->return_status = $line_return_status[$x];
-                        $model_line->save(false);
+                        if($line_asset_id[$x] != null){
+                            $check = \common\models\AssetRentalLine::find()->where(['asset_rental_id' => $model->id, 'asset_id' => $line_asset_id[$x]])->one();
+                            if($check){
+                                $model_line = \common\models\AssetRentalLine::find()->where(['asset_rental_id' => $model->id, 'asset_id' => $line_asset_id[$x]])->one();
+                                $model_line->remark = $line_size[$x];
+                                $model_line->use_status = $line_use_status[$x];
+                                $model_line->return_status = $line_return_status[$x];
+                                $model_line->save(false);
+                            }else{
+                                $model_line = new \common\models\AssetRentalLine();
+                                $model_line->asset_rental_id = $model->id;
+                                $model_line->asset_id = $line_asset_id[$x];
+                                $model_line->remark = $line_size[$x];
+                                $model_line->price = $line_price[$x];
+                                $model_line->use_status = $line_use_status[$x];
+                                $model_line->return_status = $line_return_status[$x];
+                                $model_line->save(false);
+                            }
+                        }
+
+                    }
+                }
+
+                if($removelist != null){
+                    $xdel = explode(',', $removelist);
+                    if($xdel != null){
+                        for ($i=0;$i<=count($xdel)-1;$i++){
+                            $model_line = \common\models\AssetRentalLine::find()->where(['id' => $xdel[$i]])->one();
+                            $model_line->delete();
+                        }
                     }
                 }
                 return $this->redirect(['index']);

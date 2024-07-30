@@ -361,6 +361,14 @@ $model_line = \common\models\StockTrans::find()->select(['trans_ref_id'])->where
         </tr>
         </tfoot>
     </table>
+    <table style="width: 100%;border: 0px;">
+        <tr>
+            <td style="text-align: right;border: 0px;">
+                FM-WAT-06 แก้ไขครั้งที่: 00 <br />
+                วันที่ประกาศใช้: 01/01/2565
+            </td>
+        </tr>
+    </table>
 </div>
 
 <br/>

@@ -72,7 +72,14 @@ $this->params['breadcrumbs'][] = $this->title;
                 'contentOptions' => ['style' => 'text-align: right'],
                 'label' => 'ยอดเงิน',
                 'value' => function ($data) {
-                    return number_format(\backend\models\Customerinvoice::getInvAmount($data->id),2);
+                    return number_format(\backend\models\Customerinvoice::getInvAmount($data->id), 2);
+                }
+            ],
+            [
+                'attribute' => 'created_by',
+                'label' => 'ดำเนินการโดย',
+                'value' => function ($data) {
+                    return \backend\models\User::findName($data->created_by);
                 }
             ],
             [

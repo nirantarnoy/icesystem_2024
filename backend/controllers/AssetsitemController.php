@@ -37,9 +37,14 @@ class AssetsitemController extends Controller
     public function actionIndex()
     {
         $viewstatus = 1;
+        $viewstatus2 = 0;
 
         if (\Yii::$app->request->get('viewstatus') != null) {
             $viewstatus = \Yii::$app->request->get('viewstatus');
+        }
+
+        if (\Yii::$app->request->get('viewstatus2') != null) {
+            $viewstatus2 = \Yii::$app->request->get('viewstatus2');
         }
 
         $pageSize = \Yii::$app->request->post("perpage");
@@ -52,6 +57,15 @@ class AssetsitemController extends Controller
             $dataProvider->query->andFilterWhere(['assets.status' => 0]);
         }
 
+        if ($viewstatus2 == 1) {
+            $dataProvider->query->andFilterWhere(['is','customer_asset.product_id', new \yii\db\Expression('NULL')]);
+        }
+        if ($viewstatus2 == 2) {
+            $dataProvider->query->andFilterWhere(['is not','customer_asset.product_id', new \yii\db\Expression('NULL')]);
+        }
+
+
+
         $dataProvider->setSort(['defaultOrder' => ['id' => SORT_DESC]]);
         $dataProvider->pagination->pageSize = $pageSize;
 
@@ -60,6 +74,7 @@ class AssetsitemController extends Controller
             'dataProvider' => $dataProvider,
             'perpage' => $pageSize,
             'viewstatus' => $viewstatus,
+            'viewstatus2' => $viewstatus2
         ]);
     }
 
