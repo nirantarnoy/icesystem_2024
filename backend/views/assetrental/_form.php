@@ -27,6 +27,31 @@ $total_amount = 0;
                 ) ?>
             </div>
         </div>
+        <div class="row">
+            <div class="col-lg-3">
+                <?= $form->field($model, 'work_name')->textInput(['maxlength' => true,]) ?>
+            </div>
+            <div class="col-lg-3">
+                <?php $model->use_from = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->use_from)); ?>
+                <?= $form->field($model, 'use_from')->widget(\kartik\date\DatePicker::className(),
+                    [
+                            'options' => [
+                                    'format' => 'dd-mm-yyyy',
+                            ]
+                    ]
+                ) ?>
+            </div>
+            <div class="col-lg-3">
+                <?php $model->use_to = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->use_to)); ?>
+                <?= $form->field($model, 'use_to')->widget(\kartik\date\DatePicker::className(),
+                    [
+                        'options' => [
+                            'format' => 'dd-mm-yyyy',
+                        ]
+                    ]
+                ) ?>
+            </div>
+        </div>
 
 
         <div class="row">

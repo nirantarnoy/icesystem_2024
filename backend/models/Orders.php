@@ -260,6 +260,32 @@ class Orders extends \common\models\Orders
         }
     }
 
+    public static function getLastNoPosCancel($company_id, $branch_id)
+    {
+        $current_date = date('Y-m-d');
+        //   $model = Orders::find()->MAX('order_no');
+        //    $model = Orders::find()->where(['date(order_date)' => date('Y-m-d', strtotime($date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
+        $model = \backend\models\Stocktrans::find()->where(['date(trans_date)' => $current_date])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id,'activity_type_id'=>8])->MAX('journal_no');
+        //$model = Orders::find()->select(['order_no'])->where(['date(order_date)' => $current_date])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['id'=>SORT_DESC])->one();
+
+        $pre = "SRT";
+        if ($model != null || $model != "") {
+            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m') . date('d') . '-';
+            $cnum = substr((string)$model, 11, 4);
+            $len = strlen($cnum);
+            $clen = strlen($cnum + 1);
+            $loop = $len - $clen;
+            for ($i = 1; $i <= $loop; $i++) {
+                $prefix .= "0";
+            }
+            $prefix .= $cnum + 1;
+            return $prefix;
+        } else {
+            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m') . date('d') . '-';
+            return $prefix . '0001';
+        }
+    }
+
     public static function findOrderemp($id)
     {
         $html = '';
@@ -516,5 +542,45 @@ class Orders extends \common\models\Orders
 //        $model = Unit::find()->where(['name'=>$code])->one();
 //        return count($model)>0?$model->id:0;
 //    }
+
+    public static function findordercreditPos($user_id)
+    {
+        $total = 0;
+        //if ($user_id > 0) {
+        $sql = "SELECT SUM(line_total) as line_total";
+        $sql .= " FROM query_order_data";
+        $sql .= " WHERE  created_by =" . $user_id;
+        $sql .= " AND  sale_payment_method_id = 2";
+        $sql .= " AND  date(order_date) = " . "'" . date('Y-m-d') . "'";
+        $sql .= " AND  order_status in(1,100)";
+        $sql .= " AND  sale_channel_id = 2";
+        $query = \Yii::$app->db->createCommand($sql);
+        $modelx = $query->queryAll();
+        if ($modelx) {
+            $total = $modelx[0]['line_total'];
+        }
+        //}
+        return $total;
+    }
+
+    public static function findordercashPos($user_id)
+    {
+        $total = 0;
+        //if ($user_id > 0) {
+        $sql = "SELECT SUM(line_total) as line_total";
+        $sql .= " FROM query_order_data";
+        $sql .= " WHERE  created_by =" . $user_id;
+        $sql .= " AND  sale_payment_method_id = 1";
+        $sql .= " AND  date(order_date) = " . "'" . date('Y-m-d') . "'";
+        $sql .= " AND  order_status in(1,100)";
+        $sql .= " AND  sale_channel_id = 2";
+        $query = \Yii::$app->db->createCommand($sql);
+        $modelx = $query->queryAll();
+        if ($modelx) {
+            $total = $modelx[0]['line_total'];
+        }
+        // }
+        return $total;
+    }
 
 }

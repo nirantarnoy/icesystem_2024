@@ -46,6 +46,21 @@ if ($f_date != null && $t_date != null) {
                          'width'=> '300px',
                      ]
                  ])->label(false) ?>
+                 <span style="margin-left: 2px;"></span>
+                 <?= $form->field($model, 'product_id')->widget(\kartik\select2\Select2::className(), [
+                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\Product::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'status'=>1])->all(), 'id', function ($data) {
+                         return $data->name;
+                     }),
+                     'options' => [
+                         'placeholder' => '--สินค้า--',
+                         'onchange' => 'this.form.submit();'
+                     ],
+                     'pluginOptions' => [
+                         'allowClear' => true,
+                         'width'=> '300px',
+                     ]
+                 ])->label(false) ?>
+
 
                  <span style="margin-left: 2px;"></span>
                  <?= $form->field($model, 'delivery_route_id')->widget(\kartik\select2\Select2::className(), [

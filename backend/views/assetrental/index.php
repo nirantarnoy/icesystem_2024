@@ -6,6 +6,7 @@ use kartik\grid\GridView;
 use yii\widgets\Pjax;
 use yii\widgets\LinkPager;
 use yii\helpers\Url;
+
 /* @var $this yii\web\View */
 /* @var $searchModel backend\models\AssetrentalSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
@@ -15,7 +16,7 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="assetrental-index">
 
-    <form action="<?=Url::to(['customertaxinvoice/recalno'],true)?>" method="post">
+    <form action="<?= Url::to(['customertaxinvoice/recalno'], true) ?>" method="post">
 
         <div class="row">
             <div class="col-lg-3">
@@ -74,7 +75,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div class="col-lg-3"></div>
         </div>
     </form>
-    <br />
+    <br/>
     <div class="customertaxinvoice-index">
         <?php Pjax::begin(); ?>
         <div class="row">
@@ -121,12 +122,29 @@ $this->params['breadcrumbs'][] = $this->title;
                     'headerOptions' => ['style' => 'text-align:center;'],
                     'contentOptions' => ['style' => 'text-align: center'],
                 ],
-            'journal_no',
-            'trans_date',
-            'status',
-            //'created_by',
-            //'updated_at',
-            //'updated_by',
+                'journal_no',
+                'trans_date',
+                'work_name',
+                [
+                    'attribute' => 'use_from',
+                    'value' => function ($model) {
+                        if ($model->use_from != null) {
+                            return date('d-m-Y', strtotime($model->use_from));
+                        }
+                    }
+                ],
+                [
+                    'attribute' => 'use_to',
+                    'value' => function ($model) {
+                        if ($model->use_to != null) {
+                            return date('d-m-Y', strtotime($model->use_to));
+                        }
+                    }
+                ],
+                'status',
+                //'created_by',
+                //'updated_at',
+                //'updated_by',
 
                 [
 

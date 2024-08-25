@@ -2406,6 +2406,14 @@ class ProductionController extends Controller
                     if ($model_sum) {
                         $model_sum->qty = (float)$model_sum->qty + (float)$qty;
                         $model_sum->save(false);
+                    }else{
+                        $model_sum_new = new \backend\models\Stocksum();
+                        $model_sum_new->warehouse_id = $wh_id;
+                        $model_sum_new->product_id = $product_id;
+                        $model_sum_new->qty = $qty;
+                        $model_sum_new->company_id = $company_id;
+                        $model_sum_new->branch_id = $branch_id;
+                        $model_sum_new->save(false);
                     }
 
                 }

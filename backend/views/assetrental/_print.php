@@ -134,6 +134,10 @@ if (count($xxtodate) > 1) {
         <tr>
             <td style="text-align: left;border: none" colspan="2"><h3>รายงานสรุปการใช้ถัง (เช่า)</h3></td>
         </tr>
+        <tr>
+            <td><b>ชื่องาน</b><span> <?=$model->work_name?></span></td>
+            <td><b>เริ่มใช้</b><span> <?=date('d-m-Y',strtotime($model->use_from))?></span> <span><b> ถึง </b> <?=date('d-m-Y',strtotime($model->use_to))?></span></td>
+        </tr>
     </table>
     <br/>
 

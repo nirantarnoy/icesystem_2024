@@ -248,6 +248,12 @@ class TransformController extends Controller
                     if ($model_sum) {
                         $model_sum->qty = (int)$model_sum->qty + (int)$qty;
                         $model_sum->save(false);
+                    }else{
+                        $model_sum_new = new \backend\models\Stocksum();
+                        $model_sum_new->warehouse_id = $wh_id;
+                        $model_sum_new->product_id = $product_id;
+                        $model_sum_new->qty = $qty;
+                        $model_sum_new->save(false);
                     }
 
                     //$model = \backend\models\Stockjournal::find()->where(['id' => $model_journal->id])->one();

@@ -323,7 +323,7 @@ class PaymentreceiveController extends Controller
                                 // $this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
                                 $data = ['pay successfully'];
 
-                                if ($base64_string != null && $i == 0) {
+                                /*if ($base64_string != null && $i == 0) {
 
                                     $newfile = time() . ".jpg";
                                     $outputfile = '../web/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
@@ -339,7 +339,7 @@ class PaymentreceiveController extends Controller
 
                                    \backend\models\Paymentreceive::updateAll(['slip_doc'=>$newfile],['id'=>$check_record->id]);
 
-                                }
+                                }*/
                             }
                             // }
                         } else {

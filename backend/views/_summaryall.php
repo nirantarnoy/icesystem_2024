@@ -359,6 +359,7 @@ $model_line = \common\models\TransactionPosSaleSum::find()->select(['user_id', '
                 $line_out_total = 0;
                 $line_diff_qty = 0;
 
+
 //                $prodrec_all_qty = getProrecAllQty($start_date->format('Y-m-d'), $find_product_id);
 //                if ($prodrec_all_qty != null) {
 //                    $prodrecall_total += $prodrec_all_qty[0]['qty'];
@@ -452,39 +453,43 @@ $model_line = \common\models\TransactionPosSaleSum::find()->select(['user_id', '
 
                     $prodrec_adjust = getCloseAdjustProdrecQty($start_date->format('Y-m-d'), $find_product_id, $shift_id, $b);
 
-//                    $prodrec_total = ($prodrec_total + $prod_rec_qty[0]['qty']);
+                    // $prodrec_total = ($prodrec_total + $prod_rec_qty[0]['qty']);
 
                     if ($data_type_selected == 2) {
-
                         if ($prodrec_adjust != null) {
                             // $line_prodrec_qty = $prodrec_adjust[0]['qty'];
                             if ($prodrec_adjust[0]['qty'] != null || $prodrec_adjust[0]['qty'] == 0) {
                                 $line_prodrec_qty = $prodrec_adjust[0]['qty'];
                                 $prodrecall_total = ($prodrecall_total + $prodrec_adjust[0]['qty']);
                                 $line_in_total = ($line_in_total + $prodrec_adjust[0]['qty']);
+                                $prodrec_total = ($prodrec_total + $prodrec_adjust[0]['qty']);
                                 $line_edit_prodrec_color = 'color:red;';
                             } else {
 
                                 // $line_prodrec_qty = $prod_rec_qty[0]['qty'];
                                 $prodrecall_total = ($prodrecall_total + $prod_rec_qty[0]['qty']);
                                 $line_in_total = ($line_in_total + $prod_rec_qty[0]['qty']);
+                                $prodrec_total = ($prodrec_total + $prodrec_adjust[0]['qty']);
                                 $line_edit_prodrec_color = '';
                                 //$line_prodrec_qty = 888;
                             }
                         } else {
 
                             $line_prodrec_qty = $prod_rec_qty[0]['qty'];
+                            $prodrec_total = ($prodrec_total + $prod_rec_qty[0]['qty']);
                             $prodrecall_total = ($prodrecall_total + $prod_rec_qty[0]['qty']);
                             $line_in_total = ($line_in_total + $prod_rec_qty[0]['qty']);
                         }
                         //$line_edit_color = 'color:red;';
                     } else {
+
                         $line_prodrec_qty = $prod_rec_qty[0]['qty'];
+                        $prodrec_total = ($prodrec_total + $line_prodrec_qty);
                         $prodrecall_total = ($prodrecall_total + $prod_rec_qty[0]['qty']);
                         $line_in_total = ($line_in_total + $prod_rec_qty[0]['qty']);
 
                     }
-                    $prodrec_total = ($prodrec_total + $prod_rec_qty[0]['qty']);
+
 
                 }
 
@@ -823,9 +828,9 @@ $model_line = \common\models\TransactionPosSaleSum::find()->select(['user_id', '
                     ?>
                     <tr data-var="<?= date_format($start_date, 'd-m-Y') ?>" data-id="<?= $b ?>"
                         data-show="<?= $shift_name ?>" data-product="<?= $find_product_id ?>"
-                        data-product-name="<?= $current_product_name ?>" ondblclick="editshiftdata($(this))">
+                        data-product-name="<?= $current_product_name ?>" data-shift-id="<?= $shift_id ?>" ondblclick="editshiftdata($(this))">
                         <td style="text-align: center;"><?= date_format($start_date, 'd-m-Y') ?></td>
-                        <td style="text-align: center;"><?= $shift_name . ' ' . $shift_id ?></td>
+                        <td style="text-align: center;"><?= $shift_name . ' '.$b.' = ' . $shift_id ?></td>
                         <td style="text-align: center;"><?= number_format($prod_rec_all_day_qty, 2) ?></td>
                         <td style="text-align: center;<?= $line_edit_transfer_color ?>"><?= number_format($line_transfer_qty, 2) ?></td>
                         <td style="text-align: center;<?= $line_edit_balance_in_color ?>"><?= number_format($line_balance_in_qty, 2) ?></td>
@@ -850,9 +855,9 @@ $model_line = \common\models\TransactionPosSaleSum::find()->select(['user_id', '
                     ?>
                     <tr data-var="<?= date_format($start_date, 'd-m-Y') ?>" data-id="<?= $b ?>"
                         data-show="<?= $shift_name ?>" data-product="<?= $find_product_id ?>"
-                        data-product-name="<?= $current_product_name ?>" ondblclick="editshiftdata($(this))">
+                        data-product-name="<?= $current_product_name ?>" data-shift-id="<?= $shift_id ?>" ondblclick="editshiftdata($(this))">
                         <td style="text-align: center;<?= $show_border ?>"></td>
-                        <td style="text-align: center;<?= $show_border ?>"><?= $shift_name . ' ' . $shift_id ?></td>
+                        <td style="text-align: center;<?= $show_border ?>"><?= $shift_name . ' ' .$b.' = '. $shift_id ?></td>
                         <td style="text-align: center;<?= $show_border ?>"></td>
                         <td style="text-align: center;<?= $show_border ?><?= $line_edit_transfer_color ?>"><?= number_format($line_transfer_qty, 2) ?></td>
                         <td style="text-align: center;<?= $show_border ?><?= $line_edit_balance_in_color ?>"><?= number_format($line_balance_in_qty, 2) ?></td>
@@ -931,6 +936,7 @@ $model_line = \common\models\TransactionPosSaleSum::find()->select(['user_id', '
                   method="post">
                 <input type="hidden" name="search_from_date" value="<?= $from_date ?>">
                 <input type="hidden" name="search_to_date" value="<?= $to_date ?>">
+                <input type="hidden" class="edit-shift" name="edit_shift" value="">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-lg-4">
@@ -1265,7 +1271,7 @@ function getProdrecAllDayQty($t_date, $product_id, $data_type_selected, $loop, $
     return $data;
 }
 
-function getProdrecAllDayQty2($t_date, $product_id, $data_type_selected)
+function getProdrecAllDayQty2($t_date, $product_id, $data_type_selected,$loop, $shift)
 {
     $data = 0;
     $model = 0;
@@ -1273,32 +1279,106 @@ function getProdrecAllDayQty2($t_date, $product_id, $data_type_selected)
     $model_shift = \common\models\TransactionPosSaleSum::find()->select(['shift', 'sum(prodrec_qty) as prodrec_qty'])->where(['date(trans_date)' => date('Y-m-d', strtotime($t_date)), 'product_id' => $product_id])->groupby(['shift'])->orderby(['shift' => SORT_ASC])->all();
     if ($model_shift) {
         foreach ($model_shift as $value) {
-            $is_cal = 0;
             $modelx = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift])->andFilterWhere(['is not', 'prodrec_qty', new \yii\db\Expression('null')])->one();
             if ($modelx) {
-                if ($modelx->prodrec_qty != null || $modelx->prodrec_qty == 0) {
+                if ( $modelx->prodrec_qty >= 0) {
                     $model += $modelx->prodrec_qty;
-                    $is_cal = 1;
+                   // $data = $modelx->prodrec_qty.',';
                 } else {
-                    $model += $value->prodrec_qty;
-                    $is_cal = 1;
+                   // $model += $value->prodrec_qty;
                 }
 
             } else {
-                if($is_cal == 0){
-                    $model += $value->prodrec_qty;
-                }
-
-                //$model = 200;
+               $model += $value->prodrec_qty;
+              // $data = $value->prodrec_qty.',';
             }
             //  $model +=$value->prodrec_qty;
+
+
         }
     }
 
     if ($model) {
         $data = $model;
     }
+//    return $model_shift[0]['shift'].'='.$model_shift[0]['prodrec_qty'];
     return $data;
+}
+
+//function getProdrecAllDayQty2($t_date, $product_id, $data_type_selected, $loop, $shift)
+//{
+//    $data = 0;
+//    $model = 0;
+//    $shift_loop = [$shift - 1, $shift, $shift + 1];
+//    for ($i = 0; $i <= 2; $i++) {
+//        $origin_qty = 0;
+//        $edit_qty = 0;
+//       $origin_qty = checkqtybyshiftOrigin($shift_loop[$i], $product_id);
+//       $edit_qty = checkqtybyshiftEdit($shift_loop[$i], $product_id);
+//       if($edit_qty == null){
+//           if($origin_qty >= 0){
+//               $model = ($model) + $origin_qty;
+//              // $data = $data.",".$origin_qty.($shift_loop[$i]).",";
+//           }else{
+//               $model = ($model) + 0;
+//              // $data = $data.",0,".$shift_loop[$i].",";
+//           }
+//       }else{
+//           if($edit_qty >= 0){
+//               $model = ($model) + $edit_qty;
+//              // $data = $data.",".$edit_qty.($shift_loop[$i]).",";
+//           }
+//       }
+//
+//        //$data = $data.$edit_qty.','.$shift_loop[$i].',';
+//
+//    }
+//
+//    if ($model) {
+//        $data = $model;
+//    }
+//    return $data;
+//}
+//function getProdrecAllDayQty($t_date, $product_id, $data_type_selected, $loop, $shift)
+//{
+//    $data = 0;
+//    $model = 0;
+//    $shift_loop = [$shift - 1, $shift, $shift + 1];
+//    for ($i = 0; $i <= 2; $i++) {
+//        $origin_qty = 0;
+//        $origin_qty = checkqtybyshiftOrigin($shift_loop[$i], $product_id);
+//        $model = ($model) + $origin_qty;
+//
+//    }
+//
+//    if ($model) {
+//        $data = $model;
+//    }
+//    return $data;
+//}
+function checkqtybyshiftOrigin($shift, $product_id)
+{
+    $qty = 0;
+    if ($shift && $product_id) {
+        $modelx = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'shift' => $shift])->one();
+        if ($modelx) {
+            $qty = $modelx->prodrec_qty;
+        }
+    }
+    return $qty;
+}
+function checkqtybyshiftEdit($shift, $product_id)
+{
+    $qty = 0;
+    if ($shift && $product_id) {
+        $modelx = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $shift])->andFilterWhere(['is not', 'prodrec_qty', new \yii\db\Expression('null')])->one();
+        if ($modelx) {
+            $qty = $modelx->prodrec_qty;
+        }else{
+            $qty = null;
+        }
+    }
+    return $qty;
 }
 
 
@@ -1806,12 +1886,14 @@ function checkDataTypeSelected(){
 function editshiftdata(e){
     var t_date = e.attr("data-var");
     var t_shift = e.attr("data-id");
+    var edit_shift = e.attr("data-shift-id");
     var t_shift_show = e.attr("data-show");
     var t_product_id = e.attr("data-product");
     var t_product_name = e.attr("data-product-name");
     if(t_date !='' && t_shift != ''){
         $(".trans-date").val(t_date);
         $(".shift-seq").val(t_shift);
+        $(".edit-shift").val(edit_shift);
         $(".shift-show").val(t_shift_show);
         $(".edit-product-id").val(t_product_id);
         $(".edit-product-name").val(t_product_name);

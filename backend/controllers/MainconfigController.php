@@ -130,12 +130,12 @@ class MainconfigController extends Controller
                         continue;
                     }
 
-//                    $model_dup = \backend\models\Customer::find()->where(['name' => trim($rowData[2]), 'company_id' => 1, 'branch_id' => 1])->one();
-//                    if ($model_dup != null) {
-//                        continue;
-//                    }
+                    $model_dup = \backend\models\Customer::find()->where(['code' => trim($rowData[0]), 'company_id' => 1, 'branch_id' => 1])->one();
+                    if ($model_dup != null) {
+                        continue;
+                    }
 
-                    $route_id = $this->checkRoute($rowData[3]);
+                    $route_id = $this->checkRoute($rowData[4]);
                     $group_id = $this->checkCustomergroup($rowData[5]);
                     $type_id = $this->checkCustomertype($rowData[6]);
                     $payment_method = $this->checkPaymethod($rowData[14]);
@@ -219,7 +219,7 @@ class MainconfigController extends Controller
                 //  echo "okk";return;
                 // $myfile = Yii::$app->request->baseUrl . '/uploads/files/' . $upfiles;
                 $myfile = '../web/uploads/files/customers/' . $upfiles;
-                $file = fopen($myfile, "r");
+                $file = fopen($myfile, "r+");
                 fwrite($file, "\xEF\xBB\xBF");
 
                 setlocale(LC_ALL, 'th_TH.TIS-620');

@@ -29,7 +29,7 @@ class SiteController extends Controller
 //                        'allow' => false,
 //                    ],
                     [
-                        'actions' => ['login', 'error', 'createadmin', 'changepassword', 'decodex', 'grab', 'addseconduser', 'getcominfo', 'transactionsalecar', 'transactionsalecar2', 'transactionsalecar3', 'createscreenshort', 'transactionsalepos', 'updateroute', 'calmachine', 'clearorder','testclosesum','updateorderpayment','caltransactionsaledistributor','startcaldailymanagerauto'],
+                        'actions' => ['login', 'error', 'createadmin', 'changepassword', 'decodex', 'grab', 'addseconduser', 'getcominfo', 'transactionsalecar', 'transactionsalecar2', 'transactionsalecar3', 'createscreenshort', 'transactionsalepos', 'updateroute', 'calmachine', 'clearorder', 'testclosesum', 'updateorderpayment', 'caltransactionsaledistributor', 'startcaldailymanagerauto', 'uploadfromgo'],
                         'allow' => true,
                     ],
                     [
@@ -1133,7 +1133,7 @@ class SiteController extends Controller
         $company_id = 1;
         $branch_id = 2;
         $cal_date = date('Y-m-d');
-        $xdate = explode('-',$caldate);
+        $xdate = explode('-', $caldate);
 
         // $create_date = date_create('2024-02-20');
 
@@ -1141,11 +1141,11 @@ class SiteController extends Controller
         $to_date = date('Y-m-d');
 
         $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
-            $cal_date = date('Y-m-d',strtotime($findcaldate));
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
+            $cal_date = date('Y-m-d', strtotime($findcaldate));
         }
-       // print_r($xdate);return;
+        // print_r($xdate);return;
         $started = microtime(true);
 
         //\common\models\TransactionCarSale::deleteAll(['date(trans_date)'=>date('Y-m-d')]);
@@ -1164,7 +1164,7 @@ class SiteController extends Controller
         if ($model) {
             foreach ($model as $value) {
                 $model_trans = new \common\models\TransactionDistributorSale();
-                $model_trans->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                $model_trans->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                 $model_trans->customer_id = $value->customer_id;
                 $model_trans->product_id = $value->product_id;
                 $model_trans->cash_qty = $value->line_qty_cash;
@@ -1199,16 +1199,17 @@ class SiteController extends Controller
         $total_time_use = $end - $started;
         $this->notifymessageorderclose(1, 2, number_format($total_time_use, 4));
     }
+
     function actionCaltransactionsaledistributorauto()
     {
 
         $company_id = 1;
         $branch_id = 2;
 
-        $t_date = date('Y-m-d',strtotime('-1 day'));
+        $t_date = date('Y-m-d', strtotime('-1 day'));
 
         $cal_date = date('Y-m-d');
-        $xdate = explode('-',$t_date);
+        $xdate = explode('-', $t_date);
 
         // $create_date = date_create('2024-02-20');
 
@@ -1216,9 +1217,9 @@ class SiteController extends Controller
         $to_date = date('Y-m-d');
 
         $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
-            $cal_date = date('Y-m-d',strtotime($findcaldate));
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
+            $cal_date = date('Y-m-d', strtotime($findcaldate));
         }
         // print_r($xdate);return;
         $started = microtime(true);
@@ -1239,7 +1240,7 @@ class SiteController extends Controller
         if ($model) {
             foreach ($model as $value) {
                 $model_trans = new \common\models\TransactionDistributorSale();
-                $model_trans->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                $model_trans->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                 $model_trans->customer_id = $value->customer_id;
                 $model_trans->product_id = $value->product_id;
                 $model_trans->cash_qty = $value->line_qty_cash;
@@ -1279,8 +1280,8 @@ class SiteController extends Controller
     {
         $company_id = 1;
         $branch_id = 1;
-        $caldate = date('Y-m-d',strtotime('-1 day'));
-        $xdate = explode('-',$caldate);
+        $caldate = date('Y-m-d', strtotime('-1 day'));
+        $xdate = explode('-', $caldate);
 
         // $create_date = date_create('2024-02-20');
 
@@ -1288,8 +1289,8 @@ class SiteController extends Controller
         $to_date = date('Y-m-d');
 
         $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
             $from_date = $findcaldate;
             $to_date = $findcaldate;
         }
@@ -1316,11 +1317,10 @@ class SiteController extends Controller
         $btn_order_type = null;
 
         $model_product_daily = \backend\models\Product::find()->where(['status' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['item_pos_seq' => SORT_ASC])->all();
-        \common\models\TransactionManagerDaily::deleteAll(['date(trans_date)'=>date('Y-m-d',strtotime($findcaldate))]);
+        \common\models\TransactionManagerDaily::deleteAll(['date(trans_date)' => date('Y-m-d', strtotime($findcaldate))]);
         foreach ($model_product_daily as $value) {
             $line_product_price_list = $this->getProductpricelist($value->id, $from_date, $to_date, $company_id, $branch_id);
             if ($line_product_price_list != null) {
-
 
 
                 for ($x = 0; $x <= count($line_product_price_list) - 1; $x++) {
@@ -1362,7 +1362,7 @@ class SiteController extends Controller
 
 
                     $model_add = new \common\models\TransactionManagerDaily();
-                    $model_add->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                    $model_add->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                     $model_add->product_id = $value->id;
                     $model_add->price = $line_product_price_list[$x]['line_price'];
                     $model_add->cash_qty = $line_qty;
@@ -1379,7 +1379,7 @@ class SiteController extends Controller
 
 
                 }
-            }else{
+            } else {
                 echo "no data";
             }
         }
@@ -1886,7 +1886,8 @@ class SiteController extends Controller
         echo "ok";
     }
 
-    public function actionTestclosesum(){
+    public function actionTestclosesum()
+    {
         $product_id = 1;
         $qty = 1;
         $company_id = 1;
@@ -1894,7 +1895,7 @@ class SiteController extends Controller
         $route_id = 900;
 
         if ($product_id != null && $qty > 0 && $company_id != null && $branch_id != null) {
-            $order_shift = \common\models\OrderStock::find()->where(['route_id' => $route_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>','issue_id',0])->groupBy(['issue_id'])->count('issue_id');
+            $order_shift = \common\models\OrderStock::find()->where(['route_id' => $route_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>', 'issue_id', 0])->groupBy(['issue_id'])->count('issue_id');
             $model = \common\models\SaleRouteDailyClose::find()->where(['product_id' => $product_id, 'route_id' => $route_id, 'date(trans_date)' => date('Y-m-d'), 'order_shift' => $order_shift])->one();
             if ($model) {
                 echo "ok";
@@ -1916,27 +1917,30 @@ class SiteController extends Controller
             }
         }
     }
-    public function actionUpdateorderpayment(){
-        $model = \common\models\QueryOrderWaitForUpdatePayment::find()->where(['date(trans_date)'=>date('Y-m-d')])->limit(30)->all();
+
+    public function actionUpdateorderpayment()
+    {
+        $model = \common\models\QueryOrderWaitForUpdatePayment::find()->where(['date(trans_date)' => date('Y-m-d')])->limit(30)->all();
         $res = 0;
         $company_id = 0;
         $branch_id = 0;
-        if($model){
-            foreach($model as $value){
+        if ($model) {
+            foreach ($model as $value) {
                 $company_id = $value->company_id;
                 $branch_id = $value->branch_id;
-                $modelorder = \common\models\Orders::find()->where(['id'=>$value->order_id,'payment_status'=>0])->one();
-                if($modelorder){
+                $modelorder = \common\models\Orders::find()->where(['id' => $value->order_id, 'payment_status' => 0])->one();
+                if ($modelorder) {
                     $modelorder->payment_status = 1;
                     $modelorder->save(false);
-                    $res+=1;
+                    $res += 1;
                 }
             }
         }
-        if($res > 0){
-         //   $this->notifymessageorderupdatepayment($company_id,$branch_id,1);
+        if ($res > 0) {
+            //   $this->notifymessageorderupdatepayment($company_id,$branch_id,1);
         }
     }
+
     public function notifymessageorderupdatepayment($company_id, $branch_id, $timeuse)
     {
         //$message = "This is test send request from camel paperless";
@@ -1977,8 +1981,6 @@ class SiteController extends Controller
         $res = json_decode($result);
         return $res;
     }
-
-
 
 
     function getProductpricelist($product_id, $f_date, $t_date, $company_id, $branch_id)
@@ -2199,6 +2201,22 @@ class SiteController extends Controller
             }
         }
         return $data;
+    }
+
+    function actionUploadfromgo()
+    {
+        if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
+            $uploadFile = basename($_FILES['image']['name']);
+
+            // if (move_uploaded_file($_FILES['image']['tmp_name'], \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . $uploadFile)) {
+            if (move_uploaded_file($_FILES['image']['tmp_name'], '../web/uploads/files/receive/' . $uploadFile)) {
+                echo "File is valid, and was successfully uploaded.\n";
+            } else {
+                echo "Possible file upload attack!\n";
+            }
+        } else {
+            echo \Yii::$app->getUrlManager()->baseUrl;
+        }
     }
 }
 

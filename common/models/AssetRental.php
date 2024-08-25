@@ -32,9 +32,9 @@ class AssetRental extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['trans_date'], 'safe'],
+            [['trans_date','use_from','use_to'], 'safe'],
             [['status', 'created_at', 'created_by', 'updated_at', 'updated_by'], 'integer'],
-            [['journal_no'], 'string', 'max' => 255],
+            [['journal_no','work_name'], 'string', 'max' => 255],
         ];
     }
 
@@ -47,6 +47,9 @@ class AssetRental extends \yii\db\ActiveRecord
             'id' => 'ID',
             'journal_no' => 'Journal No',
             'trans_date' => 'Trans Date',
+            'use_from' => 'เริ่มใช้งาน',
+            'use_to' => 'ถึง',
+            'work_name' => 'ชื่องาน',
             'status' => 'Status',
             'created_at' => 'Created At',
             'created_by' => 'Created By',

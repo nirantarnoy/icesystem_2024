@@ -9,13 +9,13 @@ use yii\web\Session;
 
 class CustomerSearch extends Customer
 {
-    public $globalSearch;
+    public $globalSearch,$from_date,$to_date;
 
     public function rules()
     {
         return [
             [['id', 'customer_group_id', 'customer_type_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by'], 'integer'],
-            [['code', 'name', 'description', 'location_info', 'active_date', 'logo', 'shop_photo'], 'safe'],
+            [['code', 'name', 'description', 'location_info', 'active_date', 'logo', 'shop_photo','from_date','to_date'], 'safe'],
             [['globalSearch'], 'string']
         ];
     }
@@ -92,6 +92,21 @@ class CustomerSearch extends Customer
         }
         if (!empty(\Yii::$app->user->identity->branch_id)) {
             $query->andFilterWhere(['branch_id' => \Yii::$app->user->identity->branch_id]);
+        }
+
+        if(!empty($this->from_date) && !empty($this->to_date)){
+            $fdate = null;
+            $xdate = explode('-',$this->from_date);
+            if($xdate!=null){
+                $fdate = $xdate[2].'/'.$xdate[1].'/'.$xdate[0];
+            }
+
+            $tdate = null;
+            $ydate = explode('-',$this->to_date);
+            if($ydate!=null){
+                $tdate = $ydate[2].'/'.$ydate[1].'/'.$ydate[0];
+            }
+            $query->andFilterWhere(['AND',['>=','date(active_date)',date('Y-m-d',strtotime($fdate))],['<=','date(active_date)',date('Y-m-d',strtotime($tdate))]]);
         }
 
         return $dataProvider;

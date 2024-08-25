@@ -121,6 +121,10 @@ class IssuereportSearch extends QueryIssue
             $query->andFilterWhere(['in','delivery_route_id',$this->delivery_route_id]);
         }
 
+        if($this->product_id!=null){
+            $query->andFilterWhere(['product_id' => $this->product_id]);
+        }
+
         $query->andFilterWhere(['like', 'journal_no', $this->globalSearch]);
 
         return $dataProvider;

@@ -205,7 +205,12 @@ class DeliveryrouteController extends Controller
         echo $html;
     }
     public function actionRoutestock($id){
-        $model = \common\models\OrderStock::find()->where(['route_id'=>$id])->andFilterWhere(['date(trans_date)'=>date('Y-m-d')])->all();
+//        if($id == 4){ // ตลาดเวืลด์อ้อมน้อย
+//            $model = \common\models\OrderStock::find()->where(['route_id'=>$id])->andFilterWhere(['date(trans_date)'=>date('Y-m-d',strtotime('-1 day'))])->all();
+//        }else{
+            $model = \common\models\OrderStock::find()->where(['route_id'=>$id])->andFilterWhere(['date(trans_date)'=>date('Y-m-d')])->all();
+       // }
+
         return $this->render('_currentstock',['route_id'=>$id,'model'=>$model]);
     }
     public function actionUpdateroutestock(){

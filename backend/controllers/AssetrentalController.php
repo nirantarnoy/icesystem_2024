@@ -88,8 +88,28 @@ class AssetrentalController extends Controller
             $line_use_status = \Yii::$app->request->post('line_use_status');
             $line_return_status = \Yii::$app->request->post('line_return_status');
 
+
+            $fdate = date('Y-m-d');
+            $tdata = date('Y-m-d');
+
+            $xfdate = explode('-',$model->use_from);
+            if($xfdate!=null){
+                if(count($xfdate)>1){
+                    $fdate = $xfdate[2].'-'.$xfdate[1].'-'.$xfdate[0];
+                }
+            }
+            $xtdate = explode('-',$model->use_to);
+            if($xtdate!=null){
+                if(count($xtdate)>1){
+                    $tdata = $xtdate[2].'-'.$xtdate[1].'-'.$xtdate[0];
+                }
+            }
+
+
             $model->journal_no = $model::getLastNo(1,1);
             $model->trans_date = date('Y-m-d');
+            $model->use_from = date('Y-m-d',strtotime($fdate));
+            $model->use_to = date('Y-m-d',strtotime($tdata));
 
             if($model->save(false)){
                 if($line_asset_id != null){
@@ -134,7 +154,26 @@ class AssetrentalController extends Controller
             $line_use_status = \Yii::$app->request->post('line_use_status');
             $line_return_status = \Yii::$app->request->post('line_return_status');
 
+            $fdate = date('Y-m-d');
+            $tdata = date('Y-m-d');
+
+            $xfdate = explode('-',$model->use_from);
+            if($xfdate!=null){
+                if(count($xfdate)>1){
+                    $fdate = $xfdate[2].'-'.$xfdate[1].'-'.$xfdate[0];
+                }
+            }
+            $xtdate = explode('-',$model->use_to);
+            if($xtdate!=null){
+                if(count($xtdate)>1){
+                    $tdata = $xtdate[2].'-'.$xtdate[1].'-'.$xtdate[0];
+                }
+            }
+
+
             $removelist = \Yii::$app->request->post('removelist');
+            $model->use_from = date('Y-m-d',strtotime($fdate));
+            $model->use_to = date('Y-m-d',strtotime($tdata));
 
             if($model->save(false)){
                 if($line_asset_id != null){

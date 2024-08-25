@@ -151,7 +151,6 @@ class CustomerController extends Controller
             }
 
            // echo $model->getLastNo($company_id, $branch_id);
-
             $fdate = date('Y-m-d');
             $xdate = explode('-', $model->active_date);
             if($xdate != null){
@@ -161,6 +160,7 @@ class CustomerController extends Controller
             }
 
             $model->active_date = date('Y-m-d', strtotime($fdate));
+
             $model->code = $model->getLastNo($company_id, $branch_id);
             $model->sort_name = $model->sort_name == null ? '' : $model->sort_name;
             $model->company_id = $company_id;

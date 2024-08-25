@@ -4490,12 +4490,14 @@ class OrderController extends Controller
         $branch_id = 1;
         $reason = '';
         $default_warehouse = 1;
+        $user_id = 0;
 
 
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $req_data = \Yii::$app->request->getBodyParams();
         $order_id = $req_data['order_id'];
         $reason = $req_data['reason'];
+        $user_id = $req_data['user_id'];
 
         $data = [];
 
@@ -4525,12 +4527,12 @@ class OrderController extends Controller
 //                                        $model_palate->save(false);
 //                                    }
                                     // create trans and update stock
-                                    $this->updatestockcancel($val->product_id, $val->qty, $default_warehouse, '', $company_id, $branch_id);
+                                    $this->updatestockcancel($val->product_id, $val->qty, $default_warehouse, '', $company_id, $branch_id,$user_id);
                                 }
                             } else {
                                 $model_issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_issue->id])->all();
                                 foreach ($model_issue_line as $line) {
-                                    $this->updatestockcancel($line->product_id, $line->qty, $default_warehouse, '', $company_id, $branch_id);
+                                    $this->updatestockcancel($line->product_id, $line->qty, $default_warehouse, '', $company_id, $branch_id,$user_id);
                                 }
 
                             }
@@ -4542,9 +4544,12 @@ class OrderController extends Controller
         return ['status' => $status, 'data' => $data];
     }
 
-    public function updatestockcancel($product_id, $qty, $wh_id, $journal_no, $company_id, $branch_id)
+    public function updatestockcancel($product_id, $qty, $wh_id, $journal_no, $company_id, $branch_id,$user_id)
     {
         if ($product_id != null && $qty > 0) {
+
+            $last_no = \backend\models\Orders::getLastNoPosCancel($company_id, $branch_id);
+
             $model_trans = new \backend\models\Stocktrans();
             $model_trans->journal_no = $journal_no;
             $model_trans->trans_date = date('Y-m-d H:i:s');
@@ -4555,11 +4560,16 @@ class OrderController extends Controller
             $model_trans->activity_type_id = 8; // คืนขาย
             $model_trans->company_id = $company_id;
             $model_trans->branch_id = $branch_id;
-            $model_trans->created_by = \Yii::$app->user->id;
+            $model_trans->created_by = $user_id;
             if ($model_trans->save(false)) {
                 $model = \backend\models\Stocksum::find()->where(['warehouse_id' => $wh_id, 'product_id' => $product_id])->one();
                 if ($model) {
-                    $model->qty = (float)$model->qty + (float)$qty;
+                    if($model->qty == null){
+                        $model->qty = (float)$qty;
+                    }else{
+                        $model->qty = (float)$model->qty + (float)$qty;
+                    }
+
                     $model->save(false);
                 }
             }

@@ -4,6 +4,9 @@ use yii\widgets\ActiveForm;
 use yii\captcha\Captcha;
 use yii\helpers\Html;
 
+$login_date = '2024-08-13';
+$cal_date =  date('Y-m-d') > date('Y-m-d',strtotime($login_date))?date('Y-m-d'):$login_date;
+echo date('Y-m-d',strtotime($cal_date));
 ?>
 
 <!--<link rel="stylesheet" href="../../backend/web/plugins/fontawesome-free/css/all.min.css">-->
