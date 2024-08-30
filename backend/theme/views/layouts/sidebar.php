@@ -832,6 +832,23 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <?php if (\Yii::$app->user->can('saleqtysumbyprice/index')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=saleqtysumbyprice/index" class="nav-link saleqtysumbyprice">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>แคทหน้าบ้าน</p>
+                                </a>
+                            </li>
+                        <?php endif;?>
+                        <?php if (\Yii::$app->user->can('saleqtysumbyprice/index2')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=saleqtysumbyprice/index2" class="nav-link saleqtysumbyprice">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>แคทขายรถ</p>
+                                </a>
+                            </li>
+                        <?php endif;?>
+
                         <?php if (\Yii::$app->user->can('salereportemp/index')): ?>
 <!--                        <li class="nav-item">-->
 <!--                            <a href="index.php?r=salereportemp" class="nav-link salereportemp">-->

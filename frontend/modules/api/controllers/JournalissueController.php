@@ -1740,6 +1740,7 @@ class JournalissueController extends Controller
 
                 $this->createOrderforissue($route_id, $sale_date, $company_id, $branch_id, $default_warehouse, $datalist, $model->id, $user_id);
                 $this->transfertocarwarehousebp($company_id, $branch_id, $datalist, $default_warehouse, $route_id);
+                $this->createIssueTempcar($model->id, $user_id);
                 $status = 1;
                 array_push($data, ['issue_no' => $model->journal_no]);
             }
@@ -2118,4 +2119,165 @@ class JournalissueController extends Controller
 
         return ['status' => $status, 'data' => $data];
     }
+
+
+    //// create issue for map production receive
+    public function createIssueTempcar($journal_issue_id, $user_id)
+    {
+        if ($journal_issue_id) {
+            $model_journal = \backend\models\Journalissue::find()->where(['id' => $journal_issue_id])->one();
+            if ($model_journal) {
+                $issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_journal->id])->all();
+                foreach ($issue_line as $val) {
+                    $production_rec_id = $this->findProdrecOrder($val->product_id, $val->qty);
+                    if ($production_rec_id != null) {
+                        for ($k = 0; $k <= count($production_rec_id) - 1; $k++) {
+                            $model = new \common\models\IssueStockTemp();
+                            $model->issue_id = $model_journal->id;
+                            $model->prodrec_id = $production_rec_id[$k]['id'];
+                            $model->product_id = $val->product_id;
+                            $model->qty = $production_rec_id[$k]['qty'];
+                            $model->status = 100;
+                            $model->created_by = $user_id;
+                            $model->company_id = 1;
+                            $model->branch_id = 1;
+                            $model->crated_at = time();
+                            if ($model->save(false)) {
+
+                                // Create production rec issue
+
+                                $model_update_prodrec_issue = new \common\models\ProductionRecIssue();
+                                $model_update_prodrec_issue->stock_trans_id = $production_rec_id[$k]['id'];
+                                $model_update_prodrec_issue->product_id = $val->product_id;
+                                $model_update_prodrec_issue->issue_id = $model_journal->id;
+                                $model_update_prodrec_issue->qty = $production_rec_id[$k]['qty'];
+                                $model_update_prodrec_issue->save(false);
+
+                                $this->updateProdrecQtyStatus($production_rec_id[$k]['id']);
+
+                                // End production rec issue
+
+                            }
+                        }
+                    }
+
+                    $model_update = \backend\models\Journalissueline::find()->where(['id' => $val->id])->one();
+                    if ($model_update) {
+                        // $model_update->qty = ($model_update->qty + $val->qty);
+                        $model_update->avl_qty = $model_update->qty;
+                        $model_update->updated_by = $val->created_by;
+                        $model_update->temp_update = date('Y-m-d H:i:s');
+                        if ($model_update->save(false)) {
+                            $issue_m = \backend\models\Journalissue::find()->where(['id' => $val->issue_id])->one();
+                            if ($issue_m) {
+                                $issue_m->updated_by = $val->created_by;
+                                $issue_m->status = 150; // confirm issue
+                                if ($issue_m->save(false)) {
+                                    //                                       $check_is_order_car = \backend\models\Orders::find()->select('customer_id')->where(['id' => $issue_m->order_ref_id])->one();
+
+//                                        if ($check_is_order_car->customer_id > 0) {  // add new 01102021  reduce stock for pos sale not include mobile sale
+//                                            // $this->updateSummary($value->product_id,$defaultwarehouse,$value->qty);
+//                                            $mode = 'pos';
+//                                        } else {  // add new 01102021  transfer main warehouse to car warehouse for mobile sale
+//                                            $mode = 'car';
+//                                            $this->transfertocarwarehouse($issue_m->company_id, $issue_m->branch_id, $value->product_id, $defaultwarehouse, $value->qty, $issue_m->delivery_route_id);
+//                                        }
+                                }
+                            }
+
+
+                        }
+                    }
+
+                }
+            }
+
+        }
+
+    }
+
+
+    function findProdrecOrder($product_id, $issue_qty)
+    {
+        $prodrec_id = 0;
+        $data = [];
+        $cal_qty = 0;
+        $full_qty = 0;
+        $issue_remain_qty = 0;
+        //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
+        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
+        if ($model) {
+            foreach ($model as $value) {
+                $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+                if ($model_sum_issue_used_qty > 0) {
+                    // if ($model_sum_issue_used_qty >= $issue_qty) continue;
+                    $prod_rec_avl_qty = ($value->qty - $model_sum_issue_used_qty);
+                    if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
+                        if ($prod_rec_avl_qty >= $issue_qty) {
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
+                            break;
+                        } else {
+                            $cal_qty += $prod_rec_avl_qty;
+                            if ($cal_qty < $issue_qty) {
+                                array_push($data, ['id' => $value->id, 'qty' => $prod_rec_avl_qty]);
+                            }
+                            $full_qty += $prod_rec_avl_qty;
+                        }
+                    }
+                    if ($full_qty >= $issue_qty) {
+                        break;
+                    }
+                } else {
+
+                    if ($value->qty >= $issue_qty) {
+                        array_push($data, ['id' => $value->id, 'qty' => $issue_qty]);
+                        break;
+                    } else {
+                        if ($full_qty > 0) {
+                            $remain_qty = $issue_qty - $full_qty;
+                            if($remain_qty > $value->qty) {
+                                array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
+                                $full_qty += $value->qty;
+                            }else{
+                                array_push($data, ['id' => $value->id, 'qty' => $remain_qty]);
+                                $full_qty += $remain_qty;
+                            }
+
+                        } else {
+                            array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
+                            $full_qty += $value->qty;
+                        }
+
+                    }
+
+
+                }
+                if ($full_qty == $issue_qty) {
+                    break;
+                }
+            }
+
+        }
+
+        return $data;
+    }
+
+    function updateProdrecQtyStatus($recid)
+    {
+        $prodrec_issue_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $recid])->sum('qty');
+        if ($prodrec_issue_qty > 0) {
+            $model_trans = \backend\models\Stocktrans::find()->where(['id' => $recid])->one();
+            if ($model_trans) {
+                if($prodrec_issue_qty >= $model_trans->qty){
+                    $model_trans->status = 1000; // balance production receive
+                    $model_trans->save(false);
+                }
+            }
+        }
+
+    }
+
+
+    // end issue temp confirm
+
 }
