@@ -265,7 +265,7 @@ $mpdf->AddPageByArray([
                     $line_route_code = \backend\models\Deliveryroute::findName($find_user_id[$k]);
                     ?>
 
-                    <?php $find_order = getPayment($from_date, $to_date, 0, $find_user_id[$k], $company_id, $branch_id); ?>
+                    <?php $find_order = getPayment($from_date, $to_date, 0, $find_user_id[$k], $company_id, $branch_id,$find_cus_id); ?>
                     <?php if ($find_order != null): ?>
                         <?php
                         $loop_count = count($find_order);
@@ -414,9 +414,21 @@ $mpdf->AddPageByArray([
     </html>
 
 <?php
-function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id)
+function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id,$find_cus_id)
 {
     $list_route_id = null;
+
+    $cust_list = '';
+
+    if ($find_cus_id != null) {
+        for($i = 0; $i < count($find_cus_id); $i++) {
+            if ($i == 0) {
+                $cust_list .= $find_cus_id[$i];
+            } else {
+                $cust_list .= ',' . $find_cus_id[$i];
+            }
+        }
+    }
 
     $data = [];
 //    $sql = "SELECT t1.id,t1.journal_no,t1.trans_date,t1.customer_id,SUM(t2.payment_amount) as amount
@@ -434,6 +446,10 @@ function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_i
               AND t1.status <> 100 
               AND t1.payment_method_id=2 AND  t2.delivery_route_id =" . $find_user_id . "
               AND t1.company_id=" . $company_id . " AND t1.branch_id=" . $branch_id;
+
+    if ($find_cus_id != null) {
+        $sql .= " AND t1.customer_id in (" . $cust_list.")";
+    }
 
 
     $sql .= " GROUP BY t1.id,t1.journal_no";

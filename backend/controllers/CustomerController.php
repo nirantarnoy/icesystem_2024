@@ -160,7 +160,16 @@ class CustomerController extends Controller
                 }
             }
 
+            $fdate2 = date('Y-m-d');
+            $xdate2 = explode('-', $model->active_date);
+            if($xdate2 != null){
+                if(count($xdate2) > 1){
+                    $fdate2 = $xdate2[2] . '/' . $xdate2[1] . '/' . $xdate2[0];
+                }
+            }
+
             $model->active_date = date('Y-m-d', strtotime($fdate));
+            $model->cancel_use_date = date('Y-m-d', strtotime($fdate2));
             $model->code = $model->getLastNo($company_id, $branch_id);
             $model->sort_name = $model->sort_name == null ? '' : $model->sort_name;
             $model->company_id = $company_id;
@@ -212,6 +221,26 @@ class CustomerController extends Controller
                 $photo->saveAs(Yii::getAlias('@backend') . '/web/uploads/images/customer/' . $photo_name);
                 $model->shop_photo = $photo_name;
             }
+
+            $fdate = date('Y-m-d');
+            $xdate = explode('-', $model->active_date);
+            if($xdate != null){
+                if(count($xdate) > 1){
+                    $fdate = $xdate[2] . '/' . $xdate[1] . '/' . $xdate[0];
+                }
+            }
+
+            $fdate2 = date('Y-m-d');
+            $xdate2 = explode('-', $model->cancel_use_date);
+            if($xdate2 != null){
+                if(count($xdate2) > 1){
+                    $fdate2 = $xdate2[2] . '/' . $xdate2[1] . '/' . $xdate2[0];
+                }
+            }
+
+            $model->active_date = date('Y-m-d', strtotime($fdate));
+            $model->cancel_use_date = $model->cancel_use_date == null ? null:date('Y-m-d', strtotime($fdate2));
+
             $model->sort_name = $model->sort_name == null ? '' : $model->sort_name;
             $model->is_show_pos = $model->sort_name == null || $model->sort_name == '' ? 1 : 0;
             if ($model->save(false)) {

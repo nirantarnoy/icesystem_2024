@@ -309,6 +309,9 @@ if (count($xxtodate) > 1) {
         <button id="btn-export-excel-top" class="btn btn-secondary">Export Excel</button>
         <!--            <button id="btn-print" class="btn btn-warning" onclick="printContent('div1')">Print</button>-->
     </td>
+    <td>
+        <a href="index.php?r=customerinvoicecash/recal&id=<?= $model->id ?>" class="btn btn-warning">คำนวนใหม่</a>
+    </td>
 </table>
 </body>
 </html>

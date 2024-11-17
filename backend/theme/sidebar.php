@@ -606,6 +606,14 @@
                                 </a>
                             </li>
                         <?php endif; ?>
+                        <?php //if (\Yii::$app->user->can('deviceregister/index')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=deviceregister/index" class="nav-link cardaily">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>อุปกรณ์ขายมือถือ</p>
+                                </a>
+                            </li>
+                        <?php //endif; ?>
                     </ul>
                 </li>
                 <li class="nav-item has-treeview has-sub">

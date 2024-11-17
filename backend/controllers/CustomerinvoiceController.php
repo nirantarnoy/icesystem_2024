@@ -125,12 +125,23 @@ class CustomerinvoiceController extends Controller
     {
         $company_id = 1;
         $branch_id = 1;
+
+        $find_from_date = date('Y-m-d');
+        $find_to_date = date('Y-m-d');
         if (!empty(\Yii::$app->user->identity->company_id)) {
             $company_id = \Yii::$app->user->identity->company_id;
         }
         if (!empty(\Yii::$app->user->identity->branch_id)) {
             $branch_id = \Yii::$app->user->identity->branch_id;
         }
+
+        if(\Yii::$app->request->post('find_from_date') !=null){
+            $find_from_date = \Yii::$app->request->post('find_from_date');
+        }
+        if(\Yii::$app->request->post('find_to_date') !=null){
+            $find_to_date = \Yii::$app->request->post('find_to_date');
+        }
+
         $model = new Customerinvoice();
 
 
@@ -259,6 +270,8 @@ class CustomerinvoiceController extends Controller
 
         return $this->render('create', [
             'model' => $model,
+            'find_from_date' => $find_from_date,
+            'find_to_date' => $find_to_date,
         ]);
     }
 
@@ -377,10 +390,31 @@ class CustomerinvoiceController extends Controller
     public function actionGetitem()
     {
         $cus_id = \Yii::$app->request->post('customer_id');
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
         $html = '';
         $total_amount = 0;
 //        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . "-3 month"));
         $pre_date ="2024-01-01 00:00:01";
+
+        $xt1 = explode("/", $from_date);
+        $xt2 = explode("/", $to_date);
+
+        $f_date = '';
+        $t_date = '';
+
+        if($xt1!=null){
+            if(count($xt1)>1){
+                $f_date = $xt1[2].'/'.$xt1[1].'/'.$xt1[0];
+            }
+        }
+        if($xt2!=null){
+            if(count($xt2)>1){
+                $t_date = $xt2[2].'/'.$xt2[1].'/'.$xt2[0];
+            }
+        }
+
+
         if ($cus_id) {
             // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andFilterWhere(['>', 'remain_amount', 0])->all();
            // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR', ['is', 'payment_amount', new \yii\db\Expression('null')], ['>', 'remain_amount', 0]])->andFilterWhere(['!=', 'payment_status', 1])->orderBy(['order_id' => SORT_DESC])->all();
@@ -406,7 +440,12 @@ class CustomerinvoiceController extends Controller
 
 //            $sql .= " AND year(t1.order_date)>=2022";
 //            $sql .= " AND month(t1.order_date)>=10";
-            $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            if($f_date != '' && $t_date != ''){
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($f_date))."'";
+                $sql .= " AND date(t1.order_date) <='". date('Y-m-d',strtotime($t_date))."'";
+            }else{
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            }
             $sql .= " GROUP BY t1.id";
 
             $sql_query = \Yii::$app->db->createCommand($sql);
@@ -594,5 +633,43 @@ class CustomerinvoiceController extends Controller
         }else{
             echo "not success";
         }
+    }
+
+    public function actionRecal($id){
+       if($id){
+          $customer_id = \backend\models\Customerinvoice::find()->where(['id'=>$id])->one()->customer_id;
+          $model = \common\models\CustomerInvoiceLine::find()->where(['customer_invoice_id'=>$id])->all();
+          if($customer_id && $model){
+              foreach($model as $value){
+                 $order_amount_new = 0;
+                 $order_id = $value->order_id;
+                 $model_order_line = \backend\models\Orderline::find()->where(['order_id'=>$order_id,'status'=>1])->all();
+                 if($model_order_line){
+                     foreach($model_order_line as $value_line){
+                        $order_amount_new += ($this->findProductPrice($customer_id,$value_line->product_id) * $value_line->qty);
+                     }
+
+                 //    \common\models\CustomerInvoiceLine::updateAll(['line_disc_amt'=>$order_amount_new],['id'=>$value->id]);
+                     \common\models\CustomerInvoiceLine::updateAll(['amount'=>$order_amount_new,'remain_amount'=>$order_amount_new],['id'=>$value->id]);
+                 }
+              }
+          }
+       }
+
+       return $this->redirect(['customerinvoice/printinvoice','id'=>$id]);
+    }
+
+    function findProductPrice($customer_id,$product_id){
+        $new_price = 0;
+        $model = \common\models\QueryCustomerPrice::find()->where(['cus_id' => $customer_id,'product_id'=>$product_id])->all();
+        if ($model) {
+            foreach ($model as $value) {
+                $new_price = $value->sale_price;
+//                if($value->haft_cal == 1){
+//                    $new_price = $value->sale_haft_price;
+//                }
+            }
+        }
+        return $new_price;
     }
 }

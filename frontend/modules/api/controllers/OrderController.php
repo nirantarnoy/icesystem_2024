@@ -52,6 +52,9 @@ class OrderController extends Controller
                     'getbalancein' => ['POST'],
                     'closeorderposmobile' => ['POST'],
                     'testclosepos' => ['POST'],
+                    'findprodorderx' => ['POST'],
+                    'cancelprodrecx' => ['POST'],
+                    'checkcloseposmobile' => ['POST'],
                 ],
             ],
         ];
@@ -1577,7 +1580,7 @@ class OrderController extends Controller
                         //  $status = 101;
 
                         $model = new \backend\models\Stocktrans();
-                        $model->journal_no = $model->getReturnNo($company_id, $branch_id);
+                        $model->journal_no = $model->getLastNoCarreprocess($company_id, $branch_id);
                         $model->trans_date = date('Y-m-d H:i:s');
                         $model->product_id = $stock_data[$i]['product_id'];
                         $model->qty = (float)$stock_data[$i]['avl_qty'];
@@ -1587,6 +1590,7 @@ class OrderController extends Controller
                         $model->company_id = $company_id;
                         $model->branch_id = $branch_id;
                         $model->created_by = $user_id;
+                        $model->status = 0;
                         $model->trans_ref_id = $route_id;
                         if ($model->save(false)) {
                             if ($dvl_route_type == 1) { // check general route not boot
@@ -2074,7 +2078,6 @@ class OrderController extends Controller
         if ($order_line_id != null) {
             $model = \backend\models\Orderline::find()->where(['id' => $order_line_id])->andFilterWhere(['!=', 'status', 500])->one();
             if ($model) {
-
                 //$model_order_stock = \common\models\OrderStock::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id])->one();
                 $find_route_id = 0;
                 $model_route_order = \backend\models\Orders::find()->select(['order_channel_id'])->where(['id' => $model->order_id])->one();
@@ -4509,7 +4512,7 @@ class OrderController extends Controller
             if ($model) {
                 $model->status = 3; // cancel
                 if ($model->save(false)) {
-                    $model_issue = \backend\models\Journalissue::find()->where(['order_ref_id' => $order_id])->one();
+                    $model_issue = \backend\models\Journalissue::find()->where(['order_ref_id' => $order_id,'reason_id'=>1])->one();
                     if ($model_issue) {
                         $model_issue->status = 200; // cancel issue
                         if ($model_issue->save(false)) {
@@ -4531,13 +4534,14 @@ class OrderController extends Controller
 //                                    }
                                     // create trans and update stock
                                     $this->updatestockcancel($val->product_id, $val->qty, $default_warehouse, '', $company_id, $branch_id, $user_id);
+                                    $this->updateOrdercancelProdrec($model_issue->id, $val->product_id, $val->qty);
                                 }
                             } else {
                                 $model_issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_issue->id])->all();
                                 foreach ($model_issue_line as $line) {
                                     $this->updatestockcancel($line->product_id, $line->qty, $default_warehouse, '', $company_id, $branch_id, $user_id);
+                                    $this->updateOrdercancelProdrec($model_issue->id, $line->product_id, $line->qty);
                                 }
-
                             }
                         }
                     }
@@ -4603,7 +4607,7 @@ class OrderController extends Controller
 
         if ($user_id != null && $model_product != null) {
 
-            $login_time = \backend\models\User::findLogintime($user_id);
+            $login_time = \backend\models\User::findLogindatetime($user_id);
             $cur_shift = $this->getTransShift($company_id, $branch_id);
 
             $list_product_data = [];
@@ -4686,6 +4690,7 @@ class OrderController extends Controller
 
                     $this->adjustStock($default_warehouse, $value->id, $line_stock_count, $company_id, $branch_id); // update stock main
                     \common\models\DailyCountStock::updateAll(['status' => 1], ['status' => 0, 'company_id' => $company_id, 'branch_id' => $branch_id, 'product_id' => $value->id]); // update count stock
+                    $this->updateProdrecFromBalanceIn($value->id, $line_stock_count, $user_id);
 
                 }
             }
@@ -4698,6 +4703,35 @@ class OrderController extends Controller
                 array_push($data, ['message' => 'success']);
                 $this->notifymessageorderPosclose($user_id, $company_id, $branch_id);
             }
+        }
+        return ['status' => $status, 'data' => $data];
+    }
+
+    public function actionCheckcloseposmobile()
+    {
+        $status = 0;
+
+        $user_id = 0;
+        $company_id = 1;
+        $branch_id = 1;
+        $enddate = null;
+        $default_warehouse = 1;
+
+
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        $company_id = $req_data['company_id'];
+        $branch_id = $req_data['branch_id'];
+        $user_id = $req_data['user_id'];
+        // $enddate = $req_data['end_date'];
+
+        $data = [];
+        $res = 0;
+
+        if ($user_id != null) {
+
+            $login_time = \backend\models\User::findLogindatetime($user_id);
+           array_push($data,$login_time);
         }
         return ['status' => $status, 'data' => $data];
     }
@@ -4788,6 +4822,7 @@ class OrderController extends Controller
                     $model_trans->scrap_qty = $list_product_data[$i]['line_scrap_qty'];//$this->getScrapDaily($value->product_id, $user_login_datetime, $cal_date);
                     $model_trans->counting_qty = $list_product_data[$i]['line_stock_count'];
                     $model_trans->shift = $cur_shift;//$this->checkDailyShift($cal_date);
+                    $model_trans->transfer_in_qty = $this->getTransferInQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
                     $model_trans->company_id = $company_id;
                     $model_trans->branch_id = $branch_id;
                     $model_trans->user_id = $user_id;
@@ -4852,10 +4887,11 @@ class OrderController extends Controller
 //        $new_date = date_create(date('Y-m-d'). $hx);
 //        $xdate = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). ' - 1 day'));
 //        echo date('Y-m-d H:i:s',strtotime($xdate));
-        if (date('H', strtotime($user_login_datetime)) == 23) {
-            $new_date = date_create(date('Y-m-d') . $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date, "Y-m-d H:i:s") . '- 1 day'));
-        }
+
+//        if (date('H', strtotime($user_login_datetime)) == 23) {
+//            $new_date = date_create(date('Y-m-d') . $user_login_datetime);
+//            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date, "Y-m-d H:i:s") . '- 1 day'));
+//        }
 
         $qty = 0;
         if ($user_id != null) {
@@ -5015,6 +5051,31 @@ class OrderController extends Controller
         return $qty;
     }
 
+    function getTransferInQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id){
+        $qty = 0;
+        if($user_id!=null){
+            $sql = "SELECT  SUM(qty) as qty";
+            $sql .= " FROM stock_trans";
+            $sql .= " WHERE activity_type_id = 15";
+            $sql .= " AND not transfer_branch_id is null";
+            $sql .= " AND trans_date >=" . "'" . date('Y-m-d H:i:s', strtotime($user_login_datetime)) . "'";
+            $sql .= " AND trans_date <=" . "'" . date('Y-m-d H:i:s') . "'";
+            $sql .= " AND product_id=" . $product_id;
+            // $sql .= " AND orders.created_by=" . $user_id;
+            $sql .= " GROUP BY product_id";
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+            if ($model) {
+                for ($i = 0; $i <= count($model) - 1; $i++) {
+                    $qty = $model[$i]['qty'];
+                }
+            }
+        }
+        return $qty;
+    }
+
+
     function getBalancein($product_id)
     {
         $qty = 0;
@@ -5158,13 +5219,14 @@ class OrderController extends Controller
     public function createIssueTemp($order_id, $user_id)
     {
         if ($order_id) {
-            $model_journal = \backend\models\Journalissue::find()->where(['order_ref_id' => $order_id])->one();
+            $model_journal = \backend\models\Journalissue::find()->where(['order_ref_id' => $order_id, 'reason_id' => 1])->one();
             if ($model_journal) {
                 $issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_journal->id])->all();
                 foreach ($issue_line as $val) {
                     $production_rec_id = $this->findProdrecOrder($val->product_id, $val->qty);
                     if ($production_rec_id != null) {
                         for ($k = 0; $k <= count($production_rec_id) - 1; $k++) {
+                            if ($production_rec_id[$k]['qty'] == 0) continue;
                             $model = new \common\models\IssueStockTemp();
                             $model->issue_id = $model_journal->id;
                             $model->prodrec_id = $production_rec_id[$k]['id'];
@@ -5184,6 +5246,7 @@ class OrderController extends Controller
                                 $model_update_prodrec_issue->product_id = $val->product_id;
                                 $model_update_prodrec_issue->issue_id = $model_journal->id;
                                 $model_update_prodrec_issue->qty = $production_rec_id[$k]['qty'];
+                                $model_update_prodrec_issue->type_id = 1;
                                 $model_update_prodrec_issue->save(false);
 
                                 $this->updateProdrecQtyStatus($production_rec_id[$k]['id']);
@@ -5237,21 +5300,29 @@ class OrderController extends Controller
         $cal_qty = 0;
         $full_qty = 0;
         $issue_remain_qty = 0;
+        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
         //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
-        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
+        //       $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,27], 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
+        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15, 26, 27], 'status' => 0])->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d', strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
         if ($model) {
             foreach ($model as $value) {
+                $prod_rec_avl_qty = 0;
+                $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty - $adjust_all_qty); // prodrec - scrap
+
+
                 $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
                 if ($model_sum_issue_used_qty > 0) {
-                   // if ($model_sum_issue_used_qty >= $issue_qty) continue;
-                    $prod_rec_avl_qty = ($value->qty - $model_sum_issue_used_qty);
+                    // if ($model_sum_issue_used_qty >= $issue_qty) continue;
+                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
                     if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
                         if ($prod_rec_avl_qty >= $issue_qty) {
                             array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
                             break;
                         } else {
                             $cal_qty += $prod_rec_avl_qty;
-                            if ($cal_qty < $issue_qty) {
+                            if ($cal_qty <= $issue_qty) {
                                 array_push($data, ['id' => $value->id, 'qty' => $prod_rec_avl_qty]);
                             }
                             $full_qty += $prod_rec_avl_qty;
@@ -5262,28 +5333,30 @@ class OrderController extends Controller
                     }
                 } else {
 
-                    if ($value->qty >= $issue_qty) {
-                        array_push($data, ['id' => $value->id, 'qty' => $issue_qty]);
+                    if ($qty_after_deduct_scrap >= $issue_qty) {
+                        if ($full_qty > 0) {
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty - $full_qty]);
+                            $full_qty = 0;
+                        } else {
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                        }
                         break;
                     } else {
                         if ($full_qty > 0) {
                             $remain_qty = $issue_qty - $full_qty;
-                            if($remain_qty > $value->qty) {
-                                array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
-                                $full_qty += $value->qty;
-                            }else{
+                            if ($remain_qty > $qty_after_deduct_scrap) {
+                                array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                                $full_qty += $qty_after_deduct_scrap;
+                            } else {
                                 array_push($data, ['id' => $value->id, 'qty' => $remain_qty]);
                                 $full_qty += $remain_qty;
                             }
 
                         } else {
-                            array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
-                            $full_qty += $value->qty;
+                            array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                            $full_qty += $qty_after_deduct_scrap;
                         }
-
                     }
-
-
                 }
                 if ($full_qty == $issue_qty) {
                     break;
@@ -5295,13 +5368,91 @@ class OrderController extends Controller
         return $data;
     }
 
+//    function actionFindprodorderx()
+//    {
+//
+//
+//        $product_id = '';
+//        $issue_qty = 0;
+//
+//        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+//        $req_data = \Yii::$app->request->getBodyParams();
+//        if ($req_data != null) {
+//
+//            $product_id = $req_data['product_id'];
+//            $issue_qty = $req_data['qty'];
+//        }
+//        $data = [];
+//        $cal_qty = 0;
+//        $full_qty = 0;
+//        $issue_remain_qty = 0;
+//        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+//        //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
+//        //       $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,27], 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
+//        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15], 'status' => 0])->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d', strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+//        if ($model) {
+//            $prod_rec_avl_qty = 0;
+//            foreach ($model as $value) {
+//                $scrap_all_qty = $this->checkProdrecScrap($value->id);
+//                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty); // prodrec - scrap
+//
+//                $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+//                if ($model_sum_issue_used_qty > 0) {
+//                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
+//                    if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
+//                        if ($prod_rec_avl_qty >= $issue_qty) {
+//                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
+//                            break;
+//                        } else {
+//                            $cal_qty += $prod_rec_avl_qty;
+//                            if ($cal_qty <= $issue_qty) {
+//                                array_push($data, ['id' => $value->id, 'qty' => $prod_rec_avl_qty]);
+//                            }
+//                            $full_qty += $prod_rec_avl_qty;
+//                        }
+//                    }
+//                    if ($full_qty >= $issue_qty) {
+//                        break;
+//                    }
+//                } else {
+//
+//                    if ($qty_after_deduct_scrap >= $issue_qty) {
+//                        array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+//                        break;
+//                    } else {
+//                        if ($full_qty > 0) {
+//                            $remain_qty = $issue_qty - $full_qty;
+//                            if ($remain_qty > $qty_after_deduct_scrap) {
+//                                array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+//                                $full_qty += $qty_after_deduct_scrap;
+//                            } else {
+//                                array_push($data, ['id' => $value->id, 'qty' => $remain_qty]);
+//                                $full_qty += $remain_qty;
+//                            }
+//
+//                        } else {
+//                            array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+//                            $full_qty += $qty_after_deduct_scrap;
+//                        }
+//                    }
+//                }
+//                if ($full_qty == $issue_qty) {
+//                    break;
+//                }
+//            }
+//
+//        }
+//
+//        return ['data' => $data];
+//    }
+
     function updateProdrecQtyStatus($recid)
     {
         $prodrec_issue_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $recid])->sum('qty');
         if ($prodrec_issue_qty > 0) {
             $model_trans = \backend\models\Stocktrans::find()->where(['id' => $recid])->one();
             if ($model_trans) {
-                if($prodrec_issue_qty >= $model_trans->qty){
+                if ($prodrec_issue_qty >= $model_trans->qty) {
                     $model_trans->status = 1000; // balance production receive
                     $model_trans->save(false);
                 }
@@ -5310,7 +5461,386 @@ class OrderController extends Controller
 
     }
 
+    function updateOrdercancelProdrec($issue_id, $product_id, $cancel_qty)
+    {
 
+        $model_issue = \common\models\ProductionRecIssue::find()->where(['issue_id' => $issue_id, 'product_id' => $product_id])->andFilterWhere(['>=', 'qty', $cancel_qty])->one();
+        if ($model_issue) {
+            $model_issue->qty = ($model_issue->qty - $cancel_qty);
+            if ($model_issue->save(false)) {
+                $model_trans = \backend\models\Stocktrans::find()->where(['id' => $model_issue->stock_trans_id])->one();
+                if ($model_trans) {
+                    if ($model_trans->status == 1000) {
+                        $model_trans->status = 0;
+                        $model_trans->save(false);
+                    }
+
+                }
+            }
+        }
+
+    }
+
+    function actionCancelprodrecx()
+    {
+
+        $product_id = '';
+        $cancel_qty = 0;
+        $issue_id = 0;
+
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        if ($req_data != null) {
+
+            $product_id = $req_data['product_id'];
+            $count_qty = $req_data['qty'];
+
+        }
+        $data = [];
+
+        // $count_qty = 70;
+        if ($count_qty > 0) {
+            $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+
+            $model = \backend\models\Stocktrans::find()->where(['activity_type_id' => [15, 26, 27], 'status' => 0, 'product_id' => $product_id])->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d', strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+            if ($model) {
+
+                $cal_qty = 0;
+                $min_id = 0;
+                $min_not_full_qty = 0;
+                $loop = 0;
+                foreach ($model as $value) {
+                    $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                    $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+                    $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                    $refill_qty = $this->checkProdrecRefill($value->id);
+
+                    $cal_qty += ($value->qty - $scrap_all_qty) - $model_sum_issue_used_qty - $adjust_all_qty - $refill_qty;
+                    if ($cal_qty > 0 && $loop == 0) {
+                        $min_id = $value->id;
+                        $min_not_full_qty = ($value->qty - $cal_qty);
+                        $loop++;
+                    }
+
+
+                }
+
+
+           //     array_push($data, ['qty' => $cal_qty,'diff_qty'=> $min_not_full_qty]);
+
+                if ($cal_qty > 0) {
+                    if ($count_qty < $cal_qty) {
+
+                        $line_diff_qty = $cal_qty - $count_qty;
+
+                        if ($line_diff_qty <= $min_not_full_qty) { // under qty or equal qty
+                            $model_adjust = new \common\models\ProductionRecIssueAdjust();
+                            $model_adjust->stock_trans_id = $min_id;
+                            $model_adjust->product_id = $product_id;
+                            $model_adjust->qty = $line_diff_qty;
+                            $model_adjust->save(false);
+                            array_push($data, ['message' => 'qty ok']);
+                        } else {
+                            $firs_diff_qty = $line_diff_qty - $min_not_full_qty;
+                            array_push($data, ['message' => 'qty not ok']);
+                            $model_adjust = new \common\models\ProductionRecIssueAdjust();
+                            $model_adjust->stock_trans_id = $min_id;
+                            $model_adjust->product_id = $product_id;
+                            $model_adjust->qty = $min_not_full_qty;
+                            $model_adjust->save(false);
+
+                            if ($firs_diff_qty > 0) { // has diff qty
+                                foreach ($model as $value2) {
+                                    $scrap_next_qty = $this->checkProdrecScrap($value2->id);
+                                    $model_sum_issue_next_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value2->id, 'product_id' => $product_id])->sum('qty');
+                                    $adjust_all_next_qty = $this->checkProdrecAdjust($value2->id);
+                                    $refill_next_qty = $this->checkProdrecRefill($value2->id);
+
+                                    $cal_next_qty = ($value2->qty - $scrap_next_qty) - $model_sum_issue_next_qty - $adjust_all_next_qty - $refill_next_qty;
+                                    if ($cal_next_qty > 0) {
+                                        if ($cal_next_qty >= $firs_diff_qty) {
+                                            $model_adjustx = new \common\models\ProductionRecIssueAdjust();
+                                            $model_adjustx->stock_trans_id = $value2->id;
+                                            $model_adjustx->product_id = $product_id;
+                                            $model_adjustx->qty = $firs_diff_qty;
+                                            $model_adjustx->save(false);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+
+
+                        // $count_qty += $line_diff_qty;
+                    } else if ($count_qty > $cal_qty) {
+//                        $line_diff_qty = $count_qty - $cal_qty;
+//                        $this->createNewProdrec($product_id, $line_diff_qty, $user_id);
+                    } else {
+                        array_push($data, ['qty' => 90]);
+                    }
+                }
+            }
+        }
+        return ['data' => $data];
+    }
+
+    function checkProdrecScrap($prodrec_id)
+    {
+        $scrap_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\QueryScrap::find()->where(['prodrec_id' => $prodrec_id])->sum('qty');
+            if ($model_qty > 0) {
+                $scrap_qty = $model_qty;
+            }
+        }
+
+
+        return $scrap_qty;
+    }
+
+    function checkProdrecAdjust($prodrec_id)
+    {
+        $adjust_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
+            if ($model_qty > 0) {
+                $adjust_qty = $model_qty;
+            }
+        }
+
+
+        return $adjust_qty;
+    }
+
+    function checkProdrecRefill($prodrec_id)
+    {
+        $issue_refill_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $prodrec_id, 'type_id' => 2])->sum('qty');
+            if ($model_qty > 0) {
+                $issue_refill_qty = $model_qty;
+            }
+        }
+        return $issue_refill_qty;
+    }
+
+    function updateProdrecFromBalanceIn($product_id, $count_qty, $user_id)
+    {
+        // $count_qty = 70;
+        if ($count_qty > 0) {
+            $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+
+            $model = \backend\models\Stocktrans::find()->where(['activity_type_id' => [15, 26, 27], 'status' => 0, 'product_id' => $product_id])->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d', strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+            if ($model) {
+                $cal_qty = 0;
+                $min_id = 0;
+                $min_not_full_qty = 0;
+                $loop = 0;
+                foreach ($model as $value) {
+                    $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                    $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+                    $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                    $refill_qty = $this->checkProdrecRefill($value->id);
+
+                    $cal_qty += ($value->qty - $scrap_all_qty) - $model_sum_issue_used_qty - $adjust_all_qty - $refill_qty;
+                    if ($cal_qty > 0 && $loop == 0) {
+                        $min_id = $value->id;
+                        $min_not_full_qty = ($value->qty - $cal_qty);
+                        $loop++;
+                    }
+
+                }
+
+                if ($cal_qty > 0) {
+                    if ($count_qty < $cal_qty) {
+                        $line_diff_qty = $cal_qty - $count_qty;
+
+                        if ($line_diff_qty <= $min_not_full_qty) { // under qty or equal qty
+                            $model_adjust = new \common\models\ProductionRecIssueAdjust();
+                            $model_adjust->stock_trans_id = $min_id;
+                            $model_adjust->product_id = $product_id;
+                            $model_adjust->qty = $line_diff_qty;
+                            if($model_adjust->save(false)){
+                                \common\models\StockTrans::updateAll(['status'=>1000],['id'=>$min_id]);
+                            }
+                        } else {
+                            $firs_diff_qty = $line_diff_qty - $min_not_full_qty;
+
+                            $model_adjust = new \common\models\ProductionRecIssueAdjust();
+                            $model_adjust->stock_trans_id = $min_id;
+                            $model_adjust->product_id = $product_id;
+                            $model_adjust->qty = $min_not_full_qty;
+                            $model_adjust->save(false);
+
+                            if ($firs_diff_qty > 0) { // has diff qty
+                                foreach ($model as $value2) {
+                                    $scrap_next_qty = $this->checkProdrecScrap($value2->id);
+                                    $model_sum_issue_next_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value2->id, 'product_id' => $product_id])->sum('qty');
+                                    $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                                    $cal_next_qty = ($value2->qty - $scrap_next_qty) - $model_sum_issue_next_qty - $adjust_all_qty;
+                                    if ($cal_next_qty > 0) {
+                                        if ($cal_next_qty >= $firs_diff_qty) {
+                                            $model_adjustx = new \common\models\ProductionRecIssueAdjust();
+                                            $model_adjustx->stock_trans_id = $value2->id;
+                                            $model_adjustx->product_id = $product_id;
+                                            $model_adjustx->qty = $firs_diff_qty;
+                                            $model_adjustx->save(false);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+
+
+                        // $count_qty += $line_diff_qty;
+                    } else if ($count_qty > $cal_qty) {
+                        $line_diff_qty = $count_qty - $cal_qty;
+                        if($line_diff_qty > 0){
+                            $this->createNewProdrec($product_id, $line_diff_qty, $user_id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    function createNewProdrec($product_id, $qty, $user_id)
+    {
+        if ($product_id && $qty && $user_id) {
+
+            //$main_warehouse = \backend\models\Warehouse::findPrimary($company_id, $branch_id);
+            $warehouse_id = 1; // หนองขาหยั่ง
+            $model_journal = new \backend\models\Stockjournal();
+            $model_journal->journal_no = $model_journal->getLastNo(1, 1);
+            $model_journal->trans_date = date('Y-m-d H:i:s');
+
+
+            $model_journal->company_id = 1;
+            $model_journal->branch_id = 1;
+            $model_journal->production_type = 15; // $production_type;
+            if ($model_journal->save(false)) {
+                $model = new \backend\models\Stocktrans();
+                $model->journal_no = $model_journal->journal_no;
+                $model->journal_id = $model_journal->id;
+                $model->trans_date = date('Y-m-d H:i:s');
+                $model->product_id = $product_id;
+                $model->qty = $qty;
+                $model->warehouse_id = $warehouse_id;//$warehouse_id;
+                $model->stock_type = 1;
+                $model->activity_type_id = 15; // 15 prod rec
+                $model->production_type = 1;
+                $model->company_id = 1;
+                $model->branch_id = 1;
+                $model->created_by = $user_id;
+                $model->status = 0;
+                if ($model->save(false)) {
+                    //$this->updateSummary2($product_id, $warehouse_id, $qty, 1, 1);
+                }
+            }
+        }
+    }
+
+    public function updateSummary2($product_id, $wh_id, $qty, $company_id, $branch_id)
+    {
+        if ($wh_id != null && $product_id != null && $qty > 0) {
+            $model = \backend\models\Stocksum::find()->where(['warehouse_id' => $wh_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->one();
+            if ($model) {
+                $model->qty = ((double)$model->qty + (double)$qty);
+                $model->save(false);
+            } else {
+                $model_new = new \backend\models\Stocksum();
+                $model_new->warehouse_id = $wh_id;
+                $model_new->product_id = $product_id;
+                $model_new->qty = (double)$qty;
+                $model_new->company_id = $company_id;
+                $model_new->branch_id = $branch_id;
+                $model_new->save(false);
+            }
+        }
+    }
+
+
+
+    public function actionCreatenotifyerrorsaletype()
+    {
+        $route_id = 0;
+        $user_id = '';
+        $company_id = 0;
+        $branch_id = 0;
+        $message = '';
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        if ($req_data != null) {
+            $route_id = $req_data['route_id'];
+            $user_id = $req_data['user_id'];
+            $company_id = $req_data['company_id'];
+            $branch_id = $req_data['branch_id'];
+            $message = $req_data['message'];
+            $order_no = $req_data['order_no'];
+            $customer_name = $req_data['customer_name'];
+            $total_amount = $req_data['total_amount'];
+        }
+
+        return $this->notifymessageError($route_id, $user_id, $company_id, $branch_id,$message,$order_no,$customer_name,$total_amount);
+    }
+
+    public function notifymessageError($route_id, $user_id, $company_id, $branch_id, $error_message,$order_no ,$customer_name,$total_amount)
+    {
+        //$message = "This is test send request from camel paperless";
+        $line_api = 'https://notify-api.line.me/api/notify';
+        $line_token = 'y7v7BXGtbORRt790MWWe2UTH02pIqeGwvTPqAUXyzgY';
+
+//        //   6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE   token omnoi
+//        if ($company_id == 1 && $branch_id == 1) {
+//            //  $line_token = 'ZMqo4ZqwBGafMOXKVht2Liq9dCGswp4IRofT2EbdRNN'; // vorapat
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            //   $line_token = '6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE'; // omnoi
+//            $line_token = trim($b_token);
+//        } else if ($company_id == 1 && $branch_id == 2) {
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            $line_token = trim($b_token);
+//            //   $line_token = 'TxAUAOScIROaBexBWXaYrVcbjBItIKUwGzFpoFy3Jrx'; // BKT
+//        }
+
+        $message = '' . "\n";
+        $message = 'แจ้งเตือนบันทึกขายผิดประเภท' . "\n";
+        $message .= 'VORAPAT:' . \backend\models\Deliveryroute::findName($route_id) . "\n";
+        $message .= 'User:' . $this->findEmpName($user_id) . "\n";
+        //   $message .= 'User:' . \backend\models\User::findName($user_id) . "\n";
+        $message .= "วันที่: " . date('Y-m-d') . "(" . date('H:i') . ")" . "\n";
+
+        $message .= $error_message;
+        $message .= "\n";
+        $message .= "เลขที่ ".$order_no;
+        $message .= "\n";
+        $message .= "ลูกค้า ".$customer_name;
+        $message .= "\n";
+        $message .= "จำนวนเงิน ".number_format($total_amount,2);
+
+        $queryData = array('message' => $message);
+        $queryData = http_build_query($queryData, '', '&');
+        $headerOptions = array(
+            'http' => array(
+                'method' => 'POST',
+                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+                    . "Authorization: Bearer " . $line_token . "\r\n"
+                    . "Content-Length: " . strlen($queryData) . "\r\n",
+                'content' => $queryData
+            )
+        );
+        $context = stream_context_create($headerOptions);
+        $result = file_get_contents($line_api, FALSE, $context);
+        $res = json_decode($result);
+        return $res;
+    }
     // end issue temp confirm
 
 }

@@ -20,7 +20,8 @@ class AuthenController extends Controller
                     'loginpos' => ['POST'],
                     'loginqrcode' => ['POST'],
                     'orderlist' => ['POST'],
-                    'logoutpos' => ['POST']
+                    'logoutpos' => ['POST'],
+                    'userlistall' => ['POST']
                 ],
             ],
         ];
@@ -81,6 +82,7 @@ class AuthenController extends Controller
     {
         $username = '';
         $password = '';
+        $second_user_id = 0;
         $status = false;
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         //$post = file_get_contents("php://input");
@@ -88,6 +90,7 @@ class AuthenController extends Controller
         if ($req_data != null) {
             $username = $req_data['username'];
             $password = $req_data['password'];
+            $second_user_id = $req_data['second_user_id'];
         }
         $data = [];
         if ($username != '' && $password != '') {
@@ -113,7 +116,7 @@ class AuthenController extends Controller
                                 'branch_name' => \backend\models\Branch::findName($model->branch_id),
                             ]
                         );
-                        if ($this->createPosLoginLog($model_info->company_id, $model_info->branch_id, $model->id) == 1) {
+                        if ($this->createPosLoginLog($model_info->company_id, $model_info->branch_id, $model->id,$second_user_id) == 1) {
                             $status = true;
                         }
                     }
@@ -130,6 +133,8 @@ class AuthenController extends Controller
         $driver = '';
         $password = '';
         $member = '';
+        $device_token = '';
+        $route_id = 0;
 
         $status = 0;
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -140,6 +145,7 @@ class AuthenController extends Controller
             $driver = $req_data['driver'];
             $password = $req_data['password'];
             $member = $req_data['member'];
+            $device_token = $req_data['device_token'];
         }
         $data = [];
         if ($car != '' && $driver != '') {
@@ -173,8 +179,9 @@ class AuthenController extends Controller
 
                         $has_driver_login = $this->checkHaslogin($model->employee_ref_id, 1);
                         $has_memeber_login = $this->checkHasloginMember($member_id, 0);
-
                         $route_enable_dup = $this->checkEnableLoginDup($car_info[0]['route_id']);
+
+                        $route_id = $car_info[0]['route_id'];
 
                         if (($has_driver_login > 0 || $has_memeber_login > 0) && $route_enable_dup == 0) { // has today login and not enable duplicate login
                             $status = 900;
@@ -230,6 +237,10 @@ class AuthenController extends Controller
             }
         }
 
+         $this->registerDevice($device_token);
+         if($this->checkDeviceregister($route_id,$device_token) == 0){
+             $status = 0;
+         }
         return ['status' => $status, 'data' => $data];
     }
 
@@ -273,16 +284,50 @@ class AuthenController extends Controller
         }
     }
 
-    public function checkEnableLoginDup($route_id){
+    public function checkEnableLoginDup($route_id)
+    {
         $enable = 0;
-        if($route_id){
-            $model = \backend\models\Deliveryroute::find()->where(['id' => $route_id, 'status' => 1,'is_dup_login' => 1])->one();
-            if($model){
+        if ($route_id) {
+            $model = \backend\models\Deliveryroute::find()->where(['id' => $route_id, 'status' => 1, 'is_dup_login' => 1])->one();
+            if ($model) {
                 $enable = 1;
             }
         }
-        
+
         return $enable;
+    }
+
+    public function registerDevice($device_token)
+    {
+        if($device_token!='' || $device_token !=null){
+            $model_check = \common\models\DeviceRegister::find()->where(['device_token' => $device_token])->one();
+            if(!$model_check){
+                $model = new \backend\models\Deviceregister();
+                $model->device_token = $device_token;
+                $model->status = 1;
+                $model->save(false);
+            }
+        }
+    }
+
+    public function checkDeviceregister($route_id,$device_token){
+        $res = 0;
+        if($route_id > 0 && $device_token !=''){
+            $model = \common\models\DeliveryRouteDevice::find()->where(['delivery_route_id' => $route_id])->all();
+            if ($model) {
+                foreach ($model as $value) {
+                    $token = \common\models\DeviceRegister::find()->where(['id' => $value->device_register_id])->one();
+                    if($token){
+                        if($token->device_token == $device_token){
+                            $res = 1;
+                        }
+                    }
+                }
+               // $res = 1;
+            }
+        }
+
+        return $res;
     }
 
     public function getCar($emp_id, $company_id, $branch_id)
@@ -435,7 +480,7 @@ class AuthenController extends Controller
 //
 //        return ['status' => true, 'data' => $data];
 //    }
-    public function createPosLoginLog($company_id, $branch_id, $user_id)
+    public function createPosLoginLog($company_id, $branch_id, $user_id , $second_user_id)
     {
         $res = 0;
         $model_log = new \common\models\LoginLog();
@@ -450,6 +495,7 @@ class AuthenController extends Controller
                 $model_login_cal = new \common\models\LoginLogCal();
                 $model_login_cal->login_date = date('Y-m-d H:i:s');
                 $model_login_cal->user_id = $user_id;
+                $model_login_cal->second_user_id = $second_user_id;
                 $model_login_cal->status = 1;
                 $model_login_cal->ip = '';
                 $model_login_cal->company_id = $company_id;
@@ -472,6 +518,7 @@ class AuthenController extends Controller
                         $model_login_cal = new \common\models\LoginLogCal();
                         $model_login_cal->login_date = date('Y-m-d H:i:s', strtotime($model_log->login_date));
                         $model_login_cal->user_id = $model_log->user_id;
+                        $model_login_cal->second_user_id = $second_user_id;
                         $model_login_cal->status = 1;
                         $model_login_cal->ip = '';
                         $model_login_cal->company_id = $company_id;
@@ -526,6 +573,32 @@ class AuthenController extends Controller
             }
         }
 
+        return ['status' => $status, 'data' => $data];
+    }
+
+    public function actionUserlistall()
+    {
+        $status = false;
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $data = [];
+        $model = \common\models\User::find()->where(['status' => 1])->all();
+        if ($model) {
+            foreach ($model as $value) {
+                $emp_name = '';
+                if($value->employee_ref_id != null){
+                    $model_emp = \backend\models\Employee::find()->select(['fname','lname'])->where(['id' => $value->employee_ref_id])->one();
+                    if($model_emp){
+                        $emp_name = $model_emp->fname.' '.$model_emp->lname;
+                    }
+                    array_push($data, [
+                            'user_id' => $value->id,
+                            'emp_name' => $emp_name,
+                        ]
+                    );
+                }
+                $status = true;
+            }
+        }
         return ['status' => $status, 'data' => $data];
     }
 }

@@ -141,10 +141,25 @@ class DeliveryrouteController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $model_device_register = \common\models\DeliveryRouteDevice::find()->where(['delivery_route_id'=>$id])->all();
 
         if ($model->load(Yii::$app->request->post())) {
 //            echo $model->status;return;
+            $device_register_list = \Yii::$app->request->post('device_register_list');
             if ($model->save(false)) {
+
+                if($device_register_list!=null){
+                    \common\models\DeliveryRouteDevice::deleteAll(['delivery_route_id'=>$id]);
+                    for($i=0;$i<count($device_register_list);$i++){
+                        $model_check = \common\models\DeliveryRouteDevice::find()->where(['device_register_id'=>$device_register_list[$i],'delivery_route_id'=>$model->id])->one();
+                        if($model_check==null){
+                            $model_new_device = new \common\models\DeliveryRouteDevice();
+                            $model_new_device->delivery_route_id = $model->id;
+                            $model_new_device->device_register_id = $device_register_list[$i];
+                            $model_new_device->save(false);
+                        }
+                    }
+                }
                 $session = Yii::$app->session;
                 $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
                 return $this->redirect(['index']);
@@ -153,6 +168,7 @@ class DeliveryrouteController extends Controller
 
         return $this->render('update', [
             'model' => $model,
+            'model_device_register'=>$model_device_register,
         ]);
     }
 

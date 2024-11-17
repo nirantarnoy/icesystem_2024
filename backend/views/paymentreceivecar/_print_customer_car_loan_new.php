@@ -567,6 +567,7 @@ function getOrder($route_id, $customer_id, $t_date, $company_id, $branch_id, $is
              AND t2.payment_method_id = 2
              AND t1.line_total > 0
              AND t2.payment_status = 0
+             AND t2.status in(1,100)
              AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
 
 

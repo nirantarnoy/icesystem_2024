@@ -19,10 +19,10 @@ $t_date = date('d/m/Y');
         <?php $form = ActiveForm::begin(); ?>
         <input type="hidden" class="selected-list" name="list_order" value="">
         <div class="row">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <?= $form->field($model, 'journal_no')->textInput(['maxlength' => true, 'readonly' => 'readonly']) ?>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <?php $model->trans_date = $model->isNewRecord ? $t_date : date('d/m/Y', strtotime($model->trans_date)); ?>
                 <?= $form->field($model, 'trans_date')->widget(\kartik\date\DatePicker::className(), [
                     'pluginOptions' => [
@@ -31,16 +31,49 @@ $t_date = date('d/m/Y');
                     ]
                 ]) ?>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <?php
                 $disabled = false;
                 if (!$model->isNewRecord) {
 
                 }
                 ?>
+                <label for="">ตั้งแต่วันที่</label>
+                <?php
+                echo \kartik\date\DatePicker::widget([
+                    'id' => 'find-from-date',
+                    'name' => 'find_from_date',
+                    'value' => date('d/m/Y', strtotime($find_from_date)),
+                    'type' => \kartik\date\DatePicker::TYPE_COMPONENT_APPEND,
+                    'pluginOptions' => [
+                        'format' => 'dd/mm/yyyy',
+                    ]
+                ]);
 
+                ?>
+
+            </div>
+            <div class="col-lg-3">
+                <label for="">ถึงวันที่</label>
+                <?php
+                echo \kartik\date\DatePicker::widget([
+                    'id' => 'find-to-date',
+                    'name' => 'find_to_date',
+                    'value' => date('d/m/Y', strtotime($find_to_date)),
+                    'type' => \kartik\date\DatePicker::TYPE_COMPONENT_APPEND,
+                    'pluginOptions' => [
+                        'format' => 'dd/mm/yyyy',
+                    ]
+                ]);
+
+                ?>
+            </div>
+        </div>
+        <div class="row">
+
+            <div class="col-lg-3">
                 <?= $form->field($model, 'customer_id')->widget(\kartik\select2\Select2::className(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Customer::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1])->all(), 'id', function ($data) {
+                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Customer::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'status' => 1])->all(), 'id', function ($data) {
                         return $data->code . ' ' . $data->name;
                     }),
                     'options' => [
@@ -52,11 +85,9 @@ $t_date = date('d/m/Y');
                     ]
                 ]) ?>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-4"><?= $form->field($model, 'status')->textInput() ?></div>
-            <div class="col-lg-4"></div>
-            <div class="col-lg-4"></div>
+            <div class="col-lg-3"><?= $form->field($model, 'status')->textInput() ?></div>
+
+            <div class="col-lg-3"></div>
         </div>
         <div class="row">
             <div class="col-lg-10">
@@ -76,7 +107,8 @@ $t_date = date('d/m/Y');
                 <tr>
                     <th style="text-align: center" width="5%"><input type="checkbox"
                                                                      onchange="showselectpaymentall($(this))"
-                                                                     class="selected-all-item" style="transform: scale(1.5)"></th>
+                                                                     class="selected-all-item"
+                                                                     style="transform: scale(1.5)"></th>
                     <th style="text-align: center">เลขที่</th>
                     <th style="text-align: center">วันที่</th>
                     <th style="text-align: center">ค้างชำระ</th>
@@ -119,11 +151,12 @@ $t_date = date('d/m/Y');
                 <!--                    <td></td>-->
                 <!--                </tr>-->
                 <?php if ($model_line != null): ?>
-                    <?php $i = 0;$total_amt=0; ?>
+                    <?php $i = 0;
+                    $total_amt = 0; ?>
                     <?php foreach ($model_line as $value): ?>
                         <?php
                         $i += 1;
-                        $total_amt+=$value->remain_amount;
+                        $total_amt += $value->remain_amount;
                         $order_date = \backend\models\Orders::getOrderdate($value->order_id);
                         ?>
                         <tr data-id="<?= $value->id ?>">
@@ -171,7 +204,8 @@ $t_date = date('d/m/Y');
                 <tfoot>
                 <tr>
                     <td colspan="4" style="text-align: right">รวม</td>
-                    <td style="text-align: right;font-weight: bold"><span class="line-pay-remain"><b><?= number_format($total_amt, 2) ?></b></span></td>
+                    <td style="text-align: right;font-weight: bold"><span
+                                class="line-pay-remain"><b><?= number_format($total_amt, 2) ?></b></span></td>
                     <!--                        <td style="text-align: right;font-weight: bold"><span class="line-pay-remain">0</span></td>-->
                 </tr>
                 </tfoot>
@@ -341,13 +375,15 @@ function calpayment2(){
 
 function getpaymentrec(e){
     var ids = e.val();
+    var from_date = $("#find-from-date").val();
+    var to_date = $("#find-to-date").val();
     if(ids){
         $.ajax({
               'type':'post',
               'dataType': 'html',
               'async': false,
               'url': "$url_to_get_receive",
-              'data': {'customer_id': ids},
+              'data': {'customer_id': ids, 'from_date': from_date, 'to_date': to_date},
               'success': function(data) {
                    //alert(data);
                    if(data != ''){

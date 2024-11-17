@@ -66,6 +66,12 @@ $this->params['breadcrumbs'][] = $this->title;
             'name',
             'description',
             [
+                'attribute' => 'created_at',
+                'value' => function ($data) {
+                    return date('d-m-Y', strtotime($data->created_at));
+                }
+            ],
+            [
                 'attribute' => 'customer_group_id',
                 'value' => function ($data) {
                     return \backend\models\Customergroup::findName($data->customer_group_id);
@@ -75,6 +81,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute' => 'customer_type_id',
                 'value' => function ($data) {
                     return \backend\models\Customertype::findName($data->customer_type_id);
+                },
+            ],
+            [
+                'attribute' => 'sale_id',
+                'value' => function ($data) {
+                    return \backend\models\Employee::findFullName($data->sale_id);
                 },
             ],
             [
@@ -95,7 +107,14 @@ $this->params['breadcrumbs'][] = $this->title;
             //'updated_at',
             //'created_by',
             //'updated_by',
-
+            [
+                'attribute' => 'cancel_use_date',
+                 'value' => function ($data) {
+                   if(date('Y',strtotime($data->cancel_use_date)) != 1970){
+                       return date('d-m-Y H:i', $data->cancel_use_date);
+                   }
+                 }
+            ],
             [
                 'attribute' => 'status',
                 'format' => 'raw',

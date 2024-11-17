@@ -15,6 +15,7 @@ $this->params['breadcrumbs'][] = '/'.Yii::t('app', 'แก้ไข');
 <div class="deliveryroute-update">
     <?= $this->render('_form', [
         'model' => $model,
+        'model_device_register'=>$model_device_register,
     ]) ?>
 
 </div>

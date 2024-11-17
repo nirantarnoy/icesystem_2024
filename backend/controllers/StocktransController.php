@@ -115,6 +115,7 @@ class StocktransController extends Controller
         $trans_date = \Yii::$app->request->post('prodrecdate');
         $wh_id = \Yii::$app->request->post('line_warehouse_id');
         $prodid = \Yii::$app->request->post('line_item_id');
+        $loc = \Yii::$app->request->post('line_loc');
         $qty = \Yii::$app->request->post('line_qty');
 
         //($wh_id);return;
@@ -137,10 +138,13 @@ class StocktransController extends Controller
                     $model->warehouse_id = $wh_id[$i];
                     $model->stock_type = 1;
                     $model->activity_type_id = 15; // 15 prod rec
+                    $model->production_type = 1;
+                    $model->lot_no = $loc[$i];
                     $model->company_id = $company_id;
                     $model->branch_id = $branch_id;
+                    $model->status = 0;
                     $model->created_by = \Yii::$app->user->id;
-                    if($model->save()){
+                    if($model->save(false)){
                         $this->updateSummary($prodid[$i],$wh_id[$i],$qty[$i],$company_id,$branch_id);
                     }
                 }

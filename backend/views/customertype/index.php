@@ -26,6 +26,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         <option value="20" <?= $perpage == '20' ? 'selected' : '' ?>>20</option>
                         <option value="50" <?= $perpage == '50' ? 'selected' : '' ?> >50</option>
                         <option value="100" <?= $perpage == '100' ? 'selected' : '' ?>>100</option>
+                        <option value="150" <?= $perpage == '150' ? 'selected' : '' ?>>150</option>
+                        <option value="200" <?= $perpage == '200' ? 'selected' : '' ?>>200</option>
                     </select>
                     <label> รายการ</label>
                 </div>

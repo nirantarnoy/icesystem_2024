@@ -40,6 +40,8 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
+$pay_type = [['id'=>0,'name'=>'ค้างชำระ'],['id'=>1,'name'=>'ชำระแล้ว']];
+
 $model_customer_loan = null;
 if ($is_find_date == 1) {
     if ($find_customer_id != null) {
@@ -166,7 +168,7 @@ if ($is_find_date == 1) {
 <body>
 
 <form action="<?= \yii\helpers\Url::to(['paymentreceive/customerloanprint'], true) ?>" method="post" id="form-search">
-    <div id="div1">
+    <td id="div1">
         <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
             <tr>
 
@@ -273,6 +275,20 @@ if ($is_find_date == 1) {
                     ]);
                     ?>
                 </td>
+                <td style="width: 10%">
+                    <div class="label">ประเภทชำระเงิน</div>
+                    <select name="find_pay_type" id="" class="form-control">
+                        <?php for($x=0;$x<=count($pay_type)-1;$x++):?>
+                            <?php
+                                  $selected = "";
+                                  if($find_pay_type == $pay_type[$x]['id']){
+                                      $selected = "selected";
+                                  }
+                            ?>
+                            <option value="<?=$pay_type[$x]['id']?>" <?=$selected?>><?=$pay_type[$x]['name']?></option>
+                        <?php endfor;?>
+                    </select>
+                </td>
                 <td>
                     <input type="submit" class="btn btn-primary" style="margin-top: 35px;" value="ค้นหา">
                 </td>
@@ -349,6 +365,17 @@ if ($is_find_date == 1) {
 
                     if ($line_remain_amount < 0) {
                         $line_remain_amount = 0;
+                    }
+
+                    if($find_pay_type == 0){ // ค้าง
+                        if($line_remain_amount <= 0){
+                            continue;
+                        }
+                    }
+                    if($find_pay_type == 1){ //ชำระแล้ว
+                        if($line_remain_amount > 0){
+                            continue;
+                        }
                     }
 //
                     $sum_line_total_all += $find_order[$i]['total_credit'];

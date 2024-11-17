@@ -76,6 +76,10 @@ class PaymentreceiveController extends Controller
         $company_id = 0;
         $branch_id = 0;
         $user_id = 1;
+
+        $find_from_date = date('Y-m-d');
+        $find_to_date = date('Y-m-d');
+
         if (!empty(\Yii::$app->user->id)) {
             if (\Yii::$app->user->id == null) {
                 $user_id = 1;
@@ -89,6 +93,13 @@ class PaymentreceiveController extends Controller
         }
         if (!empty(\Yii::$app->user->identity->branch_id)) {
             $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        if(\Yii::$app->request->post('find_from_date') !=null){
+            $find_from_date = \Yii::$app->request->post('find_from_date');
+        }
+        if(\Yii::$app->request->post('find_to_date') !=null){
+            $find_to_date = \Yii::$app->request->post('find_to_date');
         }
 
         $model = new Paymentreceive();
@@ -184,6 +195,8 @@ class PaymentreceiveController extends Controller
 
         return $this->render('create', [
             'model' => $model,
+            'find_from_date' => $find_from_date,
+            'find_to_date' => $find_to_date,
         ]);
     }
 
@@ -404,19 +417,49 @@ class PaymentreceiveController extends Controller
     public function actionGetitemnew()
     {
         $cus_id = \Yii::$app->request->post('customer_id');
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+
+        $pre_date ="2024-01-01 00:00:01";
+
+        $xt1 = explode("/", $from_date);
+        $xt2 = explode("/", $to_date);
+
+        $f_date = '';
+        $t_date = '';
+
+        if($xt1!=null){
+            if(count($xt1)>1){
+                $f_date = $xt1[2].'/'.$xt1[1].'/'.$xt1[0];
+            }
+        }
+        if($xt2!=null){
+            if(count($xt2)>1){
+                $t_date = $xt2[2].'/'.$xt2[1].'/'.$xt2[0];
+            }
+        }
+
+
         $html = '';
         $total_amount = 0;
         if ($cus_id) {
             // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andFilterWhere(['>', 'remain_amount', 0])->all();
             //  $model = \common\models\QuerySalePosPaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR',['is','payment_amount',new \yii\db\Expression('null')],['>', 'remain_amount', 0]])->all();
 
-            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(t2.payment_amount)as payment_amount, t1.line_total - SUM(t2.payment_amount) as remain_amount";
-            $sql .= " FROM query_sale_by_customer_pos as t1 INNER JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
+            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(CASE WHEN t2.payment_amount IS NULL THEN 0 ELSE t2.payment_amount END)as payment_amount, t1.line_total - SUM(CASE WHEN t2.payment_amount IS NULL THEN 0 ELSE t2.payment_amount END) as remain_amount";
+            $sql .= " FROM query_sale_by_customer_pos as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
             $sql .= " WHERE t1.customer_id=" . $cus_id;
             $sql .= " AND t1.payment_method_id=2";
             $sql .= " GROUP BY t1.customer_id,t1.order_id";
-            $sql .= " ORDER BY t1.order_id";
+            $sql .= " ORDER BY t1.is_init_remain,t1.order_id";
             //$sql.=" AND t1.payment"
+
+            if($f_date != '' && $t_date != ''){
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($f_date))."'";
+                $sql .= " AND date(t1.order_date) <='". date('Y-m-d',strtotime($t_date))."'";
+            }else{
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            }
 
             $query = \Yii::$app->db->createCommand($sql);
             $model = $query->queryAll();
@@ -433,7 +476,7 @@ class PaymentreceiveController extends Controller
                     if ($model[$x]['remain_amount'] == null && $model[$x]['payment_amount'] != null) {
                         $remain_amt = $model[$x]['line_total'] - $model[$x]['payment_amount'];
                     } else {
-                        $remain_amt = $model[$x]['remain_amount'];
+                        $remain_amt =  $model[$x]['remain_amount'];
                     }
                     if ($remain_amt <= 0) continue;
                     //  $remain_amt = $value->remain_amount == null?$value->payment_amount:$value->remain_amount;
@@ -488,6 +531,27 @@ class PaymentreceiveController extends Controller
     public function actionGetitemnewcar()
     {
         $cus_id = \Yii::$app->request->post('customer_id');
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+
+        $pre_date ="2024-01-01 00:00:01";
+
+        $xt1 = explode("/", $from_date);
+        $xt2 = explode("/", $to_date);
+
+        $f_date = '';
+        $t_date = '';
+
+        if($xt1!=null){
+            if(count($xt1)>1){
+                $f_date = $xt1[2].'/'.$xt1[1].'/'.$xt1[0];
+            }
+        }
+        if($xt2!=null){
+            if(count($xt2)>1){
+                $t_date = $xt2[2].'/'.$xt2[1].'/'.$xt2[0];
+            }
+        }
         $html = '';
         $total_amount = 0;
         if ($cus_id) {
@@ -495,9 +559,18 @@ class PaymentreceiveController extends Controller
             //  $model = \common\models\QuerySalePosPaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR',['is','payment_amount',new \yii\db\Expression('null')],['>', 'remain_amount', 0]])->all();
 
             $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(t2.payment_amount)as payment_amount, t1.line_total - SUM(t2.payment_amount) as remain_amount";
-            $sql .= " FROM query_sale_by_customer_car as t1 INNER JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
+            $sql .= " FROM query_sale_by_customer_car as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
             $sql .= " WHERE t1.customer_id=" . $cus_id;
             $sql .= " AND t1.payment_method_id=2";
+
+
+            if($f_date != '' && $t_date != ''){
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($f_date))."'";
+                $sql .= " AND date(t1.order_date) <='". date('Y-m-d',strtotime($t_date))."'";
+            }else{
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            }
+
             $sql .= " GROUP BY t1.customer_id,t1.order_id";
             $sql .= " ORDER BY t1.order_id";
             //$sql.=" AND t1.payment"
@@ -516,7 +589,10 @@ class PaymentreceiveController extends Controller
                     if ($model[$x]['remain_amount'] == null && $model[$x]['payment_amount'] != null) {
                         $remain_amt = $model[$x]['line_total'] - $model[$x]['payment_amount'];
                     } else {
-                        $remain_amt = $model[$x]['remain_amount'];
+                        if($model[$x]['remain_amount'] != null){
+                            $remain_amt = $model[$x]['remain_amount'];
+                        }
+
                     }
                     if ($remain_amt <= 0) continue;
                     //  $remain_amt = $value->remain_amount == null?$value->payment_amount:$value->remain_amount;
@@ -673,6 +749,7 @@ class PaymentreceiveController extends Controller
         $from_date = \Yii::$app->request->post('from_date');
         $to_date = \Yii::$app->request->post('to_date');
         $is_find_date = \Yii::$app->request->post('is_find_date');
+        $find_pay_type = \Yii::$app->request->post('find_pay_type');
         //   echo $is_find_date;return;
         if ($from_date == null && $to_date == null) {
             $from_date = date('Y-m-d H:i');
@@ -688,6 +765,7 @@ class PaymentreceiveController extends Controller
             'find_customer_id' => $find_customer_id,
             'company_id' => $company_id,
             'branch_id' => $branch_id,
+            'find_pay_type' => $find_pay_type,
         ]);
     }
 

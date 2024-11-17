@@ -70,6 +70,7 @@ class PaymentreceiveController extends Controller
             $sql .= " AND t1.payment_method_id=2";
             $sql .= " AND t1.payment_status=0";
             $sql .= " AND date(t1.order_date) >='2024-01-01'";
+            $sql .= " AND t1.status != 3";
             $sql .= " GROUP BY t1.customer_id,t1.order_id";
             $sql .= " ORDER BY t1.order_id";
 

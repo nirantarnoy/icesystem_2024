@@ -87,6 +87,7 @@ if (!empty(\Yii::$app->session->getFlash('msg-index')) && !empty(\Yii::$app->ses
                 <th style="width: 5%;text-align: center">#</th>
                 <th>คลังสินค้า</th>
                 <th>สินค้า</th>
+                <th style="width: 15%">loc</th>
                 <th style="width: 15%">จำนวน</th>
                 <th style="width: 5%;text-align: center"></th>
             </tr>
@@ -104,6 +105,9 @@ if (!empty(\Yii::$app->session->getFlash('msg-index')) && !empty(\Yii::$app->ses
                 <td>
                     <input type="hidden" name="line_item_id[]" value="" class="form-control line-item-id" readonly>
                     <input type="text" name="line_item_name[]" value="" class="form-control line-item-name" readonly>
+                </td>
+                <td>
+                    <input type="text" class="form-control line-loc"  name="line_loc[]" />
                 </td>
                 <td>
                     <input type="number" class="form-control line-qty" value="0" min="0" name="line_qty[]" onchange="calall()" onclick="edit_qty($(this))">

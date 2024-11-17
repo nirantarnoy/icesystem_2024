@@ -80,7 +80,7 @@ class DailysummaryController extends Controller
         if ($company_id && $branch_id) {
             $model = \common\models\Product::find()->where(['status' => 1])->orderBy(['id' => SORT_ASC])->all();
             if ($model) {
-                $login_time = \backend\models\User::findLogintime($user_id);
+                $login_time = \backend\models\User::findLogindatetime($user_id);
                 foreach ($model as $value) {
                     array_push($data, [
                         'product_id' => $value->id,
@@ -98,24 +98,29 @@ class DailysummaryController extends Controller
     {
         $qty = 0;
         $cancel_qty = 0;
-        $second_user_id = [];
+        $second_user_id = 0;// [];
         if ($product_id != null) {
 
             $model_login = \common\models\LoginLogCal::find()->where(['user_id' => $user_id])->orderBy(['id' => SORT_DESC])->one();
             if ($model_login) {
-                //  $second_user_id = $model_login->second_user_id;
-                $model_user_ref = \common\models\LoginUserRef::find()->select('user_id')->where(['login_log_cal_id' => $model_login->id])->all();
-                if ($model_user_ref) {
-                    foreach ($model_user_ref as $value) {
-                        array_push($second_user_id, $value->user_id);
-                    }
-                }
+                $second_user_id = $model_login->second_user_id;
+//                $model_user_ref = \common\models\LoginUserRef::find()->select('user_id')->where(['login_log_cal_id' => $model_login->id])->all();
+//                if ($model_user_ref) {
+//                    foreach ($model_user_ref as $value) {
+//                        array_push($second_user_id, $value->user_id);
+//                    }
+//                }
             }
 
-            if (count($second_user_id) > 0) {
-                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'production_type' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $second_user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
+            // if (count($second_user_id) > 0) {
+            $list_user = [];
+            array_push($list_user,$user_id);
+            if ($second_user_id > 0) {
+               array_push($list_user, $second_user_id);
+
+                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'production_type' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $list_user])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
                 // $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id'=>$company_id,'branch_id'=>$branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s', strtotime($t_date))])->sum('qty');
-                $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $second_user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['and', ['>=', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))], ['<=', 'trans_date', date('Y-m-d H:i:s')]])->sum('qty');
+                $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $list_user])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['and', ['>=', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))], ['<=', 'trans_date', date('Y-m-d H:i:s')]])->sum('qty');
             } else {
                 $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'created_by' => $user_id, 'production_type' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
                 // $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id'=>$company_id,'branch_id'=>$branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s', strtotime($t_date))])->sum('qty');
@@ -146,7 +151,7 @@ class DailysummaryController extends Controller
         if ($company_id && $branch_id) {
             $model = \common\models\Product::find()->where(['status' => 1])->orderBy(['id' => SORT_ASC])->all();
             if ($model) {
-                $login_time = \backend\models\User::findLogintime($user_id);
+                $login_time = \backend\models\User::findLogindatetime($user_id);
                 foreach ($model as $value) {
                     array_push($data, [
                         'product_id' => $value->id,
@@ -206,7 +211,7 @@ class DailysummaryController extends Controller
         if ($company_id && $branch_id) {
             $model = \common\models\Product::find()->where(['status' => 1])->orderBy(['id' => SORT_ASC])->all();
             if ($model) {
-                $login_time = \backend\models\User::findLogintime($user_id);
+                $login_time = \backend\models\User::findLogindatetime($user_id);
                 foreach ($model as $value) {
                     array_push($data, [
                         'product_id' => $value->id,
@@ -259,7 +264,7 @@ class DailysummaryController extends Controller
                         'product_id' => $value->id,
                         'product_code' => $value->code,
                         'product_name' => $value->name,
-                        'qty' =>$this->getOrderCashQty($value->id, $user_id, $login_time),
+                        'qty' => $this->getOrderCashQty($value->id, $user_id, $login_time),
                     ]);
                 }
             }
@@ -303,8 +308,8 @@ class DailysummaryController extends Controller
     {
         $qty = 0;
         if ($user_id != null) {
-       //     $model = \common\models\SalePosCloseCashQty::find()->select('qty')->where(['user_id' => $user_id, 'product_id' => $product_id])->andFilterWhere(['between', 'start_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->one();
-            $model = \common\models\SalePosCloseCashQty::find()->select('qty')->where(['user_id' => $user_id, 'product_id' => $product_id])->andFilterWhere(['>=', 'start_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))])->andFilterWhere(['<=','start_date',date('Y-m-d H:i:s')])->one();
+            //     $model = \common\models\SalePosCloseCashQty::find()->select('qty')->where(['user_id' => $user_id, 'product_id' => $product_id])->andFilterWhere(['between', 'start_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->one();
+            $model = \common\models\SalePosCloseCashQty::find()->select('qty')->where(['user_id' => $user_id, 'product_id' => $product_id])->andFilterWhere(['>=', 'start_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))])->andFilterWhere(['<=', 'start_date', date('Y-m-d H:i:s')])->one();
             if ($model) {
                 $qty = $model->qty;
             }
@@ -603,7 +608,7 @@ class DailysummaryController extends Controller
     {
         $qty = 0;
         if ($product_id != null) {
-            $qty = \backend\models\Stocktrans::find()->where(['in', 'activity_type_id', [27]])->andFilterWhere(['product_id' => $product_id, 'created_by' => $user_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->andFilterWhere(['OR',['!=','status',500],['is','status', new \yii\db\Expression('null')]])->sum('qty');
+            $qty = \backend\models\Stocktrans::find()->where(['in', 'activity_type_id', [27]])->andFilterWhere(['product_id' => $product_id, 'created_by' => $user_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->andFilterWhere(['OR', ['!=', 'status', 500], ['is', 'status', new \yii\db\Expression('null')]])->sum('qty');
         }
 
         if ($qty == null) {
@@ -695,7 +700,7 @@ class DailysummaryController extends Controller
         $cancel_qty = 0;
         if ($product_id != null) {
             $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 18])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
-            $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 27,'status'=>0,'trans_ref_id'=>0])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
+            $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 27, 'status' => 0, 'trans_ref_id' => 0])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
         }
         if ($qty == null) {
             $qty = 0;
@@ -703,11 +708,29 @@ class DailysummaryController extends Controller
 
         if ($cancel_qty > $qty) {
             $qty = $cancel_qty;
-        }else{
+        } else {
             $qty = $qty - $cancel_qty;
         }
         return $qty;
     }
+
+    function actionCheckuserlogindate()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+        $user_id = 0;
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        if ($req_data != null) {
+            $user_id = $req_data['user_id'];
+
+        }
+
+        $user_login_datetime = \backend\models\User::findLogindatetime($user_id);
+
+        echo $user_login_datetime;
+    }
 }
+
 
 ?>

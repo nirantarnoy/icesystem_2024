@@ -49,6 +49,43 @@ if ($is_admin == 1) {
 
             }
             ?>
+            <label for="">ตั้งแต่วันที่</label>
+            <?php
+            echo \kartik\date\DatePicker::widget([
+                'id' => 'find-from-date',
+                'name' => 'find_from_date',
+                'value' => date('d/m/Y', strtotime($find_from_date)),
+                'type' => \kartik\date\DatePicker::TYPE_COMPONENT_APPEND,
+                'pluginOptions' => [
+                    'format' => 'dd/mm/yyyy',
+                ]
+            ]);
+
+            ?>
+
+        </div>
+        <div class="col-lg-3">
+            <label for="">ถึงวันที่</label>
+            <?php
+            echo \kartik\date\DatePicker::widget([
+                'id' => 'find-to-date',
+                'name' => 'find_to_date',
+                'value' => date('d/m/Y', strtotime($find_to_date)),
+                'type' => \kartik\date\DatePicker::TYPE_COMPONENT_APPEND,
+                'pluginOptions' => [
+                    'format' => 'dd/mm/yyyy',
+                ]
+            ]);
+
+            ?>
+        </div>
+        <div class="col-lg-3">
+            <?php
+            $disabled = false;
+            if (!$model->isNewRecord) {
+
+            }
+            ?>
 
             <?= $form->field($model, 'customer_id')->widget(\kartik\select2\Select2::className(), [
                 'data' => \yii\helpers\ArrayHelper::map(\backend\models\Customer::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'is_show_pos' => 1,'status'=>1])->all(), 'id', function ($data) {
@@ -168,9 +205,10 @@ if ($is_admin == 1) {
     </div>
     <?php if ($model->isNewRecord): ?>
         <div class="row show-button-payment" style="display: none;">
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <div class="btn btn-primary" onclick="selectallcash();">ชำระด้วยเงินสดทั้งหมด</div>
                 <div class="btn btn-warning" onclick="selectallbank();">ชำระด้วยเงินโอนทั้งหมด</div>
+                <div class="btn btn-info" onclick="selectallamount();">ชำระเตต็มจำนวนทั้งหมด</div>
             </div>
             <div class="col-lg-3" style="text-align: left">
                 <input type="file" class="form-control-file" style="padding: 5px;background: #1ab6cf;color: black;" name="receive_doc[]"  title="เลือกไฟล์แนบ">
@@ -233,6 +271,13 @@ function selectallbank(){
         $(this).closest('tr').find('.line-pay-bank').addClass('btn-success');
     });
 }
+function selectallamount(){
+    $(".table-list tbody tr").each(function(){
+       var line_amount = $(this).closest('tr').find('.line-remain-qty').val();
+        $(this).closest('tr').find('.line-pay').val(line_amount);
+    });
+    calpayment();
+}
 
 function checkpaytype2(e){
     var val = e.attr('data-var');
@@ -271,13 +316,15 @@ function calpayment(){
 
 function getpaymentrec(e){
     var ids = e.val();
+    var from_date = $("#find-from-date").val();
+    var to_date = $("#find-to-date").val();
     if(ids){
         $.ajax({
               'type':'post',
               'dataType': 'html',
               'async': false,
               'url': "$url_to_get_receive_new",
-              'data': {'customer_id': ids},
+              'data': {'customer_id': ids, 'from_date': from_date, 'to_date': to_date},
               'success': function(data) {
                   //  alert(data);
                    if(data != ''){
@@ -295,13 +342,15 @@ function getpaymentrec(e){
 }
 function getpaymentrecfromcar(e){
     var ids = e.val();
+     var from_date = $("#find-from-date").val();
+    var to_date = $("#find-to-date").val();
     if(ids){
         $.ajax({
               'type':'post',
               'dataType': 'html',
               'async': false,
               'url': "$url_to_get_receive_new_car",
-              'data': {'customer_id': ids},
+              'data': {'customer_id': ids, 'from_date': from_date, 'to_date': to_date},
               'success': function(data) {
                   //  alert(data);
                    if(data != ''){

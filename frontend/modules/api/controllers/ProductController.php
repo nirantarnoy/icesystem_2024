@@ -117,7 +117,7 @@ class ProductController extends Controller
         $data = [];
         $status = false;
 
-        $model = \common\models\Product::find()->where(['status' =>1])->all();
+        $model = \common\models\Product::find()->where(['status' =>1])->orderBy(['id'=>SORT_ASC])->all();
         // $model = \common\models\QueryCustomerPrice::find()->all();
         if ($model) {
             $status = true;

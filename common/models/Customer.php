@@ -45,12 +45,13 @@ class Customer extends \yii\db\ActiveRecord
     {
         return [
             [['code','name'],'unique'],
-            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos'], 'integer'],
-            [['active_date'], 'safe'],
+            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos','sale_id','route_num'], 'integer'],
+            [['active_date','cancel_use_date'], 'safe'],
             [['code', 'name', 'description', 'location_info', 'logo', 'shop_photo','address','address2','phone','branch_no','sort_name'], 'string', 'max' => 255],
             [['branch_id'], 'exist', 'skipOnError' => true, 'targetClass' => Branch::className(), 'targetAttribute' => ['branch_id' => 'id']],
             [['company_id'], 'exist', 'skipOnError' => true, 'targetClass' => Company::className(), 'targetAttribute' => ['company_id' => 'id']],
-            [['customer_type_id','payment_method_id','payment_term_id','is_invoice_req'],'integer']
+            [['customer_type_id','payment_method_id','payment_term_id','is_invoice_req'],'integer'],
+            [['cancel_use_reason'],'string'],
         ];
     }
 
@@ -80,6 +81,9 @@ class Customer extends \yii\db\ActiveRecord
             'phone' => Yii::t('app', 'โทร'),
             'is_invoice_req'=> Yii::t('app', 'เอาใบกำกับ'),
             'branch_no' => Yii::t('app', 'รหัสสาขา'),
+            'cancel_use_date' => 'วันที่ยกเลิกใช้งาน',
+            'cancel_use_reason' => 'เหตุผลการยกเลิก',
+            'sale_id' => 'ตลาด',
             'company_id' => Yii::t('app', 'Company ID'),
             'branch_id' => Yii::t('app', 'Branch ID'),
             'created_at' => Yii::t('app', 'Created At'),

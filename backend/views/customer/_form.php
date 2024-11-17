@@ -73,6 +73,7 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
             <?= $form->field($model, 'phone')->textInput(['maxlength' => true]) ?>
         </div>
         <div class="col-lg-3">
+            <?php $model->active_date = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->active_date)); ?>
             <?= $form->field($model, 'active_date')->widget(\kartik\date\DatePicker::className(),[
                     'data' => $model->isNewRecord ? date('Y-m-d') : $model->active_date,
                     'options' => [
@@ -113,7 +114,7 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
 
     </div>
     <div class="row">
-        <div class="col-lg-4">
+        <div class="col-lg-3">
             <?php //echo $form->field($model, 'shop_photo')->fileInput(['maxlength' => true]) ?>
             <br>
             <?php if ($model->shop_photo != ''): ?>
@@ -147,15 +148,62 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
                 </div>
             <?php endif; ?>
         </div>
+        <div class="col-lg-3">
+            <label for=""><?= $model->getAttributeLabel('is_distributor') ?></label>
+            <?php echo $form->field($model, 'is_distributor')->widget(\toxor88\switchery\Switchery::className(), ['options' => ['label' => '', 'class' => 'form-control']])->label(false) ?>
+        </div>
 
-        <div class="col-lg-4">
+        <div class="col-lg-3">
              <label for=""><?= $model->getAttributeLabel('is_invoice_req') ?></label>
             <?php echo $form->field($model, 'is_invoice_req')->widget(\toxor88\switchery\Switchery::className(), ['options' => ['label' => '', 'class' => 'form-control']])->label(false) ?>
         </div>
-        <div class="col-lg-4">
+        <div class="col-lg-3">
              <label for=""><?= $model->getAttributeLabel('status') ?></label>
             <?php echo $form->field($model, 'status')->widget(\toxor88\switchery\Switchery::className(), ['options' => ['label' => '', 'class' => 'form-control']])->label(false) ?>
 
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-3">
+
+                <?= $form->field($model, 'sale_id')->Widget(\kartik\select2\Select2::className(), [
+                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Employee::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1,'is_sale_operator'=>1])->all(), 'id', function ($data) {
+                        return $data->fname . ' ' . $data->lname;
+                    }),
+                    'options' => [
+                        'placeholder' => '--เลือก--'
+                    ],
+                    'pluginOptions'=>[
+                            'allowClear' => true,
+                    ]
+                ]) ?>
+
+        </div>
+        <div class="col-lg-3">
+            <?php $model->cancel_use_date = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->cancel_use_date)); ?>
+            <?= $form->field($model, 'cancel_use_date')->widget(\kartik\date\DatePicker::className(),[
+               // 'value' => $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->cancel_use_date)),
+                'options' => [
+                    //'format' => 'dd-mm-yyyy',
+                ],
+                'pluginOptions' => [
+                        'format' => 'dd-mm-yyyy',
+                    'disabled' => true
+                ]
+            ]) ?>
+        </div>
+        <div class="col-lg-6">
+            <?= $form->field($model, 'cancel_user_reason')->textarea(['maxlength' => true]) ?>
+        </div>
+
+
+    </div>
+    <div class="row">
+        <div class="col-lg-3">
+            <?= $form->field($model, 'route_num')->textInput(['maxlength' => true])->label("ลำดับขาย") ?>
+        </div>
+        <div class="col-lg-3">
+            <?= $form->field($model, 'cus_description')->textInput(['maxlength' => true]) ?>
         </div>
     </div>
     <br/>

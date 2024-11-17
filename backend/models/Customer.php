@@ -99,6 +99,12 @@ class Customer extends \common\models\Customer
         $model = \common\models\QueryCustomerInfo::find()->where(['customer_id' => $customer_id])->one();
         return $model != null ? $model->rt_id : 0;
     }
+
+    public static function findRouteNums($customer_id)
+    {
+        $model = \common\models\Customer::find()->where(['id' => $customer_id])->one();
+        return $model != null ? $model->route_num : '';
+    }
     public static function getAddress($customer_id)
     {
         $model = \common\models\Customer::find()->where(['id' => $customer_id])->one();
@@ -119,6 +125,11 @@ class Customer extends \common\models\Customer
     {
         $model = Customer::find()->where(['id' => $id])->one();
         return $model != null ? $model->location_info : '';
+    }
+    public static function getAssetCount($id)
+    {
+        $model = \common\models\CustomerAsset::find()->where(['customer_id' => $id])->count();
+        return $model;
     }
 
     public static function findPayTerm($id)

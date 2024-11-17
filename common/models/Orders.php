@@ -21,8 +21,9 @@ class Orders extends \yii\db\ActiveRecord
     {
         return [
         //    [['order_no'], 'unique'],
+            [['is_init_remain'],'default','value'=>0],
             [['order_no', 'order_date', 'order_channel_id', 'car_ref_id'], 'required'],
-            [['customer_id', 'customer_type', 'emp_sale_id', 'payment_status', 'car_ref_id', 'order_channel_id', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','inv_status','customer_invoice_id'], 'integer'],
+            [['customer_id', 'customer_type', 'emp_sale_id', 'payment_status', 'car_ref_id', 'order_channel_id', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','inv_status','customer_invoice_id','is_init_remain'], 'integer'],
             [['order_date', 'order_date2','status', 'order_total_amt_text', 'issue_id','customer_ref_no'], 'safe'],
             [['vat_amt', 'vat_per', 'order_total_amt'], 'number'],
             [['order_no', 'customer_name'], 'string', 'max' => 255],

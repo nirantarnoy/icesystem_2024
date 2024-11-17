@@ -390,7 +390,7 @@ $model_product_daily = \common\models\Product::find()->select(['id'])->where(['s
             <div class="col-lg-3">
                 <h4>
                     <span> <i class="fa fa-user-circle text-primary"></i> </span>พนักงาน
-                    <span style="color: #ec4844"><?= \backend\models\User::findName(\Yii::$app->user->id) ?></span>
+                    <span style="color: #ec4844"><?= \backend\models\User::findName(\Yii::$app->user->id).findSecondUsername(\Yii::$app->user->id) ?></span>
                 </h4>
             </div>
 
@@ -478,6 +478,27 @@ $model_product_daily = \common\models\Product::find()->select(['id'])->where(['s
 <!--</div>-->
 
 <?php
+
+function findSecondUsername($user_id){
+    $name = ',';
+    $model = \common\models\LoginLogCal::find()->where(['user_id' => $user_id,'status'=>1])->andFilterWhere(['date(login_date)'=>date('Y-m-d')])->one();
+    if($model){
+        $modelx = \common\models\LoginUserRef::find()->where(['login_log_cal_id' => $model->id])->all();
+        if($modelx){
+            foreach ($modelx as $value) {
+                $name  = $name. \backend\models\User::findName($value->user_id).",";
+            }
+        }
+    }
+    return $name;
+
+//    $model_user_ref = \common\models\LoginUserRef::find()->select('user_id')->where(['login_log_cal_id' => $login_id])->all();
+//    if ($model_user_ref) {
+//        foreach ($model_user_ref as $value) {
+//            array_push($data, \backend\models\Employee::findNameFromUserId($value->user_id));
+//        }
+//    }
+}
 function getBalancein($product_id, $user_login_datetime, $t_date, $company_id, $branch_id)
 {
     $qty = 0;

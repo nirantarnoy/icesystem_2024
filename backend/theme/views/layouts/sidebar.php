@@ -267,6 +267,26 @@
                                 </a>
                             </li>
                         <?php endif; ?>
+                        <?php //if (\Yii::$app->user->can('assetsitem/print')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=pos/printsummarycarnky" class="nav-link pos">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>
+                                        ยอดขายแยกสินค้าสายส่ง
+                                    </p>
+                                </a>
+                            </li>
+                        <?php //endif; ?>
+                        <?php //if (\Yii::$app->user->can('assetsitem/print')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=pos/printsummaryposnky" class="nav-link pos">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>
+                                        ยอดขายแยกสินค้าหน้าบ้าน
+                                    </p>
+                                </a>
+                            </li>
+                        <?php //endif; ?>
                     </ul>
                 </li>
                 <li class="nav-item has-treeview has-sub">
@@ -536,6 +556,22 @@
                                 <a href="index.php?r=ordercarcredit/printcarsummary" class="nav-link ordercarcredit">
                                     <i class="far fa-circlez nav-icon"></i>
                                     <p>ยอดขายเชื่อสายส่ง</p>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <?php if (\Yii::$app->user->can('pos/printsummarycarnky')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=pos/printsummarycarnky" class="nav-link pos">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>แยกสินค้าสายส่ง</p>
+                                </a>
+                            </li>
+                        <?php endif; ?>
+                        <?php if (\Yii::$app->user->can('pos/printsummaryposnky')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=pos/printsummaryposnky" class="nav-link pos">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>แยกสินค้าหน้าบ้าน</p>
                                 </a>
                             </li>
                         <?php endif; ?>

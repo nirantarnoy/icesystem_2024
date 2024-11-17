@@ -46,17 +46,30 @@ class CustomerController extends Controller
             if ($model) {
                 $status = true;
                 foreach ($model as $value) {
+                    $cut_pay_type = $this->customerSaletype($value->pament_method_id);
                     array_push($data, [
                         'id' => $value->id,
                         'code' => $value->code,
                         'name' => $value->name,
-                        'route_id' => $value->delivery_route_id
+                        'route_id' => $value->delivery_route_id,
+                        'sale_type'=> $cut_pay_type, // 1 cash 2 credit
                     ]);
                 }
             }
         }
 
         return ['status' => $status, 'data' => $data];
+    }
+
+    function customerSaletype($cus_pay_method_id){
+        $type = 0;
+        if($cus_pay_method_id){
+            $model = \backend\models\Paymentmethod::find()->where(['id'=>$cus_pay_method_id])->one();
+            if($model){
+                $type = $model->pay_type;
+            }
+        }
+        return $type;
     }
 
    public function actionCheckin()

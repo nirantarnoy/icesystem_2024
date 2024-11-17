@@ -12,6 +12,7 @@ $this->params['breadcrumbs'][] = '/'.$this->title;
 <div class="deliveryroute-create">
     <?= $this->render('_form', [
         'model' => $model,
+        'model_device_register'=> null,
     ]) ?>
 
 </div>

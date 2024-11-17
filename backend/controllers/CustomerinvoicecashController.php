@@ -470,7 +470,7 @@ class CustomerinvoicecashController extends Controller
                 'model_min_max' => $model_min_max,
             ]);
         } else {
-            return $this->redirect('customerinvoice/index');
+            return $this->redirect('customerinvoicecash/index');
         }
     }
 
@@ -537,5 +537,43 @@ class CustomerinvoicecashController extends Controller
         }else{
             echo "not success";
         }
+    }
+
+    public function actionRecal($id){
+        if($id){
+            $customer_id = \backend\models\Customerinvoice::find()->where(['id'=>$id])->one()->customer_id;
+            $model = \common\models\CustomerInvoiceLine::find()->where(['customer_invoice_id'=>$id])->all();
+            if($customer_id && $model){
+                foreach($model as $value){
+                    $order_amount_new = 0;
+                    $order_id = $value->order_id;
+                    $model_order_line = \backend\models\Orderline::find()->where(['order_id'=>$order_id,'status'=>1])->all();
+                    if($model_order_line){
+                        foreach($model_order_line as $value_line){
+                            $order_amount_new += ($this->findProductPrice($customer_id,$value_line->product_id) * $value_line->qty);
+                        }
+
+                        //    \common\models\CustomerInvoiceLine::updateAll(['line_disc_amt'=>$order_amount_new],['id'=>$value->id]);
+                        \common\models\CustomerInvoiceLine::updateAll(['amount'=>$order_amount_new,'remain_amount'=>$order_amount_new],['id'=>$value->id]);
+                    }
+                }
+            }
+        }
+
+        return $this->redirect(['customerinvoicecash/printinvoice','id'=>$id]);
+    }
+
+    function findProductPrice($customer_id,$product_id){
+        $new_price = 0;
+        $model = \common\models\QueryCustomerPrice::find()->where(['cus_id' => $customer_id,'product_id'=>$product_id])->all();
+        if ($model) {
+            foreach ($model as $value) {
+                $new_price = $value->sale_price;
+//                if($value->haft_cal == 1){
+//                    $new_price = $value->sale_haft_price;
+//                }
+            }
+        }
+        return $new_price;
     }
 }

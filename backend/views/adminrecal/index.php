@@ -88,6 +88,9 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
                         } else {
                             continue;
                         }
+
+                     //   $second_user = \backend\models\Employee::findNameFromUserId($user_login[$i]['second_user_id']); // for bansing login pos user and get second user name
+
                         ?>
                         <tr>
                             <td><?= \backend\models\User::findName($user_login[$i]['user_id']) ?></td>
@@ -133,6 +136,7 @@ function findUserPos($t_date, $company_id, $branch_id)
                     'user_id' => $value->user_id,
                     'login_date' => $value->login_date,
                     'logout_date' => $value->logout_date,
+                    'second_user_id' => $value->second_user_id,
                 ]);
             }
 

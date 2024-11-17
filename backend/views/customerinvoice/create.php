@@ -13,6 +13,8 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= $this->render('_form', [
         'model' => $model,
         'model_line' => null,
+        'find_from_date' => $find_from_date,
+        'find_to_date' => $find_to_date,
     ]) ?>
 
 </div>

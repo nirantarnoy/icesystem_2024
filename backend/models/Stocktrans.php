@@ -244,6 +244,20 @@ class Stocktrans extends \common\models\StockTrans
         $model = \common\models\StockTrans::find()->where(['id' => $id,'company_id'=>$company_id,'branch_id'=>$branch_id])->one();
         return $model != null ? $model->journal_no : '';
     }
+    public static function findProdrecRefNo($id,$product_id){
+        $prodrec_id = 0;
+        $model_issue = \backend\models\Journalissue::find()->where(['order_ref_id'=>$id,'reason_id'=>2])->one();
+        if($model_issue){
+           $model_prodrec = \common\models\ProductionRecIssue::find()->where(['issue_id'=>$model_issue->id,'product_id'=>$product_id,'type_id'=>2])->one();
+           if($model_prodrec){
+               $prodrec_id = $model_prodrec->stock_trans_id;
+           }
+
+        }
+
+        $model = \common\models\StockTrans::find()->where(['id' => $prodrec_id])->one();
+        return $model != null ? $model->journal_no : '';
+    }
     public static function findCancelqty($product_id,$from_date,$to_date,$company_id,$branch_id){
       $qty = 0;
 
@@ -343,6 +357,91 @@ class Stocktrans extends \common\models\StockTrans
         }
 
         return $qty;
+    }
+
+    public static function getLastNoCarreprocess($company_id,$branch_id)
+    {
+        $model = Stocktrans::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'activity_type_id'=>26])->andFilterWhere(['date(trans_date)' => date('Y-m-d')])->MAX('journal_no');
+        //   $model = Orders::find()->where(['date(order_date)' => date('Y-m-d', strtotime($date))])->MAX('order_no');
+
+        $model_seq = \backend\models\Sequence::find()->where(['module_id' => 26, 'company_id'=>$company_id,'branch_id'=>$branch_id])->one();
+        //$pre = \backend\models\Sequence::find()->where(['module_id'=>15])->one();
+        $pre = '';
+        $prefix = '';
+        if ($model_seq) {
+            // $pre = $model_seq->prefix.$model_seq->symbol;
+            $pre = $model_seq->prefix;
+            if ($model) {
+                if ($model_seq->use_year) {
+                    $prefix = $pre . substr(date("Y"), 2, 2);
+                }
+                if ($model_seq->use_month) {
+                    $m = date('m');
+                    //if($m < 10){$m="0".$m;}
+                    $prefix = $prefix . $m;
+                }
+                if ($model_seq->use_day) {
+                    $d = date('d');
+                    //if($d < 10){$d="0".$d;}
+                    $prefix = $prefix . $d;
+                }
+                $prefix = $prefix.'-';
+                $seq_len = strlen($prefix);
+                // $cnum = substr((string)$model, $seq_len- strlen($model_seq->symbol), strlen($model));
+                $cnum = substr((string)$model, $seq_len, strlen($model));
+                $len = strlen($model_seq->maximum);// strlen($cnum);
+                $clen = strlen($cnum + 1);
+                $loop = $len - $clen;
+                for ($i = 1; $i <= $loop; $i++) {
+                    $prefix .= "0";
+                }
+                $prefix .= $cnum + 1;
+                return $prefix;
+            } else {
+                if ($model_seq->use_year) {
+                    $prefix = $pre . substr(date("Y"), 2, 2);
+                }
+                if ($model_seq->use_month) {
+                    $m = date('m');
+                    // if($m < 10){$m="0".$m;}
+                    $prefix = $prefix . $m;
+                }
+                if ($model_seq->use_day) {
+                    $d = date('d');
+                    ///  if($d < 10){$d="0".$d;}
+                    $prefix = $prefix . $d;
+                }
+                $prefix = $prefix.'-';
+                $seq_len = strlen($model_seq->maximum);
+                for ($l = 1; $l <= $seq_len - 1; $l++) {
+                    $prefix .= "0";
+                }
+                return $prefix . '1';
+            }
+        }
+
+
+//        $pre = "SO";
+//        if ($model != null) {
+////            $prefix = $pre.substr(date("Y"),2,2);
+////            $cnum = substr((string)$model,4,strlen($model));
+////            $len = strlen($cnum);
+////            $clen = strlen($cnum + 1);
+////            $loop = $len - $clen;
+//            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
+//            $cnum = substr((string)$model, 10, strlen($model));
+//            $len = strlen($cnum);
+//            $clen = strlen($cnum + 1);
+//            $loop = $len - $clen;
+//            for ($i = 1; $i <= $loop; $i++) {
+//                $prefix .= "0";
+//            }
+//            $prefix .= $cnum + 1;
+//            return $prefix;
+//        } else {
+//            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
+//            return $prefix . '0001';
+//        }
     }
 
 }

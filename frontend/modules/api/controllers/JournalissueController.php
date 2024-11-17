@@ -467,6 +467,12 @@ class JournalissueController extends Controller
             sleep(1);
             $check_route_type = \backend\models\Deliveryroute::find()->select('type_id')->where(['id' => $route_id])->one();
             $model_update_issue_status = \common\models\JournalIssue::find()->where(['id' => $issue_id])->one();
+
+            if($model_update_issue_status == null){ // not have journal issue no
+                return ['status' => $status, 'data' => $data];
+            }else if($model_update_issue_status->status == 2){ // journal already approved
+                return ['status' => $status, 'data' => $data];
+            }
             // $model_issue_line = \backend\models\Journalissueline::find()->select(['id','product_id','qty','avl_qty','origin_qty'])->where(['issue_id' => $issue_id])->andFilterWhere(['>','origin_qty',0])->all();
             $model_issue_line = \common\models\QueryRouteDailyForIssue::find()->select(['id', 'product_id', 'qty', 'avl_qty', 'origin_qty'])->where(['id' => $issue_id])->all();
             if ($model_issue_line != null) {
@@ -2125,7 +2131,7 @@ class JournalissueController extends Controller
     public function createIssueTempcar($journal_issue_id, $user_id)
     {
         if ($journal_issue_id) {
-            $model_journal = \backend\models\Journalissue::find()->where(['id' => $journal_issue_id])->one();
+            $model_journal = \backend\models\Journalissue::find()->where(['id' => $journal_issue_id,'reason_id'=>1])->one();
             if ($model_journal) {
                 $issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_journal->id])->all();
                 foreach ($issue_line as $val) {
@@ -2151,6 +2157,7 @@ class JournalissueController extends Controller
                                 $model_update_prodrec_issue->product_id = $val->product_id;
                                 $model_update_prodrec_issue->issue_id = $model_journal->id;
                                 $model_update_prodrec_issue->qty = $production_rec_id[$k]['qty'];
+                                $model_update_prodrec_issue->type_id = 1;
                                 $model_update_prodrec_issue->save(false);
 
                                 $this->updateProdrecQtyStatus($production_rec_id[$k]['id']);
@@ -2204,14 +2211,20 @@ class JournalissueController extends Controller
         $cal_qty = 0;
         $full_qty = 0;
         $issue_remain_qty = 0;
+        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
         //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
-        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
+        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,26,27], 'production_type' => 1, 'date(trans_date)' => date('Y-m-d',strtotime($pre_date)),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
         if ($model) {
             foreach ($model as $value) {
+                $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty - $adjust_all_qty); // prodrec - scrap
+
+
                 $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
                 if ($model_sum_issue_used_qty > 0) {
                     // if ($model_sum_issue_used_qty >= $issue_qty) continue;
-                    $prod_rec_avl_qty = ($value->qty - $model_sum_issue_used_qty);
+                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
                     if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
                         if ($prod_rec_avl_qty >= $issue_qty) {
                             array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
@@ -2229,23 +2242,23 @@ class JournalissueController extends Controller
                     }
                 } else {
 
-                    if ($value->qty >= $issue_qty) {
+                    if ($qty_after_deduct_scrap >= $issue_qty) {
                         array_push($data, ['id' => $value->id, 'qty' => $issue_qty]);
                         break;
                     } else {
                         if ($full_qty > 0) {
                             $remain_qty = $issue_qty - $full_qty;
-                            if($remain_qty > $value->qty) {
-                                array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
-                                $full_qty += $value->qty;
+                            if($remain_qty > $qty_after_deduct_scrap) {
+                                array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                                $full_qty += $qty_after_deduct_scrap;
                             }else{
                                 array_push($data, ['id' => $value->id, 'qty' => $remain_qty]);
                                 $full_qty += $remain_qty;
                             }
 
                         } else {
-                            array_push($data, ['id' => $value->id, 'qty' => $value->qty]);
-                            $full_qty += $value->qty;
+                            array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                            $full_qty += $qty_after_deduct_scrap;
                         }
 
                     }
@@ -2277,7 +2290,34 @@ class JournalissueController extends Controller
 
     }
 
+    function checkProdrecScrap($prodrec_id){
+        $scrap_qty = 0;
 
+        if($prodrec_id){
+            $model_qty = \common\models\QueryScrap::find()->where(['prodrec_id'=>$prodrec_id])->sum('qty');
+            if($model_qty > 0){
+                $scrap_qty = $model_qty;
+            }
+        }
+
+
+        return $scrap_qty;
+    }
+
+    function checkProdrecAdjust($prodrec_id)
+    {
+        $adjust_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
+            if ($model_qty > 0) {
+                $adjust_qty = $model_qty;
+            }
+        }
+
+
+        return $adjust_qty;
+    }
     // end issue temp confirm
 
 }
