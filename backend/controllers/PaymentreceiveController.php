@@ -450,8 +450,8 @@ class PaymentreceiveController extends Controller
             $sql .= " FROM query_sale_by_customer_pos as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
             $sql .= " WHERE t1.customer_id=" . $cus_id;
             $sql .= " AND t1.payment_method_id=2";
-            $sql .= " GROUP BY t1.customer_id,t1.order_id";
-            $sql .= " ORDER BY t1.is_init_remain,t1.order_id";
+           // $sql .= " GROUP BY t1.customer_id,t1.order_id";
+          //  $sql .= " ORDER BY t1.order_id asc ";
             //$sql.=" AND t1.payment"
 
             if($f_date != '' && $t_date != ''){
@@ -460,6 +460,10 @@ class PaymentreceiveController extends Controller
             }else{
                 $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
             }
+           
+             $sql .= " GROUP BY t1.customer_id,t1.order_id";
+            $sql .= " ORDER BY t1.order_id asc ";
+
 
             $query = \Yii::$app->db->createCommand($sql);
             $model = $query->queryAll();
@@ -757,6 +761,7 @@ class PaymentreceiveController extends Controller
         }
         //  $find_sale_type = \Yii::$app->request->post('find_sale_type');
         $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_print_customer_loan', [
             'from_date' => $from_date,
             'to_date' => $to_date,
@@ -766,6 +771,7 @@ class PaymentreceiveController extends Controller
             'company_id' => $company_id,
             'branch_id' => $branch_id,
             'find_pay_type' => $find_pay_type,
+            'is_admin'=>$is_admin,
         ]);
     }
 

@@ -29,7 +29,11 @@ class SiteController extends Controller
 //                        'allow' => false,
 //                    ],
                     [
-                        'actions' => ['login', 'error', 'createadmin', 'changepassword', 'decodex', 'grab', 'addseconduser', 'getcominfo', 'transactionsalecar', 'transactionsalecar2', 'transactionsalecar3', 'createscreenshort', 'transactionsalepos', 'updateroute', 'calmachine', 'clearorder','testclosesum','updateorderpayment','caltransactionsaledistributor','caltransactionsaledistributorauto','startcaldailymanagerauto','summarybystdgroup'],
+                        'actions' => ['login', 'error', 'createadmin', 'changepassword', 'decodex', 'grab', 'addseconduser', 'getcominfo',
+                            'transactionsalecar', 'transactionsalecar2', 'transactionsalecar3', 'createscreenshort', 'transactionsalepos',
+                            'updateroute', 'calmachine', 'clearorder', 'testclosesum', 'updateorderpayment', 'caltransactionsaledistributor',
+                            'caltransactionsaledistributorauto', 'startcaldailymanagerauto', 'summarybystdgroup', 'transferorder','transferorderline',
+                            'transferpayment','transferpaymentline','transferissue','transferissueline','checkupdateorderpayment','checkupdateorderpaymentbycustomer','generate-customer-monthly-sum'],
                         'allow' => true,
                     ],
                     [
@@ -1133,19 +1137,20 @@ class SiteController extends Controller
         $company_id = 1;
         $branch_id = 2;
         $cal_date = date('Y-m-d');
-        $xdate = explode('-',$caldate);
+        $xdate = explode('-', $caldate);
 
         // $create_date = date_create('2024-02-20');
 
         $from_date = date('Y-m-d');
         $to_date = date('Y-m-d');
 
-        $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
-            $cal_date = date('Y-m-d',strtotime($findcaldate));
+       // $findcaldate = date('Y-m-d');
+        $findcaldate = date('Y-m-d', strtotime('-10 day'));
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
+            $cal_date = date('Y-m-d', strtotime($findcaldate));
         }
-       // print_r($xdate);return;
+        // print_r($xdate);return;
         $started = microtime(true);
 
 //        echo $cal_date;return;
@@ -1166,7 +1171,7 @@ class SiteController extends Controller
         if ($model) {
             foreach ($model as $value) {
                 $model_trans = new \common\models\TransactionDistributorSale();
-                $model_trans->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                $model_trans->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                 $model_trans->customer_id = $value->customer_id;
                 $model_trans->product_id = $value->product_id;
                 $model_trans->cash_qty = $value->line_qty_cash;
@@ -1201,16 +1206,17 @@ class SiteController extends Controller
         $total_time_use = $end - $started;
         $this->notifymessageorderclose(1, 2, number_format($total_time_use, 4));
     }
+
     function actionCaltransactionsaledistributorauto()
     {
 
         $company_id = 1;
         $branch_id = 2;
 
-        $t_date = date('Y-m-d',strtotime('-1 day'));
+        $t_date = date('Y-m-d', strtotime('-1 day'));
 
         $cal_date = date('Y-m-d');
-        $xdate = explode('-',$t_date);
+        $xdate = explode('-', $t_date);
 
         // $create_date = date_create('2024-02-20');
 
@@ -1218,9 +1224,9 @@ class SiteController extends Controller
         $to_date = date('Y-m-d');
 
         $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
-            $cal_date = date('Y-m-d',strtotime($findcaldate));
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
+            $cal_date = date('Y-m-d', strtotime($findcaldate));
         }
         // print_r($xdate);return;
         $started = microtime(true);
@@ -1241,7 +1247,7 @@ class SiteController extends Controller
         if ($model) {
             foreach ($model as $value) {
                 $model_trans = new \common\models\TransactionDistributorSale();
-                $model_trans->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                $model_trans->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                 $model_trans->customer_id = $value->customer_id;
                 $model_trans->product_id = $value->product_id;
                 $model_trans->cash_qty = $value->line_qty_cash;
@@ -1281,8 +1287,8 @@ class SiteController extends Controller
     {
         $company_id = 1;
         $branch_id = 2;
-        $caldate = date('Y-m-d',strtotime('-1 day'));
-        $xdate = explode('-',$caldate);
+        $caldate = date('Y-m-d', strtotime('-1 day'));
+        $xdate = explode('-', $caldate);
 
         // $create_date = date_create('2024-02-20');
 
@@ -1290,8 +1296,8 @@ class SiteController extends Controller
         $to_date = date('Y-m-d');
 
         $findcaldate = date('Y-m-d');
-        if(count($xdate) >1){
-            $findcaldate = $xdate[0].'/'.$xdate[1].'/'.$xdate[2].' '.'00:01:01';
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
             $from_date = $findcaldate;
             $to_date = $findcaldate;
         }
@@ -1318,11 +1324,10 @@ class SiteController extends Controller
         $btn_order_type = null;
 
         $model_product_daily = \backend\models\Product::find()->where(['status' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['item_pos_seq' => SORT_ASC])->all();
-        \common\models\TransactionManagerDaily::deleteAll(['date(trans_date)'=>date('Y-m-d',strtotime($findcaldate))]);
+        \common\models\TransactionManagerDaily::deleteAll(['date(trans_date)' => date('Y-m-d', strtotime($findcaldate))]);
         foreach ($model_product_daily as $value) {
             $line_product_price_list = $this->getProductpricelist($value->id, $from_date, $to_date, $company_id, $branch_id);
             if ($line_product_price_list != null) {
-
 
 
                 for ($x = 0; $x <= count($line_product_price_list) - 1; $x++) {
@@ -1364,7 +1369,7 @@ class SiteController extends Controller
 
 
                     $model_add = new \common\models\TransactionManagerDaily();
-                    $model_add->trans_date = date('Y-m-d H:i:s',strtotime($findcaldate));
+                    $model_add->trans_date = date('Y-m-d H:i:s', strtotime($findcaldate));
                     $model_add->product_id = $value->id;
                     $model_add->price = $line_product_price_list[$x]['line_price'];
                     $model_add->cash_qty = $line_qty;
@@ -1381,7 +1386,7 @@ class SiteController extends Controller
 
 
                 }
-            }else{
+            } else {
                 echo "no data";
             }
         }
@@ -1888,7 +1893,8 @@ class SiteController extends Controller
         echo "ok";
     }
 
-    public function actionTestclosesum(){
+    public function actionTestclosesum()
+    {
         $product_id = 1;
         $qty = 1;
         $company_id = 1;
@@ -1896,7 +1902,7 @@ class SiteController extends Controller
         $route_id = 900;
 
         if ($product_id != null && $qty > 0 && $company_id != null && $branch_id != null) {
-            $order_shift = \common\models\OrderStock::find()->where(['route_id' => $route_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>','issue_id',0])->groupBy(['issue_id'])->count('issue_id');
+            $order_shift = \common\models\OrderStock::find()->where(['route_id' => $route_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>', 'issue_id', 0])->groupBy(['issue_id'])->count('issue_id');
             $model = \common\models\SaleRouteDailyClose::find()->where(['product_id' => $product_id, 'route_id' => $route_id, 'date(trans_date)' => date('Y-m-d'), 'order_shift' => $order_shift])->one();
             if ($model) {
                 echo "ok";
@@ -1918,27 +1924,30 @@ class SiteController extends Controller
             }
         }
     }
-    public function actionUpdateorderpayment(){
-        $model = \common\models\QueryOrderWaitForUpdatePayment::find()->where(['date(trans_date)'=>date('Y-m-d')])->limit(30)->all();
+
+    public function actionUpdateorderpayment()
+    {
+        $model = \common\models\QueryOrderWaitForUpdatePayment::find()->where(['date(trans_date)' => date('Y-m-d')])->limit(30)->all();
         $res = 0;
         $company_id = 0;
         $branch_id = 0;
-        if($model){
-            foreach($model as $value){
+        if ($model) {
+            foreach ($model as $value) {
                 $company_id = $value->company_id;
                 $branch_id = $value->branch_id;
-                $modelorder = \common\models\Orders::find()->where(['id'=>$value->order_id,'payment_status'=>0])->one();
-                if($modelorder){
+                $modelorder = \common\models\Orders::find()->where(['id' => $value->order_id, 'payment_status' => 0])->one();
+                if ($modelorder) {
                     $modelorder->payment_status = 1;
                     $modelorder->save(false);
-                    $res+=1;
+                    $res += 1;
                 }
             }
         }
-        if($res > 0){
-         //   $this->notifymessageorderupdatepayment($company_id,$branch_id,1);
+        if ($res > 0) {
+            //   $this->notifymessageorderupdatepayment($company_id,$branch_id,1);
         }
     }
+
     public function notifymessageorderupdatepayment($company_id, $branch_id, $timeuse)
     {
         //$message = "This is test send request from camel paperless";
@@ -1979,8 +1988,6 @@ class SiteController extends Controller
         $res = json_decode($result);
         return $res;
     }
-
-
 
 
     function getProductpricelist($product_id, $f_date, $t_date, $company_id, $branch_id)
@@ -2206,6 +2213,315 @@ class SiteController extends Controller
     public function actionSummarybystdgroup()
     {
         return $this->render('_summarybystdpricegroup');
+    }
+
+    public function actionTransferorder()
+    {
+        $fil_date = '2025-06-25 14:00:00';
+        $start_id = 1877010;
+        $route_id = 956;
+        $sql = "SELECT * FROM orders WHERE id > :fil_id";
+        $query = \Yii::$app->db2->createCommand($sql)
+            ->bindValue(':fil_id', $start_id);
+           // ->bindValue(':route_id', $route_id);
+//            ->bindValue(':sale_channel_id', 1)
+//            ->bindValue(':status', 100);
+        $model = $query->queryAll();
+        // echo count($model);
+        if ($model) {
+//            $sql2 = "DELETE FROM temp_order_id_map";
+//            $query2 = \Yii::$app->db->createCommand($sql2);
+//            $query2->execute();
+
+            foreach ($model as $value) {
+                // create new order
+                $model_new_order = new \common\models\Orders();
+                $old_id = $value['id'];
+                unset($value['id']);
+                // ใส่ค่าทั้งหมดที่เหลือใน array ลงใน model
+                $model_new_order->attributes = $value;
+                if ($model_new_order->save(false)) {
+                    $order_id = $model_new_order->id;
+                    $sql2 = "INSERT INTO temp_order_id_map (old_id, new_id) VALUES (:old_id, :new_id)";
+                    $query2 = \Yii::$app->db->createCommand($sql2)
+                        ->bindValue(':old_id', $old_id)
+                        ->bindValue(':new_id', $order_id);
+                    $query2->execute();
+                }
+            }
+        }
+    }
+
+    public function actionTransferorderline()
+    {
+        $arr_old_id = [];
+        $arr_new_id = [];
+        $sql = "SELECT * FROM temp_order_id_map WHERE old_id > 1104";
+        $query = \Yii::$app->db->createCommand($sql);
+        $model = $query->queryAll();
+        if ($model) {
+            foreach ($model as $value) {
+                array_push($arr_old_id, $value['old_id']);
+                array_push($arr_new_id, $value['new_id']);
+            }
+        }
+
+        if ($arr_old_id != null) {
+            for ($i = 0; $i <= count($arr_old_id) - 1; $i++) {
+                $old_id = $arr_old_id[$i];
+                $new_id = $arr_new_id[$i];
+                $sql = "SELECT * FROM order_line WHERE order_id = :order_id";
+                $query = \Yii::$app->db2->createCommand($sql)
+                    ->bindValue(':order_id', $old_id);
+                $model = $query->queryAll();
+                if ($model) {
+                    foreach ($model as $value) {
+                        $model_new_order = new \common\models\OrderLine();
+                        unset($value['id']);
+                        $value['order_id'] = $new_id;
+                        $model_new_order->attributes = $value;
+                        $model_new_order->save(false);
+                    }
+                }
+            }
+        }
+    }
+    public function actionTransferpayment(){
+        $start_id = 1704743;
+        $route_id = 956;
+        $sql = "SELECT * FROM payment_receive WHERE id > :fil_id";
+        $query = \Yii::$app->db2->createCommand($sql)
+            ->bindValue(':fil_id', $start_id);
+        $model = $query->queryAll();
+        // echo count($model);
+        if ($model) {
+            foreach ($model as $value) {
+                // create new order
+                $model_new_order = new \common\models\PaymentReceive();
+                $old_id = $value['id'];
+                unset($value['id']);
+                // ใส่ค่าทั้งหมดที่เหลือใน array ลงใน model
+                $model_new_order->attributes = $value;
+                if ($model_new_order->save(false)) {
+                    $order_id = $model_new_order->id;
+                    $sql2 = "INSERT INTO temp_payment_id_map (old_id, new_id) VALUES (:old_id, :new_id)";
+                    $query2 = \Yii::$app->db->createCommand($sql2)
+                        ->bindValue(':old_id', $old_id)
+                        ->bindValue(':new_id', $order_id);
+                    $query2->execute();
+                }
+            }
+        }
+    }
+    public function actionTransferpaymentline()
+    {
+        $arr_old_id = [];
+        $arr_new_id = [];
+        $sql = "SELECT * FROM temp_payment_id_map WHERE id > 1000 AND id <= 1326";
+        $query = \Yii::$app->db->createCommand($sql);
+        $model = $query->queryAll();
+        if ($model) {
+            foreach ($model as $value) {
+                array_push($arr_old_id, $value['old_id']);
+                array_push($arr_new_id, $value['new_id']);
+            }
+        }
+
+        if ($arr_old_id != null) {
+            for ($i = 0; $i <= count($arr_old_id) - 1; $i++) {
+                $old_id = $arr_old_id[$i];
+                $new_id = $arr_new_id[$i];
+                $sql = "SELECT * FROM payment_receive_line WHERE payment_receive_id = :old_id";
+                $query = \Yii::$app->db2->createCommand($sql)
+                    ->bindValue(':old_id', $old_id);
+                $model = $query->queryAll();
+                if ($model) {
+                    foreach ($model as $value) {
+                        $model_new_order = new \common\models\PaymentReceiveLine();
+                        unset($value['id']);
+                        $value['payment_receive_id'] = $new_id;
+                        $model_new_order->attributes = $value;
+                        $model_new_order->save(false);
+                    }
+                }
+            }
+        }
+    }
+
+
+    public function actionTransferissue()
+    {
+        $fil_date = '2025-06-25 14:00:00';
+        $start_id = 478405;
+        $route_id = 956;
+        $sql = "SELECT * FROM journal_issue WHERE id > :fil_id";
+        $query = \Yii::$app->db2->createCommand($sql)
+            ->bindValue(':fil_id', $start_id);
+        // ->bindValue(':route_id', $route_id);
+//            ->bindValue(':sale_channel_id', 1)
+//            ->bindValue(':status', 100);
+        $model = $query->queryAll();
+        // echo count($model);
+        if ($model) {
+//            $sql2 = "DELETE FROM temp_order_id_map";
+//            $query2 = \Yii::$app->db->createCommand($sql2);
+//            $query2->execute();
+
+            foreach ($model as $value) {
+                // create new order
+                $model_new_order = new \common\models\JournalIssue();
+                $old_id = $value['id'];
+                unset($value['id']);
+                // ใส่ค่าทั้งหมดที่เหลือใน array ลงใน model
+                $model_new_order->attributes = $value;
+                if ($model_new_order->save(false)) {
+                    $order_id = $model_new_order->id;
+                    $sql2 = "INSERT INTO temp_issue_id_map (old_id, new_id) VALUES (:old_id, :new_id)";
+                    $query2 = \Yii::$app->db->createCommand($sql2)
+                        ->bindValue(':old_id', $old_id)
+                        ->bindValue(':new_id', $order_id);
+                    $query2->execute();
+                }
+            }
+        }
+    }
+    public function actionTransferissueline()
+    {
+        $arr_old_id = [];
+        $arr_new_id = [];
+        $sql = "SELECT * FROM temp_issue_id_map";
+        $query = \Yii::$app->db->createCommand($sql);
+        $model = $query->queryAll();
+        if ($model) {
+            foreach ($model as $value) {
+                array_push($arr_old_id, $value['old_id']);
+                array_push($arr_new_id, $value['new_id']);
+            }
+        }
+
+        if ($arr_old_id != null) {
+            for ($i = 0; $i <= count($arr_old_id) - 1; $i++) {
+                $old_id = $arr_old_id[$i];
+                $new_id = $arr_new_id[$i];
+                $sql = "SELECT * FROM journal_issue_line WHERE issue_id = :issue_id";
+                $query = \Yii::$app->db2->createCommand($sql)
+                    ->bindValue(':issue_id', $old_id);
+                $model = $query->queryAll();
+                if ($model) {
+                    foreach ($model as $value) {
+                        $model_new_order = new \common\models\JournalIssueLine();
+                        unset($value['id']);
+                        $value['issue_id'] = $new_id;
+                        $model_new_order->attributes = $value;
+                        $model_new_order->save(false);
+                    }
+                }
+            }
+        }
+    }
+
+    public function actionCheckupdateorderpayment($caldate){
+        $xdate = explode('-', $caldate);
+        // $create_date = date_create('2024-02-20');
+
+        $findcaldate = date('Y-m-d', strtotime('-13 day'));
+        if (count($xdate) > 1) {
+            $findcaldate = $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01';
+            $cal_date = date('Y-m-d', strtotime($findcaldate));
+        }
+
+        $cnt = 0;
+        $cnt1 = 0;
+
+       // $model_order = \common\models\Orders::find()->where(['date(order_date)'=>$cal_date,'customer_id'=>4726])->limit(30)->all();
+        $model_order = \common\models\Orders::find()->where(['date(order_date)'=>$cal_date])->limit(200)->all();
+        if($model_order){
+           foreach($model_order as $value){
+               $amount = \common\models\PaymentReceiveLine::find()->where(['order_id' => $value->id])->sum('payment_amount');
+               $order_amount = $value->order_total_amt;// \common\models\OrderLine::find()->where(['order_id' => $value->id])->sum('line_total');
+               if($amount >= $order_amount){
+                   if($value->payment_status == 1)continue;
+                   $value->payment_status = 1;
+                   $value->save(false);
+                   $cnt += 1;
+               }else{
+                   if($value->payment_status == 0)continue;
+                   $value->payment_status = 0;
+                   $value->save(false);
+                   $cnt1 += 1;
+               }
+
+           }
+       }
+       echo 'update to 1 = ' . $cnt.'<br>';
+       echo 'update to 0 = ' . $cnt1.'<br>';
+    }
+    public function actionCheckupdateorderpaymentbycustomer($customer_id){
+        if($customer_id){
+            $findcaldate = date('Y-m-d', strtotime('-15 days'));
+            $cal_date = date('Y-m-d');
+            $xdate = explode('-', $findcaldate);
+            if (count($xdate) > 1) {
+                $findcaldate = date('Y-m-d',strtotime( $xdate[0] . '/' . $xdate[1] . '/' . $xdate[2] . ' ' . '00:01:01'));
+                $cal_date = date('Y-m-d');
+            }
+
+            $sql = "select prl.order_id,sum(ol.line_total) as order_total,prl.payment_amount
+                   from payment_receive as pr 
+                   inner join payment_receive_line as prl on pr.id = prl.payment_receive_id
+                   inner join order_line as ol on ol.order_id = prl.order_id
+                   where pr.customer_id = $customer_id and date(pr.trans_date) >= '$findcaldate' and date(pr.trans_date) <= '$cal_date' group by prl.order_id";
+
+            $data = \Yii::$app->db->createCommand($sql)->queryAll();
+           // print_r($sql);return;
+            if($data){
+            //    print_r($data);
+                foreach($data as $value){
+                    if($value['payment_amount'] >= $value['order_total']){
+                        \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$value['order_id']]);
+                    }else{
+                        \common\models\Orders::updateAll(['payment_status'=>0],['id'=>$value['order_id']]);
+                    }
+                }
+            }
+        }
+    }
+
+    public function actionGenerateCustomerMonthlySum()
+    {
+        $db = Yii::$app->db;
+
+        // ลบข้อมูลเก่าก่อน
+        $db->createCommand()->truncateTable('customer_monthly_sum')->execute();
+
+        // วนทีละเดือน (1-12)
+        for ($month = 1; $month <= 12; $month++) {
+            if($month >10)continue;
+            $sql = "
+                INSERT INTO customer_monthly_sum (customer_id, year, month, total_amount)
+                SELECT 
+                    ol.customer_id,
+                    YEAR(o.order_date) AS year,
+                    :month AS month,
+                    SUM(ol.line_total) AS total_amount
+                FROM orders o
+                INNER JOIN order_line ol ON o.id = ol.order_id
+                RIGHT JOIN customer c ON ol.customer_id = c.id                          
+                WHERE MONTH(o.order_date) = :month
+                AND not(ol.customer_id is null)
+                AND ol.status != 500
+                AND year(o.order_date) = YEAR(CURRENT_DATE())
+                GROUP BY c.id, YEAR(o.order_date)
+                ORDER BY c.id DESC
+            ";
+
+            $db->createCommand($sql, [
+                ':month' => $month,
+            ])->execute();
+        }
+
+        Yii::$app->session->setFlash('success', 'คำนวณยอดขายรายเดือน (1–12) เสร็จเรียบร้อยแล้ว');
+        return $this->redirect(['report/index']);
     }
 }
 

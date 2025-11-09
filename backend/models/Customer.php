@@ -70,6 +70,13 @@ class Customer extends \common\models\Customer
         $model = Customer::find()->where(['id' => $id])->one();
         return $model != null ? $model->code : '';
     }
+    public static function findRouteNum($id)
+    {
+        $model = Customer::find()->where(['id' => $id])->one();
+        return $model != null ? $model->route_num : '';
+    }
+
+
 
     public static function findName($id)
     {

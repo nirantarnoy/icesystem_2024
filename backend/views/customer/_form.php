@@ -166,17 +166,32 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
     <div class="row">
         <div class="col-lg-3">
 
-                <?= $form->field($model, 'sale_id')->Widget(\kartik\select2\Select2::className(), [
-                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Employee::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1,'is_sale_operator'=>1])->all(), 'id', function ($data) {
-                        return $data->fname . ' ' . $data->lname;
-                    }),
-                    'options' => [
-                        'placeholder' => '--เลือก--'
-                    ],
-                    'pluginOptions'=>[
-                            'allowClear' => true,
-                    ]
-                ]) ?>
+            <?= $form->field($model, 'sale_id')->Widget(\kartik\select2\Select2::className(), [
+                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Employee::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1,'is_sale_operator'=>1])->all(), 'id', function ($data) {
+                    return $data->fname . ' ' . $data->lname;
+                }),
+                'options' => [
+                    'placeholder' => '--เลือก--'
+                ],
+                'pluginOptions'=>[
+                    'allowClear' => true,
+                ]
+            ]) ?>
+
+        </div>
+        <div class="col-lg-3">
+
+            <?= $form->field($model, 'sale_2_id')->Widget(\kartik\select2\Select2::className(), [
+                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Employee::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1,'is_sale_operator'=>1])->all(), 'id', function ($data) {
+                    return $data->fname . ' ' . $data->lname;
+                }),
+                'options' => [
+                    'placeholder' => '--เลือก--'
+                ],
+                'pluginOptions'=>[
+                    'allowClear' => true,
+                ]
+            ]) ?>
 
         </div>
         <div class="col-lg-3">
@@ -192,8 +207,8 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
                 ]
             ]) ?>
         </div>
-        <div class="col-lg-6">
-            <?= $form->field($model, 'cancel_user_reason')->textarea(['maxlength' => true]) ?>
+        <div class="col-lg-3">
+            <?= $form->field($model, 'cancel_use_reason')->textarea(['maxlength' => true]) ?>
         </div>
 
 

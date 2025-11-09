@@ -49,7 +49,7 @@ class AssetsitemController extends Controller
 
         $pageSize = \Yii::$app->request->post("perpage");
         $searchModel = new AssetsitemSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $dataProvider = $searchModel->search(\Yii::$app->request->queryParams);
         if ($viewstatus == 1) {
             $dataProvider->query->andFilterWhere(['assets.status' => $viewstatus]);
         }
@@ -453,10 +453,12 @@ class AssetsitemController extends Controller
         $from_date = \Yii::$app->request->post('from_date');
         $to_date = \Yii::$app->request->post('to_date');
         $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        $find_customer = \Yii::$app->request->post('find_customer');
         return $this->render('_print', [
             'from_date' => $from_date,
             'to_date' => $to_date,
             'find_customer_id' => $find_customer_id,
+            'find_customer'=>$find_customer,
         ]);
     }
 
@@ -697,10 +699,12 @@ class AssetsitemController extends Controller
         $from_date = \Yii::$app->request->post('from_date');
         $to_date = \Yii::$app->request->post('to_date');
         $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        $find_customer = \Yii::$app->request->post('find_customer');
         return $this->render('_printcheckin', [
             'from_date' => $from_date,
             'to_date' => $to_date,
             'find_customer_id' => $find_customer_id,
+            'find_customer'=>$find_customer,
         ]);
     }
 }

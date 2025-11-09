@@ -235,6 +235,23 @@ $model_customer_loan = null;
                     ]);
                     ?>
                 </td>
+                <td style="width: 25%">
+                    <label for="">ลูกค้า</label>
+                    <?php
+                    echo \kartik\select2\Select2::widget([
+                        'name' => 'find_customer',
+                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\Customer::find()->where(['delivery_route_id' => $find_customer_id, 'status' => 1])->all(), 'id', 'name'),
+                        'value' => $find_customer,
+                        'options' => [
+                            'placeholder' => '--ลูกค้า--'
+                        ],
+                        'pluginOptions' => [
+                            'allowClear' => true,
+                            'multiple' => true,
+                        ]
+                    ]);
+                    ?>
+                </td>
                 <td>
                     <label for="" style="color: white">ค้นหา</label>
                     <input type="submit" class="btn btn-primary" style="margin-top: 0px;" value="ค้นหา">
@@ -265,7 +282,12 @@ $model_customer_loan = null;
 <br>
 
 <?php
-$model_asset_check = \common\models\CustomerCheckin::find()->where(['route_id' => $find_customer_id])->andFilterWhere(['BETWEEN', 'checkin_date', $from_date, $to_date])->all();
+if($find_customer){
+    $model_asset_check = \common\models\CustomerCheckin::find()->where(['route_id' => $find_customer_id,'customer_id'=>$find_customer])->andFilterWhere(['BETWEEN', 'checkin_date', $from_date, $to_date])->all();
+}else{
+    $model_asset_check = \common\models\CustomerCheckin::find()->where(['route_id' => $find_customer_id])->andFilterWhere(['BETWEEN', 'checkin_date', $from_date, $to_date])->all();
+}
+
 ?>
 <table class="table-header" width="100%">
 </table>
@@ -277,6 +299,7 @@ $model_asset_check = \common\models\CustomerCheckin::find()->where(['route_id' =
         <td style="border: 1px solid gray;text-align: center"><b>จุดเช็คอิน</b></td>
         <td style="text-align: center;border: 1px solid gray"><b>สายส่ง</b></td>
         <td style="text-align: center;border: 1px solid gray;width: 20%"><b>รูปภาพ</b></td>
+        <td style="text-align: center;border: 1px solid gray;width: 20%"><b>ลิงค์ดาวน์โหลด</b></td>
     </tr>
     <?php $i = 0; ?>
     <?php foreach ($model_asset_check as $value): ?>
@@ -294,6 +317,9 @@ $model_asset_check = \common\models\CustomerCheckin::find()->where(['route_id' =
                 <?php for($x=0;$x<=count($photolist)-1;$x++):?>
                 <img src="<?=\Yii::$app->urlManagerFrontend->getBaseUrl()?>/uploads/assetcheck/<?=$photolist[$x]?>" alt="" width="20%">
                 <?php endfor;?>
+            </td>
+            <td style="text-align: center;border: 1px solid gray;width: 20%">
+                <a href="<?='http://141.98.19.240'.\Yii::$app->urlManagerFrontend->getBaseUrl()?>/uploads/assetcheck/<?=$photolist[0]?>" target="_blank"> <?='http://141.98.19.240'.\Yii::$app->urlManagerFrontend->getBaseUrl()?>/uploads/assetcheck/<?=$photolist[0]?></a>
             </td>
         </tr>
     <?php endforeach; ?>

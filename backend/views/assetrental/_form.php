@@ -51,6 +51,10 @@ $total_amount = 0;
                     ]
                 ) ?>
             </div>
+            <div class="col-lg-3">
+                <label for="">จบงาน</label>
+                <?= $form->field($model, 'status')->widget(\toxor88\switchery\Switchery::className())->label('') ?>
+            </div>
         </div>
 
 

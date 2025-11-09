@@ -3,6 +3,7 @@
 namespace backend\models;
 
 use common\models\QueryIssue;
+use DateTime;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use backend\models\Journalissue;
@@ -34,6 +35,7 @@ class IssuereportSearch extends QueryIssue
 
     public function search($params)
     {
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->identity->id);
         $query = QueryIssue::find();
 
         // add conditions that should always apply here
@@ -74,6 +76,8 @@ class IssuereportSearch extends QueryIssue
         }
 
         if($this->from_date != null && $this->to_date != null){
+
+            include \Yii::getAlias("@backend/helpers/ChangeAdminDate.php");
             $fx_datetime = explode(' ',$this->from_date);
             $tx_datetime = explode(' ',$this->to_date);
 
@@ -87,7 +91,11 @@ class IssuereportSearch extends QueryIssue
 
             if(count($fx_datetime) > 0){
                 $f_date = $fx_datetime[0];
-                $f_time = $fx_datetime[1];
+                if(!empty($fx_datetime[1])){
+                    $f_time = $fx_datetime[1];
+                }else{
+                    $f_time = '00:01';
+                }
 
                 $x_date = explode('-', $f_date);
                 $xx_date = date('Y-m-d');
@@ -101,7 +109,11 @@ class IssuereportSearch extends QueryIssue
 
             if(count($tx_datetime) > 0){
                 $t_date = $tx_datetime[0];
-                $t_time = $tx_datetime[1];
+                if(!empty($fx_datetime[1])){
+                    $t_time = $fx_datetime[1];
+                }else{
+                    $t_time = '59:59';
+                }
 
                 $n_date = explode('-', $t_date);
                 $nn_date = date('Y-m-d');
@@ -121,7 +133,7 @@ class IssuereportSearch extends QueryIssue
             $query->andFilterWhere(['in','delivery_route_id',$this->delivery_route_id]);
         }
 
-        if($this->product_id!=null){
+         if($this->product_id!=null){
             $query->andFilterWhere(['product_id' => $this->product_id]);
         }
 

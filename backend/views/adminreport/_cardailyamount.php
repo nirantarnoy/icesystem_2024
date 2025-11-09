@@ -12,6 +12,7 @@ use yii\web\Response;
 // เพิ่ม Font ให้กับ mPDF
 
 $user_id = \Yii::$app->user->id;
+$is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->identity->id);
 
 $defaultFontConfig = (new Mpdf\Config\FontVariables())->getDefaults();
 $fontData = $defaultFontConfig['fontdata'];
@@ -38,6 +39,38 @@ $mpdf->AddPageByArray([
     'margin-top' => 0,
     'margin-bottom' => 1,
 ]);
+
+//// check date
+//$restrict_date = date('Y-m-d', strtotime('-2 months'));
+//$date1 = new DateTime($from_date);
+//$date2 = new DateTime($to_date);
+//$diff = $date1->diff($date2);
+//$diff_month = ($diff->y * 12) + $diff->m;
+//
+//if($is_admin == 1){
+//    $from_date = $from_date;
+//    $to_date = $to_date;
+//}else{
+//    if ($to_date < $restrict_date) {
+//        $from_date = null;
+//        $to_date = null;
+//    } else {
+//        if ($diff_month >= 2) {
+//            if ($from_date < $restrict_date) {
+//                $from_date = $restrict_date;
+//                $to_date = $to_date;
+//            } else {
+//                $from_date = $from_date;
+//                $to_date = $to_date;
+//            }
+//
+//        } else {
+//            $from_date = $from_date;
+//            $to_date = $to_date;
+//        }
+//    }
+//}
+//// end check date
 
 $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id'])->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
     ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['route_id' => SORT_ASC])->groupBy('route_id')->all();
@@ -276,6 +309,9 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
 
     $product_header = [];
 
+    $all_not_full_amount = 0;
+    $all_cash_transfer_amount = 0;
+
 
     $modelx = \common\models\TransactionCarSale::find()->select(['product_id'])->join('inner join','product','transaction_car_sale.product_id=product.id')->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
         ->andFilterWhere(['product.company_id' => $company_id, 'product.branch_id' => $branch_id])->groupBy('product_id')->orderBy(['item_pos_seq' => SORT_ASC])->all();
@@ -311,6 +347,10 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">ชำระหนี้โอน</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">รวมเงินสด
             </td>
+            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">เงินขาด
+            </td>
+            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">สดโอน
+            </td>
         </tr>
 
         <?php foreach ($model_line as $value): ?>
@@ -329,8 +369,13 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
 //              $order_product = getOrderQty2($value->order_id);
 //              $total_all_line_qty = 0;
             $car_data = getCardata($value->route_id,$from_date);
+            $notpay_data = getNotfullpay($value->route_id,$from_date);
+            if($notpay_data!=null){
+                $all_not_full_amount += (float)$notpay_data[0]['not_full_amount'];
+                $all_cash_transfer_amount += (float)$notpay_data[0]['cash_transfer_amount'];
+            }
             ?>
-            <tr>
+            <tr ondblclick="showedit($(this))" data-var="<?=$value->route_id?>" data-date="<?=$from_date?>">
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= \backend\models\Deliveryroute::findName($value->route_id) ?></td>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data!=null?$car_data[0]['car_name']:'' ?></td>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data!=null?$car_data[0]['emp_name']:''?></td>
@@ -371,6 +416,8 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $product_line_receive_cash==0?"-":number_format($product_line_receive_cash, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $product_line_receive_transfer==0?"-":number_format($product_line_receive_transfer, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen;font-weight: bold;"><?= number_format(($line_cash_amount_total + $product_line_receive_cash), 2) ?></td>
+                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;font-weight: bold;color: red;"><?= $notpay_data!=null?number_format($notpay_data[0]['not_full_amount'], 2):'-' ?></td>
+                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;font-weight: bold;color: red;"><?= $notpay_data!=null?number_format($notpay_data[0]['cash_transfer_amount'], 2):'-' ?></td>
             </tr>
         <?php endforeach; ?>
         <tfoot>
@@ -385,6 +432,8 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
             <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_receive_cash, 2) ?></b></td>
             <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_receive_transfer, 2) ?></b></td>
             <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format(($all_cash + $all_receive_cash), 2) ?></b></td>
+            <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;font-weight: bold;color: red;"><?=$all_not_full_amount!=0?number_format($all_not_full_amount,2):'-'?></td>
+            <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;font-weight: bold;color: red;"><?=$all_cash_transfer_amount!=0?number_format($all_cash_transfer_amount,2):'-'?></td>
         </tr>
         <tr>
             <td colspan="7">
@@ -398,6 +447,8 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                         <td style="text-align: right;vertical-align: middle">
                             <span class="all-vp18"></span>
                             </td>
+                        <td></td>
+                        <td></td>
                     </tr>
                 </table>
             </td>
@@ -431,6 +482,51 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
         </table>
     </div>
 </div>
+
+<div id="editModal" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #2b669a">
+                <div class="row" style="text-align: center;width: 100%;color: white">
+                    <div class="col-lg-12">
+                        <span><h3 class="popup-product" style="color: white">ปรับจำนวน</h3></span>
+                    </div>
+                </div>
+            </div>
+            <!--            <div class="modal-body" style="white-space:nowrap;overflow-y: auto">-->
+            <!--            <div class="modal-body" style="white-space:nowrap;overflow-y: auto;scrollbar-x-position: top">-->
+            <form id="form-edit-summary" action="<?= \yii\helpers\Url::to(['adminreport/addlinenote'], true) ?>"
+                  method="post">
+                <input type="hidden" name="add_line_date" class="add-line-date" value="">
+                <input type="hidden" name="route_id" class="route-id" value="">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-4">
+                            <label for="">จำนวนเงินขาด</label>
+                            <input type="text" class="form-control" name="add_amount" value="">
+                        </div>
+                        <div class="col-lg-4">
+                            <label for="">จำนวนเงินสดโอน</label>
+                            <input type="text" class="form-control" name="cash_transfer_amount" value="">
+                        </div>
+                    </div>
+                    <br/>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-outline-success btn-add-cart" data-dismiss="modalx"><i
+                                class="fa fa-check"></i> บันทึกรายการ
+                    </button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                                class="fa fa-close text-danger"></i> ยกเลิก
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</div>
 <!--<script src="../web/plugins/jquery/jquery.min.js"></script>-->
 <!--<script>-->
 <!--    $(function(){-->
@@ -446,6 +542,32 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
 </html>
 
 <?php
+function getNotfullpay($route_id,$trans_date){
+    $data = [];
+    if($route_id){
+        $ex = explode(' ',$trans_date);
+        $ex2 = null;
+        $t_date = null;
+        if($ex!=null){
+            $ex2 = explode('-',$ex[0]);
+
+            //   print_r($ex2);return;
+            if($ex2!=null){
+                if(count($ex2)>1){
+                    $t_date = $ex2[2].'-'.$ex2[1].'-'.$ex2[0];
+                }
+
+            }
+        }
+        if($t_date!=null){
+            $model = \common\models\DeliveryNotFullPay::find()->where(['route_id'=>$route_id,'date(trans_date)'=>date('Y-m-d',strtotime($t_date))])->one();
+            if($model){
+                array_push($data,['not_full_amount'=>$model->not_full_amount,'cash_transfer_amount'=>$model->cash_transfer_amount]);
+            }
+        }
+    }
+    return $data;
+}
 function getOrderQty2($route_id, $product_id, $from_date, $to_date)
 {
     $data = 0;
@@ -641,6 +763,14 @@ function printContent(el)
             x1 = x1.replace(rgx, '$1' + ',' + '$2');
         }
         return x1 + x2;
+ }
+ 
+ function showedit(e){
+    var route_id = e.attr("data-var");
+    var trans_date = e.attr("data-date");
+    // alert(trans_date);
+    $(".add-line-date").val(trans_date);
+    $("#editModal").modal("show").find(".route-id").val(route_id);
  }
 JS;
 $this->registerJs($js, static::POS_END);

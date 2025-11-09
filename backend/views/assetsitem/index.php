@@ -23,7 +23,7 @@ $this->params['breadcrumbs'][] = $this->title;
             </p>
         </div>
         <div class="col-lg-2" style="text-align: right">
-            <form id="form-perpage" class="form-inline" action="<?= Url::to(['cartype/index'], true) ?>"
+            <form id="form-perpage" class="form-inline" action="<?= Url::to(['assetsitem/index'], true) ?>"
                   method="post">
                 <div class="form-group">
                     <label>แสดง </label>
@@ -82,9 +82,23 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'customer_id',
+                'label' => 'รหัสลูกค้า',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomerCode($data->id);
+                }
+            ],
+            [
+                'attribute' => 'customer_id',
                 'label' => 'ลูกค้า',
                 'value' => function ($data) {
                     return \backend\models\Assetsitem::findCustomername($data->id);
+                }
+            ],
+            [
+                'attribute' => 'customer_id',
+                'label' => 'ลำดับการส่ง',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomerRouteNum($data->id);
                 }
             ],
             [

@@ -40,7 +40,7 @@ $mpdf->AddPageByArray([
 
 //$customer_name = $trans_data[0]['customer_id']?getCustomername($connect, $trans_data[0]['customer_id']):$trans_data[0]['customer_name'];
 //$model_product_daily = \common\models\QueryProductTransDaily::find()->where(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->all();
-//$model_product_daily = \common\models\StockTrans::find()->select("product_id")->where(['BETWEEN', 'trans_date', date('Y-m-d H:i:s', strtotime($from_date)), date('Y-m-d H:i:s', strtotime($to_date))])->andFilterWhere(['activity_type_id' => 5, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
+$model_product_daily = \common\models\StockTrans::find()->select("product_id")->where(['BETWEEN', 'trans_date', date('Y-m-d H:i:s', strtotime($from_date)), date('Y-m-d H:i:s', strtotime($to_date))])->andFilterWhere(['activity_type_id' => 5, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
 
 $user_login_datetime = '';
 $model_c_login = LoginLog::find()->select('MIN(login_date) as login_date')->where(['user_id' => $user_id, 'status' => 1])->one();
@@ -53,6 +53,15 @@ if ($model_c_login != null) {
 $product_header_2 = [];
 $product_header_3 = [];
 $model_line = null;
+
+/*$model_product = \backend\models\Product::find()->where(['status' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['item_pos_seq' => SORT_ASC])->all();
+if ($model_product != null) {
+    foreach ($model_product as $value) {
+        array_push($product_header_2, [$value->id]);
+        array_push($product_header_3, [$value->id]);
+    }
+}*/
+
 
 if($find_user_id!=null){
     $model_product_by_car = \common\models\QueryOrderCustomerCarProduct::find()->select(['product_id'])->where(['order_channel_id'=>$find_user_id])->andFilterWhere(['>=','order_date',date('Y-m-d H:i:s',strtotime($from_date))])->andFilterWhere(['<=','order_date',date('Y-m-d H:i:s',strtotime($to_date))])->groupBy('product_id')->orderBy(['product_id'=>SORT_ASC])->all();
@@ -72,24 +81,50 @@ if($find_user_id!=null){
     }
 }
 
-
 if ($from_date != null && $to_date != null) {
-    $model_line = \common\models\QueryOrderCustomerProduct::find()->select(['id', 'order_no','order_date','customer_id','order_channel_id'])
-        ->where(['BETWEEN', 'order_date', $from_date, $to_date])
-        ->andFilterWhere(['status' => [1, 100]])
+    $restrict_date = date('Y-m-d', strtotime('-2 months'));
+    $date1 = new DateTime($from_date);
+    $date2 = new DateTime($to_date);
+    $diff = $date1->diff($date2);
+    $diff_month = ($diff->y * 12) + $diff->m;
+
+    $model_line = \common\models\QueryOrderCustomerProduct3::find()->select(['id', 'order_no','order_date','customer_id','order_channel_id'])
+      //  ->where(['BETWEEN', 'order_date', $from_date, $to_date])
+        ->where(['status' => [1, 100]])
         ->andFilterWhere(['>', 'qty', 0]);
 
+    if($is_admin == 1){
+        $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date]);
+    }else{
+        if ($to_date < $restrict_date) {
+            $model_line = $model_line->andFilterWhere(['<=', 'order_date', date('Y-m-d H:i:s', strtotime('1970-01-01'))]);
+        } else {
+            if ($diff_month >= 2) {
+                if ($from_date < $restrict_date) {
+                    $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $restrict_date, $to_date]);
+                } else {
+                    $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date]);
+                }
+
+            } else {
+                $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $restrict_date, $to_date]);
+            }
+        }
+    }
+
     if ($find_user_id != null) {
-        $model_line = $model_line->andFilterWhere(['created_by' => $find_user_id]);
+        $model_line = $model_line->andFilterWhere(['order_channel_id' => $find_user_id]);
     }
     if ($is_invoice_req != null) {
         $model_line = $model_line->andFilterWhere(['is_invoice_req' => $is_invoice_req]);
     }
     if ($find_sale_type != null && $find_sale_type != 0) {
-        if ($find_sale_type == 1) {
+        if ($find_sale_type !=3) {
             $model_line = $model_line->andFilterWhere(['payment_method_id' => $find_sale_type]);
+        }else{
+            $model_line = $model_line->andFilterWhere(['price'=>0]);
         }
-        if ($find_sale_type == 2) {
+      /*  if ($find_sale_type == 2) {
             // $sql .= " AND (t2.order_channel_id = 0 OR t2.order_channel_id is null) AND t2.payment_method_id=" . $find_sale_type;
             $model_line = $model_line->andFilterWhere(['or', ['!=','order_channel_id',0], ['is', 'order_channel_id', new \yii\db\Expression('null')]])->andFilterWhere(['payment_method_id' => $find_sale_type]);
         }
@@ -102,7 +137,7 @@ if ($from_date != null && $to_date != null) {
 //            $sql .= " AND t2.order_channel_id > 0";
 //            $sql .= " AND t4.is_other_branch = 1";
             $model_line = $model_line->andFilterWhere(['>', 'order_channel_id', 0])->andFilterWhere(['is_other_branch' => 1]);
-        }
+        }*/
     }
 
     $model_line = $model_line->groupBy(['id'])->orderBy(['id' => SORT_DESC])->all();
@@ -192,7 +227,7 @@ if ($from_date != null && $to_date != null) {
 </head>
 <div>
 
-    <form action="<?= \yii\helpers\Url::to(['pos/printsummarydindang'], true) ?>" method="post" id="form-search">
+    <form action="<?= \yii\helpers\Url::to(['pos/printsummarycarnky'], true) ?>" method="post" id="form-search">
         <input type="hidden" class="btn-order-type" name="btn_order_type" value="<?= $btn_order_type ?>">
         <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
             <tr>
@@ -261,26 +296,23 @@ if ($from_date != null && $to_date != null) {
                         </option>
                         <option value="2" <?php if ($find_sale_type == 2) {
                             echo "selected";
-                        } ?>>ขายเชื่อหน้าบ้าน
+                        } ?>>ขายเชื่อ
                         </option>
                         <option value="3" <?php if ($find_sale_type == 3) {
                             echo "selected";
-                        } ?>>ขายเชื่อรถ
+                        } ?>>ฟรี
                         </option>
-                        <option value="4" <?php if ($find_sale_type == 4) {
-                            echo "selected";
-                        } ?>>ขายเชื่อรถต่างสาขา
-                        </option>
+                       
                     </select>
                 </td>
                 <td>
                     <?php
                     echo \kartik\select2\Select2::widget([
                         'name' => 'find_user_id',
-                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\User::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'status' => 1])->all(), 'id', 'username'),
+                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'status' => 1])->all(), 'id', 'name'),
                         'value' => $find_user_id,
                         'options' => [
-                            'placeholder' => '--พนักงานขาย--'
+                            'placeholder' => '--สายส่ง--'
                         ],
                         'pluginOptions' => [
                             'allowClear' => true,
@@ -338,7 +370,7 @@ if ($from_date != null && $to_date != null) {
                     <b>วันที่</b></td>
                 <td style="text-align: center;border: 1px solid grey">
                     <b>ลูกค้า</b></td>
-                <td style="text-align: center;border: 1px solid grey">
+                 <td style="text-align: center;border: 1px solid grey">
                     <b>ลำดับส่ง</b></td>
                 <?php for ($y = 0; $y <= count($product_header_2) - 1; $y++): ?>
                     <td style="text-align: center;border: 1px solid grey"><?= \backend\models\Product::findName($product_header_2[$y]) ?></td>
@@ -367,6 +399,7 @@ if ($from_date != null && $to_date != null) {
 
             ?>
             <?php if ($model_line != null): ?>
+               
                 <?php foreach ($model_line as $value): ?>
                     <?php
                     $loop_num += 1;
@@ -377,10 +410,10 @@ if ($from_date != null && $to_date != null) {
 //                    echo '</pre>'    ;
 
                     $customer_name = '';
-                    $customer_route_num = '';
+                     $customer_route_num = '';
                     if($value->customer_id != null){
                         $customer_name = \backend\models\Customer::findName($value->customer_id);
-                        $customer_route_num = \backend\models\Customer::findRouteNums($value->customer_id);
+                          $customer_route_num = \backend\models\Customer::findRouteNums($value->customer_id);
                     }else{
                         $customer_name = \backend\models\Deliveryroute::findName($value->order_channel_id);
                     }
@@ -399,7 +432,7 @@ if ($from_date != null && $to_date != null) {
                         <td style="text-align: center;border: 1px solid grey">
                             <?= $customer_name; ?>
                         </td>
-                        <td style="text-align: center;border: 1px solid grey">
+                         <td style="text-align: center;border: 1px solid grey">
                             <?= $customer_route_num; ?>
                         </td>
                         <?php for ($k = 0; $k <= count($product_header_3) - 1; $k++): ?>
@@ -677,3 +710,4 @@ function printContent(el)
 JS;
 $this->registerJs($js, static::POS_END);
 ?>
+

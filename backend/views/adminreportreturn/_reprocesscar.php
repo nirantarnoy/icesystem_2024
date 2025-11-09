@@ -39,6 +39,49 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
+//// check date
+//$restrict_date = date('Y-m-d', strtotime('-2 months'));
+//$date1 = new DateTime($from_date);
+//$date2 = new DateTime($to_date);
+//$diff = $date1->diff($date2);
+//$diff_month = ($diff->y * 12) + $diff->m;
+//
+//if($is_admin == 1){
+//    $from_date = $from_date;
+//    $to_date = $to_date;
+//}else{
+//    if ($to_date < $restrict_date) {
+//        $from_date = null;
+//        $to_date = null;
+//    } else {
+//        if ($diff_month >= 2) {
+//            if ($from_date < $restrict_date) {
+//                $from_date = $restrict_date;
+//                $to_date = $to_date;
+//            } else {
+//                $from_date = $from_date;
+//                $to_date = $to_date;
+//            }
+//
+//        }else if(date('Y-m-d',strtotime($from_date)) == date('Y-m-d',strtotime($to_date)) || $diff_month <= 1){
+//            if ($from_date < $restrict_date) {
+//                $from_date = $restrict_date;
+//                $to_date = $to_date;
+//            }else{
+//                $from_date = $from_date;
+//                $to_date = $to_date;
+//            }
+//
+//        } else {
+//            $from_date = $restrict_date;
+//            $to_date = $to_date;
+//        }
+//    }
+//}
+//// end check date
+
+include \Yii::getAlias("@backend/helpers/ChangeAdminDate3.php");
+
 $model_line = \common\models\StockTrans::find()->select(['trans_ref_id'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
     ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id, 'activity_type_id' => 7])->orderBy(['trans_ref_id' => SORT_ASC])->groupBy('trans_ref_id')->all();
 
@@ -261,6 +304,8 @@ $model_line = \common\models\StockTrans::find()->select(['trans_ref_id'])->where
     $total_product[12] = 0;
     $total_product[13] = 0;
     $total_product[14] = 0;
+
+
 
 
 //    $modelx = \common\models\StockTrans::find()->select(['product_id'])->join('inner join', 'product', 'stock_trans.product_id=product.id')->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])

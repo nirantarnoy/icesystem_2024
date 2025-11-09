@@ -53,11 +53,13 @@ class OrderissueController extends Controller
         $to_date = \Yii::$app->request->post('to_date');
         $find_user_id = \Yii::$app->request->post('find_user_id');
         $status = \Yii::$app->request->post('status');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
          return $this->render('_index_new',[
              'from_date'=>$from_date,
              'to_date'=>$to_date,
              'find_user_id'=>$find_user_id,
              'status'=>$status,
+             'is_admin'=>$is_admin,
 
          ]);
     }

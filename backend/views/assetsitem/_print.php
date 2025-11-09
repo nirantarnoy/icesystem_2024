@@ -134,8 +134,9 @@ $model_customer_loan = null;
     <!--    <script type="text/javascript" src="js/ThaiBath-master/thaibath.js"></script>-->
 </head>
 <body>
-<a href="<?=\yii\helpers\Url::to(['assetsitem/asset-request'],true)?>" class="btn btn-info">ใบแจ้งถังใหม่</a>
-<a href="<?=\yii\helpers\Url::to(['assetsitem/checkinprint'],true)?>" class="btn btn-info">รายการเช็คอินตำแหน่งร้าน</a>
+<a href="<?= \yii\helpers\Url::to(['assetsitem/asset-request'], true) ?>" class="btn btn-info">ใบแจ้งถังใหม่</a>
+<a href="<?= \yii\helpers\Url::to(['assetsitem/checkinprint'], true) ?>"
+   class="btn btn-info">รายการเช็คอินตำแหน่งร้าน</a>
 <form action="<?= \yii\helpers\Url::to(['assetsitem/print'], true) ?>" method="post"
       id="form-search">
     <input type="hidden" name="is_start_find" value="1">
@@ -237,6 +238,23 @@ $model_customer_loan = null;
                     ]);
                     ?>
                 </td>
+                <td style="width: 25%">
+                    <label for="">ลูกค้า</label>
+                    <?php
+                    echo \kartik\select2\Select2::widget([
+                        'name' => 'find_customer',
+                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\Customer::find()->where(['delivery_route_id' => $find_customer_id, 'status' => 1])->all(), 'id', 'name'),
+                        'value' => $find_customer,
+                        'options' => [
+                            'placeholder' => '--ลูกค้า--'
+                        ],
+                        'pluginOptions' => [
+                            'allowClear' => true,
+                            'multiple' => true,
+                        ]
+                    ]);
+                    ?>
+                </td>
                 <td>
                     <label for="" style="color: white">ค้นหา</label>
                     <input type="submit" class="btn btn-primary" style="margin-top: 0px;" value="ค้นหา">
@@ -267,7 +285,12 @@ $model_customer_loan = null;
 <br>
 
 <?php
-$model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_id' => $find_customer_id])->andFilterWhere(['BETWEEN', 'trans_date', $from_date, $to_date])->all();
+if ($find_customer) {
+    $model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_id' => $find_customer_id, 'customer_id' => $find_customer])->andFilterWhere(['BETWEEN', 'trans_date', $from_date, $to_date])->all();
+} else {
+    $model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_id' => $find_customer_id])->andFilterWhere(['BETWEEN', 'trans_date', $from_date, $to_date])->all();
+}
+
 ?>
 <table class="table-header" width="100%">
 </table>
@@ -281,6 +304,7 @@ $model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_i
         <td style="text-align: center;border: 1px solid gray"><b>ชื่อถัง</b></td>
         <td style="text-align: center;border: 1px solid gray"><b>สายส่ง</b></td>
         <td style="text-align: center;border: 1px solid gray;width: 20%"><b>รูปภาพ</b></td>
+        <td style="text-align: center;border: 1px solid gray;width: 20%"><b>ลิงค์ดาวน์โหลด</b></td>
     </tr>
     <?php $i = 0; ?>
     <?php foreach ($model_asset_check as $value): ?>
@@ -290,16 +314,49 @@ $model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_i
             <td style="border: 1px solid gray;text-align: center"><?= date('d-m-Y H:i:s', strtotime($value->trans_date)) ?></td>
             <td style="border: 1px solid gray;text-align: center"><?= \backend\models\Customer::findName($value->customer_id) ?></td>
             <td style="border: 1px solid gray;text-align: center"><?= \backend\models\Customer::findLocation($value->customer_id) ?></td>
-            <td style="border: 1px solid gray;text-align: center"><a href="https://www.google.com/search?q=<?=$value->latlong?>" target="_blank"><?=$value->latlong?></a></td>
+            <td style="border: 1px solid gray;text-align: center"><a
+                        href="https://www.google.com/search?q=<?= $value->latlong ?>"
+                        target="_blank"><?= $value->latlong ?></a></td>
             <td style="text-align: center;border: 1px solid gray;width: 10%"><?= \backend\models\Assetsitem::findFullName($value->cus_asset_id) ?></td>
-            <td style="text-align: center;border: 1px solid gray;width: 10%"><?=\backend\models\Deliveryroute::findName($value->route_id)?></td>
+            <td style="text-align: center;border: 1px solid gray;width: 10%"><?= \backend\models\Deliveryroute::findName($value->route_id) ?></td>
             <td style="text-align: center;border: 1px solid gray;width: 20%">
                 <?php
-                  $photolist = explode(',',$value->photo);
+                $photolist = explode(',', $value->photo);
                 ?>
-                <?php for($x=0;$x<=count($photolist)-1;$x++):?>
-                <img src="<?=\Yii::$app->urlManagerFrontend->getBaseUrl()?>/uploads/assetcheck/<?=$photolist[$x]?>" alt="" width="20%">
-                <?php endfor;?>
+                <?php for ($x = 0; $x <= count($photolist) - 1; $x++): ?>
+                    <?php if ($photolist[$x] != ''): ?>
+                    <?php  $filePath = Yii::getAlias('@frontendWeb/uploads/assetcheck/' . $photolist[$x]);?>
+                        <?php //if (file_exists(\Yii::$app->urlManagerFrontend->getBaseUrl() . '/uploads/assetcheck/' . $photolist[$x])): ?>
+                        <?php if (file_exists($filePath)): ?>
+                            <img src="<?= \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetcheck/<?= $photolist[$x] ?>"
+                                 alt="" width="20%">
+                        <?php else: ?>
+                            <img src="<?= \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetphoto/<?= $photolist[$x] ?>"
+                                 alt="" width="20%">
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <img src="<?= \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetphoto/<?= $photolist[$x] ?>"
+                             alt="" width="20%">
+                    <?php endif; ?>
+
+                <?php endfor; ?>
+            </td>
+            <td style="text-align: center;border: 1px solid gray;">
+                <?php for ($x = 0; $x <= count($photolist) - 1; $x++): ?>
+                    <?php if ($photolist[$x] != ''): ?>
+                        <?php  $filePath = Yii::getAlias('@frontendWeb/uploads/assetcheck/' . $photolist[$x]);?>
+                        <?php //if (file_exists(\Yii::$app->urlManagerFrontend->getBaseUrl() . '/uploads/assetcheck/' . $photolist[$x])): ?>
+                        <?php if (file_exists($filePath)): ?>
+                            <a href="<?= 'http://141.98.19.240' . \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetcheck/<?= $photolist[$x] ?>"
+                               target="_blank"><?= 'http://141.98.19.240' . \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetcheck/<?= $photolist[$x] ?></a>
+                        <?php else: ?>
+                            <a href="<?= 'http://141.98.19.240' . \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetphoto/<?= $photolist[$x] ?>"
+                               target="_blank"><?= 'http://141.98.19.240' . \Yii::$app->urlManagerFrontend->getBaseUrl() ?>/uploads/assetphoto/<?= $photolist[$x] ?></a>
+                        <?php endif; ?>
+
+                    <?php endif; ?>
+
+                <?php endfor; ?>
             </td>
         </tr>
     <?php endforeach; ?>
@@ -313,9 +370,10 @@ $model_asset_check = \common\models\CustomerAssetStatus::find()->where(['route_i
         <!--            <a class="btn btn-info" href="-->
         <? //= \yii\helpers\Url::to(['paymentreceivecar/carsummaryupdate'], true) ?><!--">อัพเดทใบส่งของ</a>-->
         <!--        </td>-->
-<!--        <td>-->
-<!--            <a class="btn btn-info" href="--><?//= \yii\helpers\Url::to(['paymentreceivecar/carsummaryupdate'], true) ?><!--">อัพเดทใบส่งของ</a>-->
-<!--        </td>-->
+        <!--        <td>-->
+        <!--            <a class="btn btn-info" href="-->
+        <? //= \yii\helpers\Url::to(['paymentreceivecar/carsummaryupdate'], true) ?><!--">อัพเดทใบส่งของ</a>-->
+        <!--        </td>-->
         <td style="text-align: right">
             <button id="btn-export-excel" class="btn btn-secondary">Export Excel</button>
             <button id="btn-print" class="btn btn-warning" onclick="printContent('div1')">Print</button>

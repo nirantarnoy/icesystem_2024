@@ -1588,6 +1588,7 @@ class OrderController extends Controller
                         $model->branch_id = $branch_id;
                         $model->created_by = $user_id;
                         $model->trans_ref_id = $route_id;
+                        $model->status = 0;
                         if ($model->save(false)) {
                             if ($dvl_route_type == 1) { // check general route not boot
                                 $this->updateSummaryreturnbpcar($stock_data[$i]['product_id'], $reprocess_wh, $stock_data[$i]['avl_qty'], $company_id, $branch_id);
@@ -2217,23 +2218,23 @@ class OrderController extends Controller
 
     public function notifymessageorderclose($route_id, $user_id, $company_id, $branch_id)
     {
-        //$message = "This is test send request from camel paperless";
-        $line_api = 'https://notify-api.line.me/api/notify';
-        $line_token = '';
-
-        //   6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE   token omnoi
-        if ($company_id == 1 && $branch_id == 1) {
-            //  $line_token = 'ZMqo4ZqwBGafMOXKVht2Liq9dCGswp4IRofT2EbdRNN'; // vorapat
-            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-            //   $line_token = '6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE'; // omnoi
-            $line_token = trim($b_token);
-        } else if ($company_id == 1 && $branch_id == 2) {
-            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-            $line_token = trim($b_token);
-            //   $line_token = 'TxAUAOScIROaBexBWXaYrVcbjBItIKUwGzFpoFy3Jrx'; // BKT
-        }
-
-        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
+//        //$message = "This is test send request from camel paperless";
+//        $line_api = 'https://notify-api.line.me/api/notify';
+//        $line_token = '';
+//
+//        //   6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE   token omnoi
+//        if ($company_id == 1 && $branch_id == 1) {
+//            //  $line_token = 'ZMqo4ZqwBGafMOXKVht2Liq9dCGswp4IRofT2EbdRNN'; // vorapat
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            //   $line_token = '6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE'; // omnoi
+//            $line_token = trim($b_token);
+//        } else if ($company_id == 1 && $branch_id == 2) {
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            $line_token = trim($b_token);
+//            //   $line_token = 'TxAUAOScIROaBexBWXaYrVcbjBItIKUwGzFpoFy3Jrx'; // BKT
+//        }
+//
+//        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
 
         // $queryData = array('message' => $message);
         $credit_total = \backend\models\Orders::findordercredit2($route_id, 1);
@@ -2261,22 +2262,34 @@ class OrderController extends Controller
         // $message .= 'สามารถดูรายละเอียดได้ที่ http://103.253.73.108/icesystem/backend/web/index.php?r=dailysum/indexnew' . "\n"; // nky
         $message .= 'สามารถดูรายละเอียดได้ที่ http://141.98.19.240/icesystem/backend/web/index.php?r=dailysum/indexnew' . "\n"; // bkt
 
+//
+//        $queryData = array('message' => $message);
+//        $queryData = http_build_query($queryData, '', '&');
+//        $headerOptions = array(
+//            'http' => array(
+//                'method' => 'POST',
+//                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+//                    . "Authorization: Bearer " . $line_token . "\r\n"
+//                    . "Content-Length: " . strlen($queryData) . "\r\n",
+//                'content' => $queryData
+//            )
+//        );
+//        $context = stream_context_create($headerOptions);
+//        $result = file_get_contents($line_api, FALSE, $context);
+//        $res = json_decode($result);
+//        return $res;
 
-        $queryData = array('message' => $message);
-        $queryData = http_build_query($queryData, '', '&');
-        $headerOptions = array(
-            'http' => array(
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
-                    . "Authorization: Bearer " . $line_token . "\r\n"
-                    . "Content-Length: " . strlen($queryData) . "\r\n",
-                'content' => $queryData
-            )
-        );
-        $context = stream_context_create($headerOptions);
-        $result = file_get_contents($line_api, FALSE, $context);
-        $res = json_decode($result);
-        return $res;
+        /// telegram
+        $telegram_api_url = "https://api.telegram.org/bot";
+        $telegram_token = "8122563927:AAGQfE8lTBJCO7q85J6VpSkl8O2Dp3hk4I4";
+        $telegram_chat_id = "-4793734810";// "7653537115"; //-4787477639 group chat id
+        // $message = "This is test send request from icesystem ";
+
+
+        $url = $telegram_api_url . $telegram_token . "/sendMessage?chat_id=" . $telegram_chat_id . "&text=" . urlencode($message);
+        //Send message to telegram
+        file_get_contents($url);
+        // end telegram
     }
 
     public function actionTestclosepos()
@@ -2287,15 +2300,15 @@ class OrderController extends Controller
     // public function notifymessageorderPosclose($route_id, $user_id, $company_id, $branch_id)
     public function notifymessageorderPosclose($user_id, $company_id, $branch_id)
     {
-        //$message = "This is test send request from camel paperless";
-        $line_api = 'https://notify-api.line.me/api/notify';
-        $line_token = '';
-
-
-        $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-        $line_token = trim($b_token);
-
-        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
+//        //$message = "This is test send request from camel paperless";
+//        $line_api = 'https://notify-api.line.me/api/notify';
+//        $line_token = '';
+//
+//
+//        $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//        $line_token = trim($b_token);
+//
+//        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
 
         // $queryData = array('message' => $message);
         $credit_total = \backend\models\Orders::findordercreditPos($user_id);
@@ -2323,21 +2336,33 @@ class OrderController extends Controller
         $message .= 'สามารถดูรายละเอียดได้ที่ http:///103.253.73.108/icesystemdindang/backend/web/index.php?r=dailysum/indexnew' . "\n"; // bkt
 
 
-        $queryData = array('message' => $message);
-        $queryData = http_build_query($queryData, '', '&');
-        $headerOptions = array(
-            'http' => array(
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
-                    . "Authorization: Bearer " . $line_token . "\r\n"
-                    . "Content-Length: " . strlen($queryData) . "\r\n",
-                'content' => $queryData
-            )
-        );
-        $context = stream_context_create($headerOptions);
-        $result = file_get_contents($line_api, FALSE, $context);
-        $res = json_decode($result);
-        return $res;
+//        $queryData = array('message' => $message);
+//        $queryData = http_build_query($queryData, '', '&');
+//        $headerOptions = array(
+//            'http' => array(
+//                'method' => 'POST',
+//                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+//                    . "Authorization: Bearer " . $line_token . "\r\n"
+//                    . "Content-Length: " . strlen($queryData) . "\r\n",
+//                'content' => $queryData
+//            )
+//        );
+//        $context = stream_context_create($headerOptions);
+//        $result = file_get_contents($line_api, FALSE, $context);
+//        $res = json_decode($result);
+//        return $res;
+
+        /// telegram
+        $telegram_api_url = "https://api.telegram.org/bot";
+        $telegram_token = "8122563927:AAGQfE8lTBJCO7q85J6VpSkl8O2Dp3hk4I4";
+        $telegram_chat_id = "-4793734810";// "7653537115"; //-4787477639 group chat id
+        // $message = "This is test send request from icesystem ";
+
+
+        $url = $telegram_api_url . $telegram_token . "/sendMessage?chat_id=" . $telegram_chat_id . "&text=" . urlencode($message);
+        //Send message to telegram
+        file_get_contents($url);
+        // end telegram
     }
 
     public function findEmpName($user_id)
@@ -4385,6 +4410,7 @@ class OrderController extends Controller
                                 $model_stock->company_id = $company_id;
                                 $model_stock->branch_id = $branch_id;
                                 $model_stock->created_by = $user_id;
+                                $model_stock->status = 0;
                                 if ($model_stock->save(false)) {
                                     $this->updateSummaryPos($datalist[$i]['product_id'], 1, $datalist[$i]['qty'], $company_id, $branch_id);
                                 }
@@ -4398,6 +4424,7 @@ class OrderController extends Controller
 
                     }
                     $this->genissue($model->id, $company_id, $branch_id);
+                    $this->createIssueTemp($model->id,$user_id);   // map issue with product receipt
                 }
 
                 $model->order_total_amt = $order_total_all;
@@ -4559,7 +4586,7 @@ class OrderController extends Controller
 
         if ($user_id != null && $model_product != null) {
 
-            $login_time = \backend\models\User::findLogintime($user_id);
+            $login_time = \backend\models\User::findLogindatetime($user_id);
             $cur_shift = $this->getTransShift($company_id, $branch_id);
 
             $list_product_data = [];
@@ -4643,7 +4670,7 @@ class OrderController extends Controller
                     $this->adjustStock($default_warehouse, $value->id, $line_stock_count, $company_id, $branch_id); // update stock main
                     \common\models\DailyCountStock::updateAll(['status' => 1], ['status' => 0, 'company_id' => $company_id, 'branch_id' => $branch_id, 'product_id' => $value->id]); // update count stock
 
-                   // $this->updateProdrecFromBalanceIn($value->id,$line_stock_count,$user_id);
+                    $this->updateProdrecFromBalanceIn($value->id,$line_stock_count,$user_id);
                 }
             }
         }
@@ -4728,7 +4755,7 @@ class OrderController extends Controller
 //                        }
 //                    }
 
-                    $model_trans = new \common\models\TransactionPosSaleSum();
+               /*     $model_trans = new \common\models\TransactionPosSaleSum();
                     $model_trans->trans_date = $cal_date;
                     $model_trans->product_id = $list_product_data[$i]['line_product_id'];
                     $model_trans->cash_qty = $list_product_data[$i]['line_cash_qty'];
@@ -4752,7 +4779,41 @@ class OrderController extends Controller
                     $model_trans->logout_datetime = date('Y-m-d H:i:s');
                     if ($model_trans->save(false)) {
                         $res += 1;
+                    } */
+
+                    $carIssueQty = $this->getIssueCarQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
+                    $carIssueOtherQty = $this->getSaleOtherRouteQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
+
+
+                    $model_trans = new \common\models\TransactionPosSaleSum();
+                    $model_trans->trans_date = $cal_date;
+                    $model_trans->product_id = $list_product_data[$i]['line_product_id'];
+                    $model_trans->cash_qty = $this->getSalecashQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);  //$list_product_data[$i]['line_cash_qty'];
+                    $model_trans->credit_qty = $this->getSaleCreditQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);  //$list_product_data[$i]['line_credit_qty'];//$new_line_credit_qty;
+ //                   $model_trans->cash_qty = $list_product_data[$i]['line_cash_qty'];
+ //                   $model_trans->credit_qty = $list_product_data[$i]['line_credit_qty'];//$new_line_credit_qty;
+                    $model_trans->free_qty = $this->getFreeQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);// 0;
+                    $model_trans->balance_in_qty = $list_product_data[$i]['line_balance_in'];
+                    $model_trans->balance_out_qty = 0;
+                    $model_trans->prodrec_qty = $list_product_data[$i]['line_production_qty'];
+                    $model_trans->reprocess_qty = $list_product_data[$i]['line_repack_qty'];
+                    $model_trans->return_qty = $this->getProdReprocessCarDaily($list_product_data[$i]['line_product_id'], $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
+                    $model_trans->issue_car_qty = ($carIssueQty - $carIssueOtherQty);// $this->getIssueCarQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
+                    $model_trans->issue_transfer_qty = $carIssueOtherQty;//$this->getSaleOtherRouteQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id); //$list_product_data[$i]['line_transfer_qty'];// $this->getTransferout($value->product_id, $cal_date);
+                    $model_trans->issue_refill_qty = $list_product_data[$i]['line_refill_qty'];
+                    $model_trans->scrap_qty = $list_product_data[$i]['line_scrap_qty'];//$this->getScrapDaily($value->product_id, $user_login_datetime, $cal_date);
+                    $model_trans->counting_qty = $list_product_data[$i]['line_stock_count'];
+                    $model_trans->shift = $cur_shift;//$this->checkDailyShift($cal_date);
+                    $model_trans->transfer_in_qty = $this->getTransferInQty($list_product_data[$i]['line_product_id'], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);
+                    $model_trans->company_id = $company_id;
+                    $model_trans->branch_id = $branch_id;
+                    $model_trans->user_id = $user_id;
+                    $model_trans->login_datetime = date('Y-m-d H:i:s', strtotime($login_date));
+                    $model_trans->logout_datetime = date('Y-m-d H:i:s');
+                    if ($model_trans->save(false)) {
+                        $res += 1;
                     }
+                  
                 }
             }
         }
@@ -4762,10 +4823,10 @@ class OrderController extends Controller
 
     function getFreeQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+      //  if(date('H',strtotime($user_login_datetime)) == 23){
+      //      $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+      //      $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+      //  }
 
         $qty = 0;
         if ($user_id != null) {
@@ -4778,10 +4839,10 @@ class OrderController extends Controller
 
     function getIssueCarQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         if ($user_id != null) {
@@ -4809,10 +4870,10 @@ class OrderController extends Controller
 //        $new_date = date_create(date('Y-m-d'). $hx);
 //        $xdate = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). ' - 1 day'));
 //        echo date('Y-m-d H:i:s',strtotime($xdate));
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+       // if(date('H',strtotime($user_login_datetime)) == 23){
+       //     $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+       //     $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+       // }
 
         $qty = 0;
         if ($user_id != null) {
@@ -4829,10 +4890,10 @@ class OrderController extends Controller
 
     function getOrderCreditQty($product_id, $user_id, $user_login_datetime)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         $qty2 = 0;
@@ -4851,10 +4912,10 @@ class OrderController extends Controller
 
     function getProdDaily($product_id, $user_login_datetime, $company_id, $branch_id, $user_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         $cancel_qty = 0;
@@ -4890,10 +4951,10 @@ class OrderController extends Controller
 
     function getScrapDaily($product_id, $user_login_datetime, $user_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         $second_user_id = [];
@@ -4939,10 +5000,10 @@ class OrderController extends Controller
 
     function getIssueRefillDaily($product_id, $user_login_datetime, $user_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         if ($product_id != null) {
@@ -4956,10 +5017,10 @@ class OrderController extends Controller
 
     function getProdRepackDaily($product_id, $user_login_datetime, $user_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         if ($product_id != null) {
@@ -5012,10 +5073,10 @@ class OrderController extends Controller
 
     function getProdTransferDaily($product_id, $user_login_datetime, $user_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         if ($product_id != null) {
@@ -5030,10 +5091,10 @@ class OrderController extends Controller
 
     function getProdReprocessCarDaily($product_id, $user_login_datetime, $t_date, $company_id, $branch_id)
     {
-        if(date('H',strtotime($user_login_datetime)) == 23){
-            $new_date = date_create(date('Y-m-d'). $user_login_datetime);
-            $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
-        }
+        //if(date('H',strtotime($user_login_datetime)) == 23){
+        //    $new_date = date_create(date('Y-m-d'). $user_login_datetime);
+        //    $user_login_datetime = date('Y-m-d H:i:s', strtotime(date_format($new_date,"Y-m-d H:i:s"). '- 1 day'));
+        //}
 
         $qty = 0;
         if ($product_id != null) {
@@ -5045,6 +5106,391 @@ class OrderController extends Controller
 
         return $qty;
     }
+
+    function getSalecashQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id){
+        $qty = 0;
+        if($user_id!=null){
+            $sql = "SELECT  SUM(order_line.qty) as cash_qty";
+            $sql .= " FROM orders inner join order_line on orders.id = order_line.order_id";
+            $sql .= " WHERE orders.sale_channel_id = 2 and orders.status <> 3 ";
+            $sql .= " AND orders.payment_method_id = 1";
+            $sql .= " AND orders.order_date>=" . "'" . date('Y-m-d H:i:s', strtotime($user_login_datetime)) . "'";
+            $sql .= " AND orders.order_date<=" . "'" . date('Y-m-d H:i:s') . "'";
+            $sql .= " AND order_line.product_id=" . $product_id;
+            $sql .= " AND orders.created_by=" . $user_id;
+            $sql .= " GROUP BY order_line.product_id";
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+            if ($model) {
+                for ($i = 0; $i <= count($model) - 1; $i++) {
+                    $qty = $model[$i]['cash_qty'];
+                }
+            }
+        }
+        return $qty;
+    }
+    function getSalecreditQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id){
+        $qty = 0;
+        if($user_id!=null){
+            $sql = "SELECT  SUM(order_line.qty) as cash_qty";
+            $sql .= " FROM orders inner join order_line on orders.id = order_line.order_id";
+            $sql .= " WHERE orders.sale_channel_id = 2 and orders.status <> 3 ";
+            $sql .= " AND orders.payment_method_id = 2";
+            $sql .= " AND (orders.order_channel_id is null OR orders.order_channel_id = 0)";
+            $sql .= " AND orders.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($user_login_datetime)) . "'";
+            $sql .= " AND orders.order_date <=" . "'" . date('Y-m-d H:i:s') . "'";
+            $sql .= " AND order_line.product_id=" . $product_id;
+            $sql .= " AND orders.created_by=" . $user_id;
+            $sql .= " GROUP BY order_line.product_id";
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+            if ($model) {
+                for ($i = 0; $i <= count($model) - 1; $i++) {
+                    $qty = $model[$i]['cash_qty'];
+                }
+            }
+        }
+        return $qty;
+    }
+
+    function getSaleOtherRouteQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id){
+        $qty = 0;
+        if($user_id!=null){
+            $sql = "SELECT  SUM(order_line.qty) as cash_qty";
+            $sql .= " FROM orders inner join order_line on orders.id = order_line.order_id inner join delivery_route on orders.order_channel_id = delivery_route.id";
+            $sql .= " WHERE orders.sale_channel_id = 2 and orders.status <> 3 ";
+            $sql .= " AND orders.order_date>=" . "'" . date('Y-m-d H:i:s', strtotime($user_login_datetime)) . "'";
+            $sql .= " AND orders.order_date<=" . "'" . date('Y-m-d H:i:s') . "'";
+            $sql .= " AND order_line.product_id=" . $product_id;
+            $sql .= " AND orders.created_by=" . $user_id;
+            $sql .= " AND delivery_route.is_other_branch=1";
+            $sql .= " AND (orders.order_channel_id > 0  AND not orders.order_channel_id is null)";
+            $sql .= " GROUP BY order_line.product_id";
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+            if ($model) {
+                for ($i = 0; $i <= count($model) - 1; $i++) {
+                    $qty = $model[$i]['cash_qty'];
+                }
+            }
+        }
+        return $qty;
+    }
+
+    function getTransferInQty($product_id, $user_id, $user_login_datetime, $t_date, $company_id, $branch_id){
+        $qty = 0;
+        if($user_id!=null){
+            $sql = "SELECT  SUM(qty) as qty";
+            $sql .= " FROM stock_trans";
+            $sql .= " WHERE activity_type_id = 15";
+            $sql .= " AND not transfer_branch_id is null";
+            $sql .= " AND trans_date >=" . "'" . date('Y-m-d H:i:s', strtotime($user_login_datetime)) . "'";
+            $sql .= " AND trans_date <=" . "'" . date('Y-m-d H:i:s') . "'";
+            $sql .= " AND product_id=" . $product_id;
+            // $sql .= " AND orders.created_by=" . $user_id;
+            $sql .= " GROUP BY product_id";
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+            if ($model) {
+                for ($i = 0; $i <= count($model) - 1; $i++) {
+                    $qty = $model[$i]['qty'];
+                }
+            }
+        }
+        return $qty;
+    }
+
+    public function createIssueTemp($order_id, $user_id)
+    {
+        if ($order_id) {
+            $model_journal = \backend\models\Journalissue::find()->where(['order_ref_id' => $order_id,'reason_id'=>1])->one();
+            if ($model_journal) {
+                $issue_line = \backend\models\Journalissueline::find()->where(['issue_id' => $model_journal->id])->all();
+                foreach ($issue_line as $val) {
+                    $production_rec_id = $this->findProdrecOrder($val->product_id, $val->qty);
+                    if ($production_rec_id != null) {
+                        for ($k = 0; $k <= count($production_rec_id) - 1; $k++) {
+                            $model = new \common\models\IssueStockTemp();
+                            $model->issue_id = $model_journal->id;
+                            $model->prodrec_id = $production_rec_id[$k]['id'];
+                            $model->product_id = $val->product_id;
+                            $model->qty = $production_rec_id[$k]['qty'];
+                            $model->status = 100;
+                            $model->created_by = $user_id;
+                            $model->company_id = 1;
+                            $model->branch_id = 1;
+                            $model->crated_at = time();
+                            if ($model->save(false)) {
+
+                                // Create production rec issue
+
+                                $model_update_prodrec_issue = new \common\models\ProductionRecIssue();
+                                $model_update_prodrec_issue->stock_trans_id = $production_rec_id[$k]['id'];
+                                $model_update_prodrec_issue->product_id = $val->product_id;
+                                $model_update_prodrec_issue->issue_id = $model_journal->id;
+                                $model_update_prodrec_issue->qty = $production_rec_id[$k]['qty'];
+                                $model_update_prodrec_issue->type_id = 1; // 1 issue for order
+                                $model_update_prodrec_issue->save(false);
+
+                                $this->updateProdrecQtyStatus($production_rec_id[$k]['id']);
+                                // End production rec issue
+
+                            }
+                        }
+                    }
+
+                    $model_update = \backend\models\Journalissueline::find()->where(['id' => $val->id])->one();
+                    if ($model_update) {
+                        // $model_update->qty = ($model_update->qty + $val->qty);
+                        $model_update->avl_qty = $model_update->qty;
+                        $model_update->updated_by = $val->created_by;
+                        $model_update->temp_update = date('Y-m-d H:i:s');
+                        if ($model_update->save(false)) {
+                            $issue_m = \backend\models\Journalissue::find()->where(['id' => $val->issue_id])->one();
+                            if ($issue_m) {
+                                $issue_m->updated_by = $val->created_by;
+                                $issue_m->status = 150; // confirm issue
+                                if ($issue_m->save(false)) {
+                                    //                                       $check_is_order_car = \backend\models\Orders::find()->select('customer_id')->where(['id' => $issue_m->order_ref_id])->one();
+
+//                                        if ($check_is_order_car->customer_id > 0) {  // add new 01102021  reduce stock for pos sale not include mobile sale
+//                                            // $this->updateSummary($value->product_id,$defaultwarehouse,$value->qty);
+//                                            $mode = 'pos';
+//                                        } else {  // add new 01102021  transfer main warehouse to car warehouse for mobile sale
+//                                            $mode = 'car';
+//                                            $this->transfertocarwarehouse($issue_m->company_id, $issue_m->branch_id, $value->product_id, $defaultwarehouse, $value->qty, $issue_m->delivery_route_id);
+//                                        }
+                                }
+                            }
+
+
+                        }
+                    }
+
+                }
+            }
+
+        }
+
+    }
+
+
+
+    function findProdrecOrder($product_id, $issue_qty)
+    {
+        $prodrec_id = 0;
+        $data = [];
+        $cal_qty = 0;
+        $full_qty = 0;
+        $issue_remain_qty = 0;
+        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+        //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
+        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,26,27],'status'=> 0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d',strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+        if ($model) {
+            // $prod_rec_avl_qty = 0;
+            foreach ($model as $value) {
+                $prod_rec_avl_qty = 0;
+                $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty - $adjust_all_qty); // prodrec - scrap
+
+                $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+                if ($model_sum_issue_used_qty > 0) {
+                    // if ($model_sum_issue_used_qty >= $issue_qty) continue;
+                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
+                    if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
+                        if ($prod_rec_avl_qty >= $issue_qty) {
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
+                            break;
+                        } else {
+                            $cal_qty += $prod_rec_avl_qty;
+                            if ($cal_qty <= $issue_qty) {
+                                array_push($data, ['id' => $value->id, 'qty' => $prod_rec_avl_qty]);
+                            }
+                            $full_qty += $prod_rec_avl_qty;
+                        }
+                    }
+                    if ($full_qty >= $issue_qty) {
+                        break;
+                    }
+                } else {
+
+                    if ($qty_after_deduct_scrap >= $issue_qty) {
+                        if($full_qty > 0){
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty - $full_qty]);
+                            $full_qty = 0;
+                        }else{
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                        }
+                        break;
+                    } else {
+                        if ($full_qty > 0) {
+                            $remain_qty = $issue_qty - $full_qty;
+                            if($remain_qty > $qty_after_deduct_scrap) {
+                                array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                                $full_qty += $qty_after_deduct_scrap;
+                            }else{
+                                array_push($data, ['id' => $value->id, 'qty' => $remain_qty]);
+                                $full_qty += $remain_qty;
+                            }
+
+                        } else {
+                            array_push($data, ['id' => $value->id, 'qty' => $qty_after_deduct_scrap]);
+                            $full_qty += $qty_after_deduct_scrap;
+                        }
+
+                    }
+
+
+                }
+                if ($full_qty == $issue_qty) {
+                    break;
+                }
+            }
+
+        }
+
+        return $data;
+    }
+
+
+    function updateProdrecQtyStatus($recid)
+    {
+        $prodrec_issue_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $recid])->sum('qty');
+        if ($prodrec_issue_qty > 0) {
+            $model_trans = \backend\models\Stocktrans::find()->where(['id' => $recid])->one();
+            if ($model_trans) {
+                if($prodrec_issue_qty >= $model_trans->qty){
+                    $model_trans->status = 1000; // balance production receive
+                    $model_trans->save(false);
+                }
+            }
+        }
+
+    }
+
+    function updateOrdercancelProdrec($issue_id,$product_id,$cancel_qty){
+
+        $model_issue = \common\models\ProductionRecIssue::find()->where(['issue_id' => $issue_id,'product_id'=>$product_id])->andFilterWhere(['>=','qty',$cancel_qty])->one();
+        if($model_issue){
+            $model_issue->qty = ($model_issue->qty - $cancel_qty);
+            // $model_issue->save(false);
+            if($model_issue->save(false)){
+                $model_trans = \backend\models\Stocktrans::find()->where(['id' => $model_issue->stock_trans_id])->one();
+                if($model_trans){
+                    if($model_trans->status == 1000){
+                        $model_trans->status = 0;
+                        $model_trans->save(false);
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    function checkProdrecScrap($prodrec_id){
+        $scrap_qty = 0;
+
+        if($prodrec_id){
+            $model_qty = \common\models\QueryScrap::find()->where(['prodrec_id'=>$prodrec_id])->sum('qty');
+            if($model_qty > 0){
+                $scrap_qty = $model_qty;
+            }
+        }
+
+
+        return $scrap_qty;
+    }
+
+
+    function checkProdrecAdjust($prodrec_id)
+    {
+        $adjust_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
+            if ($model_qty > 0) {
+                $adjust_qty = $model_qty;
+            }
+        }
+
+
+        return $adjust_qty;
+    }
+
+    function checkProdrecRefill($prodrec_id)
+    {
+        $issue_refill_qty = 0;
+
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $prodrec_id, 'type_id' => 2])->sum('qty');
+            if ($model_qty > 0) {
+                $issue_refill_qty = $model_qty;
+            }
+        }
+        return $issue_refill_qty;
+    }
+
+    // end issue temp confirm
+
+    function updateProdrecFromBalanceInX($product_id,$count_qty){
+        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+        $model = \backend\models\Stocktrans::find()->where(['activity_type_id'=>[15,26,27],'status'=>0,'product_id'=>$product_id])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d')])->orderBy(['id' => SORT_ASC])->one();
+        if($model){
+            $model->qty = ($model->qty + $count_qty);
+            $model->save(false);
+        }
+    }
+
+    /*    function updateProdrecFromBalanceIn($product_id, $count_qty ,$user_id)
+        {
+           // $count_qty = 70;
+            $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+
+            $model = \backend\models\Stocktrans::find()->where(['activity_type_id' => [15, 26, 27], 'status' => 0, 'product_id' => $product_id])->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d',strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+            if ($model) {
+                $cal_qty = 0;
+                $min_id = 0;
+                $min_not_full_qty = 0;
+                $loop = 0;
+                foreach ($model as $value) {
+                    $scrap_all_qty = $this->checkProdrecScrap($value->id);
+                    $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
+                    $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                    $refill_qty = $this->checkProdrecRefill($value->id);
+
+                    $cal_qty += ($value->qty - $scrap_all_qty) - $model_sum_issue_used_qty - $adjust_all_qty - $refill_qty;
+                    if($cal_qty > 0 && $loop == 0){
+                        $min_id = $value->id;
+                        $min_not_full_qty = ($value->qty - $cal_qty);
+                        $loop++;
+                    }
+
+
+                }
+
+                if ($cal_qty > 0) {
+                    if ($count_qty < $cal_qty) {
+                        $line_diff_qty = $cal_qty - $count_qty;
+
+                        $model_adjust = new \common\models\ProductionRecIssueAdjust();
+                        $model_adjust->stock_trans_id = $min_id;
+                        $model_adjust->product_id = $product_id;
+                        $model_adjust->qty = $line_diff_qty;
+                        $model_adjust->save(false);
+                        // $count_qty += $line_diff_qty;
+                    } else if ($count_qty > $cal_qty) {
+                        $line_diff_qty = $count_qty - $cal_qty;
+                          $this->createNewProdrec($product_id, $line_diff_qty, $user_id);
+                    }
+                }
+            }
+        }*/
 
     function updateProdrecFromBalanceIn($product_id, $count_qty ,$user_id)
     {
@@ -5132,50 +5578,6 @@ class OrderController extends Controller
         }
     }
 
-    function checkProdrecScrap($prodrec_id){
-        $scrap_qty = 0;
-
-        if($prodrec_id){
-            $model_qty = \common\models\QueryScrap::find()->where(['prodrec_id'=>$prodrec_id])->sum('qty');
-            if($model_qty > 0){
-                $scrap_qty = $model_qty;
-            }
-        }
-
-
-        return $scrap_qty;
-    }
-
-
-    function checkProdrecAdjust($prodrec_id)
-    {
-        $adjust_qty = 0;
-
-        if ($prodrec_id) {
-            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
-            if ($model_qty > 0) {
-                $adjust_qty = $model_qty;
-            }
-        }
-
-
-        return $adjust_qty;
-    }
-
-    function checkProdrecRefill($prodrec_id)
-    {
-        $issue_refill_qty = 0;
-
-        if ($prodrec_id) {
-            $model_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $prodrec_id, 'type_id' => 2])->sum('qty');
-            if ($model_qty > 0) {
-                $issue_refill_qty = $model_qty;
-            }
-        }
-        return $issue_refill_qty;
-    }
-
-    // end issue temp confirm
 
     function createNewProdrec($product_id, $qty, $user_id)
     {
@@ -5201,7 +5603,7 @@ class OrderController extends Controller
                 $model->warehouse_id = $warehouse_id;//$warehouse_id;
                 $model->stock_type = 1;
                 $model->activity_type_id = 15; // 15 prod rec
-                $model->production_type = 1;
+                $model->production_type = 2; // 1 is normal receive 2 is create auto new
                 $model->company_id = 1;
                 $model->branch_id = 1;
                 $model->created_by = $user_id;
@@ -5212,6 +5614,7 @@ class OrderController extends Controller
             }
         }
     }
+
     public function updateSummary2($product_id, $wh_id, $qty, $company_id, $branch_id)
     {
         if ($wh_id != null && $product_id != null && $qty > 0) {
@@ -5229,5 +5632,34 @@ class OrderController extends Controller
                 $model_new->save(false);
             }
         }
+    }
+
+    public function actionCheckcloseposmobile()
+    {
+        $status = 0;
+
+        $user_id = 0;
+        $company_id = 1;
+        $branch_id = 1;
+        $enddate = null;
+        $default_warehouse = 1;
+
+
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        $company_id = $req_data['company_id'];
+        $branch_id = $req_data['branch_id'];
+        $user_id = $req_data['user_id'];
+        // $enddate = $req_data['end_date'];
+
+        $data = [];
+        $res = 0;
+
+        if ($user_id != null) {
+
+            $login_time = \backend\models\User::findLogindatetime($user_id);
+            array_push($data,$login_time);
+        }
+        return ['status' => $status, 'data' => $data];
     }
 }

@@ -20,6 +20,15 @@ if ($find_from_date != null) {
 }
 
 
+
+//echo $restrict_date;
+//echo "<br />";
+//echo $diff_month;
+//
+//if($to_date < $restrict_date){
+//    echo "Less than a month";
+//}
+
 ?>
 <html>
 <head>
@@ -258,13 +267,56 @@ if ($find_from_date != null) {
 ////            }
 ////        }
 ///
+    ///
+     // check date
+    $restrict_date = date('Y-m-d', strtotime('-2 months'));
+    $date1 = new DateTime($from_date);
+    $date2 = new DateTime($to_date);
+    $diff = $date1->diff($date2);
+    $diff_month = ($diff->y * 12) + $diff->m;
+
+    if($is_admin == 1){
+        $from_date = $from_date;
+        $to_date = $to_date;
+    }else{
+        if ($to_date < $restrict_date) {
+            $from_date = null;
+            $to_date = null;
+        } else {
+            if ($diff_month >= 2) {
+                if ($from_date < $restrict_date) {
+                    $from_date = $restrict_date;
+                    $to_date = $to_date;
+                } else {
+                    $from_date = $from_date;
+                    $to_date = $to_date;
+                }
+
+            }else if(date('Y-m-d',strtotime($from_date)) == date('Y-m-d',strtotime($to_date))){
+                $from_date = $from_date;
+                $to_date = $to_date;
+            } else {
+                $from_date = $restrict_date;
+                $to_date = $to_date;
+            }
+        }
+    }
+    // end check date
+
+
         $model_product = \backend\models\Product::find()->where(['status'=>1,'company_id'=>$company_id,'branch_id'=>$branch_id])->orderBy(['item_pos_seq'=>SORT_ASC])->all();
-        $model_line = \common\models\QueryOrderCustomerProduct::find()->select(['id', 'order_no'])->where(['customer_id' => $find_customer_id])
-            ->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date])
-            ->andFilterWhere(['status' => [1,100]])
+        $model_line = \common\models\QueryOrderCustomerProduct::find()->select(['id', 'order_no'])
+            ->where(['BETWEEN', 'order_date', $from_date, $to_date])
+            ->andFilterWhere(['status' => [1,100]]);
            // ->andFilterWhere(['status' => 1])
-                ->groupBy(['id'])->all();
+            //    ->groupBy(['id'])->all();
+
+        if($find_customer_id !=null){
+            $model_line = $model_line->andFilterWhere(['customer_id'=>$find_customer_id]);
+        }
     //}
+
+    $model_line =$model_line->groupBy(['id'])->all();
 
 
     // print_r($product_header);

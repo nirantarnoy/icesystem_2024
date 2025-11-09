@@ -38,6 +38,39 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
+
+// check date
+$restrict_date = date('Y-m-d', strtotime('-2 months'));
+$date1 = new DateTime($from_date);
+$date2 = new DateTime($to_date);
+$diff = $date1->diff($date2);
+$diff_month = ($diff->y * 12) + $diff->m;
+
+if($is_admin == 1){
+    $from_date = $from_date;
+    $to_date = $to_date;
+}else{
+    if ($to_date < $restrict_date) {
+        $from_date = null;
+        $to_date = null;
+    } else {
+        if ($diff_month >= 2) {
+            if ($from_date < $restrict_date) {
+                $from_date = $restrict_date;
+                $to_date = $to_date;
+            } else {
+                $from_date = $from_date;
+                $to_date = $to_date;
+            }
+
+        } else {
+            $from_date = $from_date;
+            $to_date = $to_date;
+        }
+    }
+}
+// end check date
+
 //$customer_name = $trans_data[0]['customer_id']?getCustomername($connect, $trans_data[0]['customer_id']):$trans_data[0]['customer_name'];
 //$model_product_daily = \common\models\QueryProductTransDaily::find()->where(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->all();
 $model_product_daily = \common\models\StockTrans::find()->select("product_id")->where(['BETWEEN', 'trans_date', date('Y-m-d H:i:s', strtotime($from_date)), date('Y-m-d H:i:s', strtotime($to_date))])->andFilterWhere(['activity_type_id' => 5, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
@@ -137,8 +170,9 @@ if ($model_c_login != null) {
         <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
             <tr>
                 <td style="padding: 10px;"><span>เรียงตาม <div class="btn-group"><div
-                                    class="btn btn-sm <?=$btn_order_type==1?"btn-success":"btn-default"?> btn-order-date">วันที่ขาย</div><div
-                                    class="btn btn-sm <?=$btn_order_type==2?"btn-success":"btn-default"?> btn-order-price">ราคาขาย</div></div></span></td>
+                                    class="btn btn-sm <?= $btn_order_type == 1 ? "btn-success" : "btn-default" ?> btn-order-date">วันที่ขาย</div><div
+                                    class="btn btn-sm <?= $btn_order_type == 2 ? "btn-success" : "btn-default" ?> btn-order-price">ราคาขาย</div></div></span>
+                </td>
             </tr>
             <tr>
 
@@ -216,7 +250,7 @@ if ($model_c_login != null) {
                     <?php
                     echo \kartik\select2\Select2::widget([
                         'name' => 'find_user_id',
-                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\User::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'status'=>1])->all(), 'id', 'username'),
+                        'data' => \yii\helpers\ArrayHelper::map(\backend\models\User::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'status' => 1])->all(), 'id', 'username'),
                         'value' => $find_user_id,
                         'options' => [
                             'placeholder' => '--พนักงานขาย--'
@@ -299,7 +333,7 @@ if ($model_c_login != null) {
                     <td colspan="7"><b><?= $line_product_code ?></b> <span
                                 style="color: darkblue"> <?= $line_product_name ?></span></td>
                 </tr>
-                <?php $find_order = getOrder($value->product_id, $from_date, $to_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req, $btn_order_type); ?>
+                <?php $find_order = getOrder($value->product_id, $from_date, $to_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req, $btn_order_type, $is_admin); ?>
                 <?php if ($find_order != null): ?>
                     <?php
                     $loop_count = count($find_order);
@@ -312,11 +346,11 @@ if ($model_c_login != null) {
                         <?php
                         $x += 1;
                         $sum_qty += $find_order[$i]['qty'];
-                      //  $sum_total += ($find_order[$i]['qty'] * $find_order[$i]['sale_price']);
+                        //  $sum_total += ($find_order[$i]['qty'] * $find_order[$i]['sale_price']);
                         $sum_total += ($find_order[$i]['line_total']);
 
                         $sum_qty_all += $find_order[$i]['qty'];
-                  //      $sum_total_all += ($find_order[$i]['qty'] * $find_order[$i]['sale_price']);
+                        //      $sum_total_all += ($find_order[$i]['qty'] * $find_order[$i]['sale_price']);
                         $sum_total_all += ($find_order[$i]['line_total']);
                         ?>
                         <tr>
@@ -388,17 +422,50 @@ if ($model_c_login != null) {
 </html>
 
 <?php
-function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req,$btn_order_type)
+function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req, $btn_order_type, $is_admin)
 {
+    $finish_date = new DateTime($t_date);
+    $restrict_date = date('Y-m-d', strtotime('-2 months'));
+    $pre_2_month = date('Y-m-d', strtotime('-2 months', strtotime($finish_date->format('Y-m-d'))));
+
+    $date1 = new DateTime($f_date);
+    $date2 = new DateTime($t_date);
+    $diff = $date1->diff($date2);
+    $diff_month = ($diff->y * 12) + $diff->m;
+
+
     $data = [];
     $sql = "SELECT t2.order_no, t3.code , t3.name, t1.qty, t1.price, t2.order_date, t2.order_channel_id, t1.line_total 
               FROM order_line as t1 INNER JOIN orders as t2 ON t1.order_id = t2.id LEFT  JOIN customer as t3 ON t2.customer_id=t3.id LEFT JOIN delivery_route as t4 on t2.order_channel_id = t4.id
-             WHERE  t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . " 
-             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . " 
-             AND t1.product_id=" . $product_id . " 
+             WHERE  t1.product_id=" . $product_id . " 
              AND t2.status <> 3
              AND t2.sale_channel_id = 2
              AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
+
+    if ($is_admin == 1) {
+        $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . " 
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+    } else {
+        if ($t_date < $restrict_date) {
+            $sql.=" AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime('1970-01-01')) . "'" . "";
+        } else {
+            if ($diff_month >= 2) {
+                if ($f_date < $restrict_date) {
+                    $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($restrict_date)) . "'" . " 
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+                } else {
+                    $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . " 
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+                }
+
+            } else {
+                $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . " 
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+            }
+        }
+
+
+    }
 
     if ($find_sale_type != null && $find_sale_type != 0) {
         if ($find_sale_type == 1) {
@@ -423,11 +490,11 @@ function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id,
         $sql .= " AND t3.is_invoice_req =" . $is_invoice_req;
     }
     // $sql .=" ORDER BY t1.price ASC";
-    if($btn_order_type == 1){
+    if ($btn_order_type == 1) {
         $sql .= " ORDER BY t2.order_no ASC";
-    }else if($btn_order_type == 2){
+    } else if ($btn_order_type == 2) {
         $sql .= " ORDER BY t1.price ASC";
-    }else{
+    } else {
         $sql .= " ORDER BY t2.order_no ASC";
     }
 

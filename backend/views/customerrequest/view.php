@@ -1,0 +1,68 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\DetailView;
+
+/* @var $this yii\web\View */
+/* @var $model backend\models\Customerrequest */
+
+$this->title = $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'บันทึกการขาย (เปิดร้าน)', 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
+?>
+<div class="customerrequest-view">
+    <p>
+        <?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
+            'class' => 'btn btn-danger',
+            'data' => [
+                'confirm' => 'Are you sure you want to delete this item?',
+                'method' => 'post',
+            ],
+        ]) ?>
+    </p>
+
+    <?= DetailView::widget([
+        'model' => $model,
+        'attributes' => [
+          //  'id',
+            'journal_no',
+            'trans_date',
+            'customer_ref_id',
+            'customer_name',
+            'age',
+            'idcard_no',
+            'address',
+            'moo',
+            'district_id',
+            'city_id',
+            'province_id',
+            'phone',
+            'company_name',
+            'route_id',
+            'route_num',
+            'start_date',
+            'sale_price',
+            'remark',
+            'payment_method_id',
+            'account_no',
+            'credit_term',
+            'account_credit_no',
+            'after_invoice_day',
+            'user_box',
+            'marget_emp_id',
+            'market_emp_date',
+            'is_approve',
+            'approve_emp_id',
+            'approve_date',
+            'is_shop_place',
+            'emp_operate_id',
+            'created_at',
+            'created_by',
+            'updated_at',
+            'updated_by',
+        ],
+    ]) ?>
+
+</div>

@@ -139,7 +139,7 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                             'convertFormat' => true,
                             'options' => [
                                 'class' => 'form-control',
-                                'placeholder' => 'ถึงวันที่',
+                                'placeholder' => 'วันที่',
                                 //  'onchange' => 'this.form.submit();',
                                 'autocomplete' => 'off',
                             ],

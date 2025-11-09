@@ -2,6 +2,7 @@
 
 namespace frontend\modules\api\controllers;
 
+use backend\models\Journalissue;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
 
@@ -16,7 +17,7 @@ class ProductionController extends Controller
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'addprodrec' => ['POST'],
+                   'addprodrec' => ['POST'],
                     'cancelprodrec' => ['POST'],
                     'addprodrecreprocess' => ['POST'],
                     'warehouselist' => ['POST'],
@@ -224,6 +225,7 @@ class ProductionController extends Controller
                 $model->branch_id = $branch_id;
                 $model->created_by = $user_id;
                 $model->transfer_branch_id = $transfer_from_branch;
+                $model->status = 0;
                 if ($model->save(false)) {
                     $status = 1;
                     $this->updateSummary($product_id, $warehouse_id, $qty);
@@ -311,6 +313,7 @@ class ProductionController extends Controller
                     $model->branch_id = $branch_id;
                     $model->created_by = $user_id;
                     $model->transfer_branch_id = $datalist[$i]['transfer_branch_id'];
+                    $model->status = 0;
                     if ($model->save(false)) {
                         $status = 1;
                         $this->updateSummary($datalist[$i]['product_id'], $warehouse_id, $datalist[$i]['qty']);
@@ -2154,20 +2157,20 @@ class ProductionController extends Controller
 
 
 
-        $second_user_id = 0;
-        $model_login = \common\models\LoginLogCal::find()->where(['user_id' => $user_id])->orderBy(['id' => SORT_DESC])->one();
-        if ($model_login) {
-            $second_user_id = $model_login->second_user_id;
-        }
+       $second_user_id = 0;
+       $model_login = \common\models\LoginLogCal::find()->where(['user_id' => $user_id])->orderBy(['id' => SORT_DESC])->one();
+       if ($model_login) {
+           $second_user_id = $model_login->second_user_id;
+       }
 
-        $list_user = [];
-        array_push($list_user,$user_id);
-        if($second_user_id > 0){
-            array_push($list_user, $second_user_id);
-        }
+       $list_user = [];
+       array_push($list_user,$user_id);
+       if($second_user_id > 0){
+        array_push($list_user, $second_user_id);
+       }
 
 
-        $model = \common\models\StockTrans::find()->where(['activity_type_id'=>15,'status'=>0,'created_by'=>$list_user,'company_id' => $company_id, 'branch_id' => $branch_id,'date(trans_date)'=>date('Y-m-d')])->orderBy(['id'=>SORT_DESC])->all();
+        $model = \common\models\StockTrans::find()->where(['activity_type_id'=>15,'status'=>0,'company_id' => $company_id, 'branch_id' => $branch_id,'created_by'=>$list_user,'date(trans_date)'=>date('Y-m-d')])->orderBy(['id'=>SORT_DESC])->all();
         // $model = \common\models\QueryCustomerPrice::find()->all();
         if ($model) {
             $status = true;
@@ -2201,7 +2204,7 @@ class ProductionController extends Controller
         $data = [];
         $status = false;
 
-        $model = \common\models\StockTrans::find()->where(['activity_type_id'=>15,'production_type'=>5,'company_id' => $company_id, 'branch_id' => $branch_id,'date(trans_date)'=>date('Y-m-d')])->andFilterWhere(['OR',['!=','status',500],['is','status', new \yii\db\Expression('null')]])->orderBy(['id'=>SORT_DESC])->all();
+        $model = \common\models\StockTrans::find()->where(['activity_type_id'=>15,'production_type'=>5,'company_id' => $company_id, 'branch_id' => $branch_id,'created_by'=>$user_id,'date(trans_date)'=>date('Y-m-d')])->andFilterWhere(['OR',['!=','status',500],['is','status', new \yii\db\Expression('null')]])->orderBy(['id'=>SORT_DESC])->all();
         // $model = \common\models\QueryCustomerPrice::find()->all();
         if ($model) {
             $status = true;
@@ -2427,6 +2430,14 @@ class ProductionController extends Controller
                     if ($model_sum) {
                         $model_sum->qty = (float)$model_sum->qty + (float)$qty;
                         $model_sum->save(false);
+                    }else{
+                        $model_sum_new = new \backend\models\Stocksum();
+                        $model_sum_new->warehouse_id = $wh_id;
+                        $model_sum_new->product_id = $product_id;
+                        $model_sum_new->qty = $qty;
+                        $model_sum_new->company_id = $company_id;
+                        $model_sum_new->branch_id = $branch_id;
+                        $model_sum_new->save(false);
                     }
 
                 }
@@ -2449,10 +2460,11 @@ class ProductionController extends Controller
             $model_trans->company_id = $company_id;
             $model_trans->created_by = $user_id;
             $model_trans->branch_id = $branch_id;
+            $model_trans->status = 0;
             if ($model_trans->save(false)) {
-
-                $this->genissuefortransform($model_trans->id,$product_id, $qty, $company_id, $branch_id);
-                $this->createIssueTemp($model_trans->id, $user_id);
+      
+                  $this->genissuefortransform($model_trans->id,$product_id, $qty, $company_id, $branch_id);
+                  $this->createIssueTemp($model_trans->id, $user_id);
 
 //                $model = \common\models\StockSum::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'product_id' => $product_id, 'warehouse_id' => $warehouse_id])->one();
 //                if ($model) {
@@ -2486,7 +2498,7 @@ class ProductionController extends Controller
         $data = [];
         $status = false;
 
-        $model = \common\models\TransformReserv::find()->where(['date(trans_date)'=>date('Y-m-d'),'company_id' => $company_id, 'branch_id' => $branch_id,'status'=>0,'user_id'=>$user_id])->orderBy(['id'=>SORT_DESC])->all();
+        $model = \common\models\TransformReserv::find()->where(['date(trans_date)'=>date('Y-m-d'),'company_id' => $company_id, 'branch_id' => $branch_id,'status'=>0,'user_id'=>$user_id])->all();
         // $model = \common\models\QueryCustomerPrice::find()->all();
         if ($model) {
             $status = true;
@@ -2557,12 +2569,14 @@ class ProductionController extends Controller
                             $status = 1;
                             if($this->reducestock($model->product_id,$main_warehouse,$model->qty) == 1){
                                 if($this->addqtyfromreturntransform($model->company_id,$model->branch_id,$model_transform->product_id,$model_transform->qty,$main_warehouse,0,$user_id)){
-                                    $model->status = 500;
-                                    $model->save(false);
+                                  //  $model->status = 500;
+                                  //  $model->save(false);
                                     $model_transform->status = 1;
                                     $model_transform->save(false);
                                 }
                             }
+                           $model->status = 500;
+                           $model->save(false);
                         }
                     }
                     array_push($data, ['journal_no' => $journal_no]);
@@ -2595,7 +2609,7 @@ class ProductionController extends Controller
             $model_trans->created_by = $user_id;
             $model_trans->trans_ref_id = $journal_id;
             $model_trans->status = 500;
-            $model_trans->production_type = 500; // create trans but not show in prodrec history
+            $model_trans->production_type = 500;
             if ($model_trans->save(false)) {
                 $model_sum = \backend\models\Stocksum::find()->where(['warehouse_id' => $wh_id, 'product_id' => $product_id])->one();
                 if ($model_sum) {
@@ -2615,16 +2629,19 @@ class ProductionController extends Controller
         $branch_id = 0;
         $trans_date = null;
         $journal_id = null;
+        $user_id = 0;
+
         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $req_data = \Yii::$app->request->getBodyParams();
         $company_id = $req_data['company_id'];
         $branch_id = $req_data['branch_id'];
+        $user_id = $req_data['user_id'];
 
         $data = [];
         $status = false;
 
         if ($company_id && $branch_id) {
-            $model = \common\models\QueryScrap::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>','qty',0])->orderBy(['id' => SORT_DESC])->all();
+            $model = \common\models\QueryScrap::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id,'created_by'=>$user_id, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>','qty',0])->orderBy(['id' => SORT_DESC])->all();
             if ($model) {
                 $status = true;
                 foreach ($model as $value) {
@@ -2644,7 +2661,7 @@ class ProductionController extends Controller
         return ['status' => $status, 'data' => $data];
     }
 
-    public function actionAddscrapmobile()
+    public function actionAddscrapmobileOriginal()
     {
         $company_id = 0;
         $branch_id = 0;
@@ -2703,6 +2720,170 @@ class ProductionController extends Controller
 
             array_push($data, ['journal_no' => $journal_no]);
             //  $this->renderPartial('_printtoindex', ['model' => $model, 'model_line' => $model_line, 'change_amount' => 0]);
+        }
+
+        return ['status' => $status, 'data' => $data];
+    }
+
+    public function actionAddscrapmobileX()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+        $product_id = 0;
+        $production_rec_id = 0;
+        $user_id = 0;
+        $order_id = 0;
+        $order_no = null;
+        $qty = 0;
+        $datalist = null;
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        $company_id = $req_data['company_id'];
+        $branch_id = $req_data['branch_id'];
+        $datalist = $req_data['data'];
+        $user_id = $req_data['user_id'];
+
+        $data = [];
+        $status = false;
+        $journal_no = '';
+
+        if ($order_no != null) {
+            $order_id = \backend\models\Orders::findId($order_no);
+        }
+
+        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+
+        if ($datalist != null && $user_id && $company_id && $branch_id) {
+            for ($i = 0; $i <= count($datalist) - 1; $i++) {
+                $production_rec_id = 0;
+
+                $model_reduce_pallet_qty_id = \backend\models\Stocktrans::find()->where(['product_id'=>$datalist[$i]['product_id'],'activity_type_id'=>[15,26,27],'status'=>0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d')])->all();
+                if($model_reduce_pallet_qty_id){
+                    foreach ($model_reduce_pallet_qty_id as $value) {
+                        $stock_trans_avl_qty = 0;
+                        $prodrec_scrap_qty = $this->checkProdrecScrap($value->id);
+                        $all_issue_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id])->sum('qty');
+
+                        $stock_trans_avl_qty = ($value->qty - $prodrec_scrap_qty) - $all_issue_qty;
+                        if($stock_trans_avl_qty >= $datalist[$i]['qty']){
+                             $production_rec_id = $value->id;
+                             break;
+                        }
+
+                    }
+
+                }
+
+               // $model_reduce_pallet_qty_id = \backend\models\Stocktrans::find()->where(['product_id'=>$datalist[$i]['product_id'],'activity_type_id'=>[15,26,27],'status'=>0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d')])->andFilterWhere(['>=','qty',$datalist[$i]['qty']])->orderBy(['id' => SORT_ASC])->one();
+               // if($model_reduce_pallet_qty_id){
+               //     $production_rec_id = $model_reduce_pallet_qty_id->id;
+               // }
+
+                $model_journal = new \backend\models\Scrap();
+                $journal_no = $model_journal->getLastNo($company_id, $branch_id);
+                $model_journal->journal_no = $journal_no;
+                $model_journal->trans_date = date('Y-m-d H:i:s');
+                $model_journal->prodrec_id = $production_rec_id;
+                $model_journal->company_id = $company_id;
+                $model_journal->branch_id = $branch_id;
+                $model_journal->created_by = $user_id;
+                $model_journal->scrap_type_id = 1;
+                $model_journal->order_id = $order_id;
+                $model_journal->status = 1;
+                if ($model_journal->save(false)) {
+
+                    $model = new \common\models\ScrapLine();
+                    $model->scrap_id = $model_journal->id;
+                    $model->product_id = $datalist[$i]['product_id'];
+                    $model->qty = $datalist[$i]['qty'];
+                    $model->note = '';
+                    $model->status = 1;
+                    if ($model->save(false)) {
+                        $status = 1;
+                        $model_sum = \backend\models\Stocksum::find()->where(['warehouse_id' => 1, 'product_id' => $datalist[$i]['product_id']])->one();
+                        if ($model_sum) {
+                            $model_sum->qty = (float)$model_sum->qty - (float)$datalist[$i]['qty'];
+                            $model_sum->save(false);
+                        }
+
+                    }
+
+                }
+            }
+            array_push($data, ['journal_no' => $journal_no]);
+            //  $this->renderPartial('_printtoindex', ['model' => $model, 'model_line' => $model_line, 'change_amount' => 0]);
+        }
+
+        return ['status' => $status, 'data' => $data];
+    }
+
+    public function actionAddscrapmobile()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+        $product_id = 0;
+        $production_rec_id = 0;
+        $user_id = 0;
+        $order_id = 0;
+        $order_no = null;
+        $qty = 0;
+        $datalist = null;
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $req_data = \Yii::$app->request->getBodyParams();
+        $company_id = $req_data['company_id'];
+        $branch_id = $req_data['branch_id'];
+        $datalist = $req_data['data'];
+        $user_id = $req_data['user_id'];
+
+        $data = [];
+        $status = false;
+        $journal_no = '';
+
+        if ($order_no != null) {
+            $order_id = \backend\models\Orders::findId($order_no);
+        }
+
+        //$pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+
+        if ($datalist != null && $user_id && $company_id && $branch_id) {
+            for ($i = 0; $i <= count($datalist) - 1; $i++) {
+
+                $find_prodrec_list = $this->findProdrecOrderForScrap($datalist[$i]['product_id'],$datalist[$i]['qty']);
+                if($find_prodrec_list !=null){
+                    for($x=0;$x<=count($find_prodrec_list)-1;$x++){
+                        $model_journal = new \backend\models\Scrap();
+                        $journal_no = $model_journal->getLastNo($company_id, $branch_id);
+                        $model_journal->journal_no = $journal_no;
+                        $model_journal->trans_date = date('Y-m-d H:i:s');
+                        $model_journal->prodrec_id = $find_prodrec_list[$x]['id'];
+                        $model_journal->company_id = $company_id;
+                        $model_journal->branch_id = $branch_id;
+                        $model_journal->created_by = $user_id;
+                        $model_journal->scrap_type_id = 1;
+                        $model_journal->order_id = $order_id;
+                        $model_journal->status = 1;
+                        if ($model_journal->save(false)) {
+                            $model = new \common\models\ScrapLine();
+                            $model->scrap_id = $model_journal->id;
+                            $model->product_id = $datalist[$i]['product_id'];
+                            $model->qty = $find_prodrec_list[$x]['qty'];
+                            $model->note = '';
+                            $model->status = 1;
+                            if ($model->save(false)) {
+                                $status = 1;
+                                $model_sum = \backend\models\Stocksum::find()->where(['warehouse_id' => 1, 'product_id' => $datalist[$i]['product_id']])->one();
+                                if ($model_sum) {
+                                    $model_sum->qty = (float)$model_sum->qty - (float)$find_prodrec_list[$x]['qty'];
+                                    $model_sum->save(false);
+                                }
+                            }
+                        }
+
+                        array_push($data, ['journal_no' => $journal_no]);
+                    }
+                }
+
+            }
         }
 
         return ['status' => $status, 'data' => $data];
@@ -2801,16 +2982,14 @@ class ProductionController extends Controller
         return ['status' => $status, 'data' => $data];
     }
 
-
-    
-    /// section function for create issue with prodrec
+   /// section function for create issue with prodrec
 
     public function genissuefortransform($stock_trans_id,$product_id,$qty, $company_id, $branch_id)
     {
 
         if ($product_id != null && $stock_trans_id != null) {
 
-                $model = new \backend\models\Journalissue();
+                $model = new Journalissue();
 
                 $model->journal_no = $model->getLastNo(date('Y-m-d'), $company_id, $branch_id);
                 $model->trans_date = date('Y-m-d H:i:s');
@@ -2923,18 +3102,19 @@ class ProductionController extends Controller
         $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
         //$model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => 15, 'production_type' => 1, 'date(trans_date)' => date('Y-m-d')])->andFilterWhere(['>=', 'qty', $issue_qty])->orderBy(['id' => SORT_ASC])->all();
         //       $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,27], 'production_type' => 1, 'date(trans_date)' => date('Y-m-d'),'status'=> 0])->orderBy(['id' => SORT_ASC])->all();
-        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,27],'status'=> 0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d',strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
+        $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' =>[15,26,27] ,'status'=> 0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d',strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
         if ($model) {
-            $prod_rec_avl_qty = 0;
+           // $prod_rec_avl_qty = 0;
             foreach ($model as $value) {
+                 $prod_rec_avl_qty = 0;
                 $scrap_all_qty = $this->checkProdrecScrap($value->id);
-                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty); // prodrec - scrap
-                $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                 $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty - $adjust_all_qty); // prodrec - scrap
 
                 $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
                 if ($model_sum_issue_used_qty > 0) {
                     // if ($model_sum_issue_used_qty >= $issue_qty) continue;
-                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty - $adjust_all_qty);
+                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
                     if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
                         if ($prod_rec_avl_qty >= $issue_qty) {
                             array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
@@ -2953,7 +3133,12 @@ class ProductionController extends Controller
                 } else {
 
                     if ($qty_after_deduct_scrap >= $issue_qty) {
-                        array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                         if($full_qty > 0){
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty - $full_qty]);
+                            $full_qty = 0;
+                        }else{
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                        }
                         break;
                     } else {
                         if ($full_qty > 0) {
@@ -2981,6 +3166,7 @@ class ProductionController extends Controller
 
         return $data;
     }
+
 
     function updateProdrecQtyStatus($recid)
     {
@@ -2997,13 +3183,13 @@ class ProductionController extends Controller
 
     }
 
-    function checkProdrecScrap($prodrec_id){
+       function checkProdrecScrap($prodrec_id){
         $scrap_qty = 0;
 
         if($prodrec_id){
             $model_qty = \common\models\QueryScrap::find()->where(['prodrec_id'=>$prodrec_id])->sum('qty');
             if($model_qty > 0){
-                $scrap_qty = $model_qty;
+               $scrap_qty = $model_qty;
             }
         }
 
@@ -3011,7 +3197,20 @@ class ProductionController extends Controller
         return $scrap_qty;
     }
 
+    function checkProdrecAdjust($prodrec_id)
+    {
+        $adjust_qty = 0;
 
+        if ($prodrec_id) {
+            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
+            if ($model_qty > 0) {
+                $adjust_qty = $model_qty;
+            }
+        }
+
+
+        return $adjust_qty;
+    }    
 
     function findProdrecOrderForScrap($product_id, $issue_qty)
     {
@@ -3026,14 +3225,15 @@ class ProductionController extends Controller
         $model = \backend\models\Stocktrans::find()->select(['id', 'qty'])->where(['product_id' => $product_id, 'activity_type_id' => [15,26,27],'status'=> 0])->andFilterWhere(['>=','date(trans_date)',date('Y-m-d',strtotime($pre_date))])->orderBy(['id' => SORT_ASC])->all();
         if ($model) {
             foreach ($model as $value) {
+                $prod_rec_avl_qty = 0;
                 $scrap_all_qty = $this->checkProdrecScrap($value->id);
-                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty); // prodrec - scrap
                 $adjust_all_qty = $this->checkProdrecAdjust($value->id);
+                $qty_after_deduct_scrap = ($value->qty - $scrap_all_qty - $adjust_all_qty); // prodrec - scrap
 
                 $model_sum_issue_used_qty = \common\models\ProductionRecIssue::find()->where(['stock_trans_id' => $value->id, 'product_id' => $product_id])->sum('qty');
                 if ($model_sum_issue_used_qty > 0) {
                     // if ($model_sum_issue_used_qty >= $issue_qty) continue;
-                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty - $adjust_all_qty);
+                    $prod_rec_avl_qty = ($qty_after_deduct_scrap - $model_sum_issue_used_qty);
                     if ($prod_rec_avl_qty >= 0) { // original qty - issue qty
                         if ($prod_rec_avl_qty >= $issue_qty) {
                             array_push($data, ['id' => $value->id, 'qty' => $issue_qty]); // qty is ok
@@ -3052,7 +3252,12 @@ class ProductionController extends Controller
                 } else {
 
                     if ($qty_after_deduct_scrap >= $issue_qty) {
-                        array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                         if($full_qty > 0){
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty - $full_qty]);
+                            $full_qty = 0;
+                        }else{
+                            array_push($data, ['id' => $value->id, 'qty' => $issue_qty - $prod_rec_avl_qty]);
+                        }
                         break;
                     } else {
                         if ($full_qty > 0) {
@@ -3081,24 +3286,6 @@ class ProductionController extends Controller
         return $data;
     }
 
-
-    function checkProdrecAdjust($prodrec_id)
-    {
-        $adjust_qty = 0;
-
-        if ($prodrec_id) {
-            $model_qty = \common\models\ProductionRecIssueAdjust::find()->where(['stock_trans_id' => $prodrec_id])->sum('qty');
-            if ($model_qty > 0) {
-                $adjust_qty = $model_qty;
-            }
-        }
-
-
-        return $adjust_qty;
-    }
-
-    
-
- 
     ///////// end section
+
 }

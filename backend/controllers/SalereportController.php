@@ -30,13 +30,14 @@ class SalereportController extends Controller{
         $id = \Yii::$app->request->post('find_customer_id');
         $from_date = \Yii::$app->request->post('from_date');
         $to_date = \Yii::$app->request->post('to_date');
-
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
        // $model = \backend\models\Orders::find()->where(['customer_id' => $id])->all();
         return $this->render('_print', [
         //    'model' => $model,
             'find_from_date' => $from_date,
             'find_to_date'=> $to_date,
             'find_customer_id'=>$id,
+            'is_admin'=>$is_admin,
         ]);
     }
     public function actionIndexupdate(){
@@ -85,11 +86,13 @@ class SalereportController extends Controller{
         $to_date = \Yii::$app->request->post('to_date');
 
         // $model = \backend\models\Orders::find()->where(['customer_id' => $id])->all();
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_printcar', [
             //    'model' => $model,
             'find_from_date' => $from_date,
             'find_to_date'=> $to_date,
             'find_customer_id'=>$id,
+            'is_admin' => $is_admin,
         ]);
     }
     public function actionIndexcarupdate(){

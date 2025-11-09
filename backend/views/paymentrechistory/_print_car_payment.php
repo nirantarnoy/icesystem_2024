@@ -37,7 +37,7 @@ $mpdf->AddPageByArray([
     'margin-top' => 0,
     'margin-bottom' => 1,
 ]);
-
+include \Yii::getAlias('@backend/helpers/ChangeAdminDate.php');
 ?>
     <!DOCTYPE html>
     <html>
@@ -255,6 +255,41 @@ $mpdf->AddPageByArray([
             $payment_cash = 0;
             $payment_transfer = 0;
 
+            // check date
+            $restrict_date = date('Y-m-d', strtotime('-2 months'));
+            $date1 = new DateTime($from_date);
+            $date2 = new DateTime($to_date);
+            $diff = $date1->diff($date2);
+            $diff_month = ($diff->y * 12) + $diff->m;
+
+            if($is_admin == 1){
+                $from_date = $from_date;
+                $to_date = $to_date;
+            }else{
+                if ($to_date < $restrict_date) {
+                    $from_date = null;
+                    $to_date = null;
+                } else {
+                    if ($diff_month >= 2) {
+                        if ($from_date < $restrict_date) {
+                            $from_date = $restrict_date;
+                            $to_date = $to_date;
+                        } else {
+                            $from_date = $from_date;
+                            $to_date = $to_date;
+                        }
+
+                    } else if(date('Y-m-d',strtotime($from_date)) == date('Y-m-d',strtotime($to_date))){
+                        $from_date = $from_date;
+                        $to_date = $to_date;
+                    } else {
+                        $from_date = $restrict_date;
+                        $to_date = $to_date;
+                    }
+                }
+            }
+            // end check date
+
             ?>
             <?php if ($find_user_id != null): ?>
                 <?php
@@ -414,11 +449,11 @@ $mpdf->AddPageByArray([
     </html>
 
 <?php
-function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id,$find_cus_id)
+function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $find_cus_id)
 {
     $list_route_id = null;
-
-    $cust_list = '';
+   
+     $cust_list = '';
 
     if ($find_cus_id != null) {
         for($i = 0; $i < count($find_cus_id); $i++) {
@@ -428,7 +463,7 @@ function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_i
                 $cust_list .= ',' . $find_cus_id[$i];
             }
         }
-    }
+    }    
 
     $data = [];
 //    $sql = "SELECT t1.id,t1.journal_no,t1.trans_date,t1.customer_id,SUM(t2.payment_amount) as amount
@@ -448,9 +483,8 @@ function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_i
               AND t1.company_id=" . $company_id . " AND t1.branch_id=" . $branch_id;
 
     if ($find_cus_id != null) {
-        $sql .= " AND t1.customer_id in (" . $cust_list.")";
+        $sql .= " AND t1.customer_id in (" . $cust_list .")";
     }
-
 
     $sql .= " GROUP BY t1.id,t1.journal_no";
     $query = \Yii::$app->db->createCommand($sql);

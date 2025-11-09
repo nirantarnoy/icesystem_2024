@@ -37,6 +37,8 @@ class ReprocessSearch extends Stocktrans
      */
     public function search($params)
     {
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->identity->id);
+
         $query = Stocktrans::find();
 
         // add conditions that should always apply here
@@ -84,6 +86,8 @@ class ReprocessSearch extends Stocktrans
         }
 
         if($this->from_date != null && $this->to_date != null){
+
+            include \Yii::getAlias("@backend/helpers/ChangeAdminDate.php");
             $fx_datetime = explode(' ',$this->from_date);
             $tx_datetime = explode(' ',$this->to_date);
 

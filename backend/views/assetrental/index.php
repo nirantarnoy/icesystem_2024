@@ -141,7 +141,17 @@ $this->params['breadcrumbs'][] = $this->title;
                         }
                     }
                 ],
-                'status',
+                [
+                    'attribute' => 'status',
+                    'format' => 'raw',
+                    'value' => function ($model) {
+                        if ($model->status == 1) {
+                            return '<div class="badge badge-success">จบงาน</div>';
+                        } else {
+                            return '<div class="badge badge-danger">ยังไม่จบงาน</div>';
+                        }
+                    }
+                ],
                 //'created_by',
                 //'updated_at',
                 //'updated_by',

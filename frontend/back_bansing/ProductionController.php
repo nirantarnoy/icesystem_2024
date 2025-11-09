@@ -3183,7 +3183,7 @@ class ProductionController extends Controller
 
     }
 
-       function checkProdrecScrap($prodrec_id){
+    function checkProdrecScrap($prodrec_id){
         $scrap_qty = 0;
 
         if($prodrec_id){

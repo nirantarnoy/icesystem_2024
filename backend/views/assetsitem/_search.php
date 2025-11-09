@@ -1,5 +1,6 @@
 <?php
 
+use kartik\select2\Select2;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
@@ -23,6 +24,16 @@ use yii\widgets\ActiveForm;
             <!--         <span class="input-group-addon" id="basic-addon1"><i class="fa fa-search"></i></span>-->
             <?= $form->field($model, 'globalSearch')->textInput(['placeholder' => 'ค้นหา', 'class' => 'form-control', 'aria-describedby' => 'basic-addon1'])->label(false) ?>
 
+        </div>
+        <div class="col-lg-3">
+            <?=$form->field($model, 'route_id')->widget(Select2::classname(), [
+                    'data'=>\yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1,'branch_id'=>1])->all(),'id','name'),
+                'options'=>[
+                        'placeholder'=>'--เลือกสายส่ง--',
+                        'onchange'=>'this.form.submit();',
+                ],
+            ])->label(false);
+            ?>
         </div>
         <div class="col-lg-3">
             <?php

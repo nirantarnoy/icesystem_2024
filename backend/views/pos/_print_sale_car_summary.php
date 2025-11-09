@@ -38,11 +38,43 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
+//// check date
+//$restrict_date = date('Y-m-d', strtotime('-2 months'));
+//$date1 = new DateTime($from_date);
+//$date2 = new DateTime($to_date);
+//$diff = $date1->diff($date2);
+//$diff_month = ($diff->y * 12) + $diff->m;
+//
+//if($is_admin == 1){
+//    $from_date = $from_date;
+//    $to_date = $to_date;
+//}else{
+//    if ($to_date < $restrict_date) {
+//        $from_date = null;
+//        $to_date = null;
+//    } else {
+//        if ($diff_month >= 2) {
+//            if ($from_date < $restrict_date) {
+//                $from_date = $restrict_date;
+//                $to_date = $to_date;
+//            } else {
+//                $from_date = $from_date;
+//                $to_date = $to_date;
+//            }
+//
+//        } else {
+//            $from_date = $restrict_date;
+//            $to_date = $to_date;
+//        }
+//    }
+//}
+//// end check date
+include \Yii::getAlias("@backend/helpers/ChangeAdminDate3.php");
 
 //$customer_name = $trans_data[0]['customer_id']?getCustomername($connect, $trans_data[0]['customer_id']):$trans_data[0]['customer_name'];
 //$model_product_daily = \common\models\QueryProductTransDaily::find()->where(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->all();
-$model_product_daily = \common\models\QueryProductCarSaleDaily::find()->where(['BETWEEN', 'order_date', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
-
+$model_product_daily = \common\models\QueryProductCarSaleDaily::find()->where(['>=', 'date(order_date)', date('Y-m-d', strtotime($from_date))])->andFilterWhere(['<=','date(order_date)',date('Y-m-d', strtotime($to_date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
+//print_r($model_product_daily);return;
 $user_login_datetime = '';
 $model_c_login = LoginLog::find()->select('MIN(login_date) as login_date')->where(['user_id' => $user_id, 'status' => 1])->one();
 if ($model_c_login != null) {
@@ -279,7 +311,7 @@ if ($model_c_login != null) {
                     <td colspan="7"><b><?= $line_product_code ?></b> <span
                                 style="color: darkblue"> <?= $line_product_name ?></span></td>
                 </tr>
-                <?php $find_order = getOrder($value->product_id, $from_date, $to_date, 0, $find_user_id, $company_id, $branch_id, $is_invoice_req); ?>
+                <?php $find_order = getOrder($value->product_id, $from_date, $to_date, 0, $find_user_id, $company_id, $branch_id, $is_invoice_req,$is_admin); ?>
                 <?php if ($find_order != null): ?>
                     <?php
                     $loop_count = count($find_order);
@@ -367,19 +399,52 @@ if ($model_c_login != null) {
     </html>
 
 <?php
-function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req)
+function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req,$is_admin)
 {
     $list_route_id = null;
+
+    //$finish_date = new DateTime($t_date);
+    $restrict_date = date('Y-m-d', strtotime('-2 months'));
+    // $pre_2_month = date('Y-m-d', strtotime('-2 months', strtotime($finish_date->format('Y-m-d'))));
+
+    $date1 = new DateTime($f_date);
+    $date2 = new DateTime($t_date);
+    $diff = $date1->diff($date2);
+    $diff_month = ($diff->y * 12) + $diff->m;
 
     $data = [];
     $sql = "SELECT t2.order_no, t3.code , t3.name, t1.qty, t1.price, t2.order_date, t2.order_channel_id 
               FROM order_line as t1 INNER JOIN orders as t2 ON t1.order_id = t2.id LEFT  JOIN customer as t3 ON t1.customer_id=t3.id 
-             WHERE  t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . " 
-             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . " 
-             AND t1.product_id=" . $product_id . " 
+             WHERE t1.product_id=" . $product_id . " 
              AND t2.status=100
              AND t2.sale_channel_id = 1
              AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
+
+
+    if ($is_admin == 1) {
+        $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . "
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+    } else {
+        if ($t_date < $restrict_date) {
+            $sql.=" AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime('1970-01-01')) . "'" . "";
+        } else {
+            if ($diff_month >= 2) {
+                if ($f_date < $restrict_date) {
+                    $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($restrict_date)) . "'" . "
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+                } else {
+                    $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . "
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+                }
+
+            } else {
+                $sql .= " AND t2.order_date >=" . "'" . date('Y-m-d H:i:s', strtotime($f_date)) . "'" . "
+             AND t2.order_date <=" . "'" . date('Y-m-d H:i:s', strtotime($t_date)) . "'" . "";
+            }
+        }
+
+
+    }
 
 //      if($find_sale_type != null && $find_sale_type != 0){
 //          if($find_sale_type == 1){

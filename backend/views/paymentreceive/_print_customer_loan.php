@@ -40,7 +40,37 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
-$pay_type = [['id'=>0,'name'=>'ค้างชำระ'],['id'=>1,'name'=>'ชำระแล้ว']];
+// check date
+$restrict_date = date('Y-m-d', strtotime('-2 months'));
+$date1 = new DateTime($from_date);
+$date2 = new DateTime($to_date);
+$diff = $date1->diff($date2);
+$diff_month = ($diff->y * 12) + $diff->m;
+
+if($is_admin == 1){
+    $from_date = $from_date;
+    $to_date = $to_date;
+}else{
+    if ($to_date < $restrict_date) {
+        $from_date = null;
+        $to_date = null;
+    } else {
+        if ($diff_month >= 2) {
+            if ($from_date < $restrict_date) {
+                $from_date = $restrict_date;
+                $to_date = $to_date;
+            } else {
+                $from_date = $from_date;
+                $to_date = $to_date;
+            }
+
+        } else {
+            $from_date = $restrict_date;
+            $to_date = $to_date;
+        }
+    }
+}
+// end check date
 
 $model_customer_loan = null;
 if ($is_find_date == 1) {
@@ -168,7 +198,7 @@ if ($is_find_date == 1) {
 <body>
 
 <form action="<?= \yii\helpers\Url::to(['paymentreceive/customerloanprint'], true) ?>" method="post" id="form-search">
-    <td id="div1">
+    <div id="div1">
         <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
             <tr>
 
@@ -275,20 +305,6 @@ if ($is_find_date == 1) {
                     ]);
                     ?>
                 </td>
-                <td style="width: 10%">
-                    <div class="label">ประเภทชำระเงิน</div>
-                    <select name="find_pay_type" id="" class="form-control">
-                        <?php for($x=0;$x<=count($pay_type)-1;$x++):?>
-                            <?php
-                                  $selected = "";
-                                  if($find_pay_type == $pay_type[$x]['id']){
-                                      $selected = "selected";
-                                  }
-                            ?>
-                            <option value="<?=$pay_type[$x]['id']?>" <?=$selected?>><?=$pay_type[$x]['name']?></option>
-                        <?php endfor;?>
-                    </select>
-                </td>
                 <td>
                     <input type="submit" class="btn btn-primary" style="margin-top: 35px;" value="ค้นหา">
                 </td>
@@ -365,17 +381,6 @@ if ($is_find_date == 1) {
 
                     if ($line_remain_amount < 0) {
                         $line_remain_amount = 0;
-                    }
-
-                    if($find_pay_type == 0){ // ค้าง
-                        if($line_remain_amount <= 0){
-                            continue;
-                        }
-                    }
-                    if($find_pay_type == 1){ //ชำระแล้ว
-                        if($line_remain_amount > 0){
-                            continue;
-                        }
                     }
 //
                     $sum_line_total_all += $find_order[$i]['total_credit'];

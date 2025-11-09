@@ -101,10 +101,25 @@ class Assetsitem extends \common\models\Assets
         $model = \common\models\CustomerAsset::find()->where(['product_id' => $id])->one();
         return $model != null ? \backend\models\Customer::findName($model->customer_id) : '';
     }
+    public static function findCustomerCode($id)
+    {
+        $model = \common\models\CustomerAsset::find()->where(['product_id' => $id])->one();
+        return $model != null ? \backend\models\Customer::findCode($model->customer_id) : '';
+    }
+    public static function findCustomerRouteNum($id)
+    {
+        $model = \common\models\CustomerAsset::find()->where(['product_id' => $id])->one();
+        return $model != null ? \backend\models\Customer::findRouteNum($model->customer_id) : '';
+    }
     public static function findCustomerid($id)
     {
         $model = \common\models\CustomerAsset::find()->where(['product_id' => $id])->one();
         return $model != null ? $model->customer_id : 0;
+    }
+    public static function findSize($id)
+    {
+        $model = \common\models\Assets::find()->where(['id' => $id])->one();
+        return $model != null ? $model->description : '';
     }
 
 }

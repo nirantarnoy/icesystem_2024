@@ -19,6 +19,8 @@ if ($f_date != null && $t_date != null) {
     $dash_date = date('d/m/Y H:i', strtotime($f_date)) . ' - ' . date('d/m/Y H:i', strtotime($t_date));
 }
 
+$production_type_data = [['id'=>0,'name'=>'ทั้งหมด'],['id'=>1,'name'=>'รับเข้าปกติ'],['id'=>2,'name'=>'รับอัตโนมัติ']];
+
 ?>
 
 <div class="stocktrans-search">
@@ -152,6 +154,21 @@ if ($f_date != null && $t_date != null) {
              </div>
          </div>
      </div>
+    <div class="row">
+        <div class="col-lg-3">
+            <?php
+                echo \kartik\select2\Select2::widget([
+                        'model' => $model,
+                        'attribute'=> 'production_view_type_id',
+                        'data' => \yii\helpers\ArrayHelper::map($production_type_data, 'id', 'name'),
+                        'options'=>[
+                            'onchange' => 'this.form.submit();',
+                        ]
+
+                ])
+            ?>
+        </div>
+    </div>
 
 
     <?php ActiveForm::end(); ?>

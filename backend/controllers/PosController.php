@@ -42,8 +42,8 @@ class PosController extends Controller
                     [
                         'actions' => [
                             'logout', 'index', 'indextest', 'indextest2', 'print', 'printindex', 'dailysum', 'getcustomerprice', 'getoriginprice', 'closesale', 'cancelorder', 'manageclose',
-                            'salehistory', 'getbasicprice', 'delete', 'orderedit', 'posupdate', 'posttrans', 'saledailyend', 'saledailyend2', 'printdo', 'createissue', 'updatestock', 'listissue', 'updateissue', 'printsummary', 'printpossummary', 'printcarsummary','startcaldailymanager','printsummarycarnky','printsummaryposnky'
-                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','closesaletestnew','printtestnew','printtestnewdo'
+                            'salehistory', 'getbasicprice', 'delete', 'orderedit', 'posupdate', 'posttrans', 'saledailyend', 'saledailyend2', 'printdo', 'createissue', 'updatestock', 'listissue', 'updateissue', 'printsummary', 'printpossummary', 'printcarsummary','startcaldailymanager'
+                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','closesaletestnew','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky'
                         ],
                         'allow' => true,
                         'roles' => ['@'],
@@ -1340,7 +1340,6 @@ class PosController extends Controller
             $emp_id = \Yii::$app->request->queryParams['SaleposdataSearch']['emp_id'];
         }
 
-
         $from_date_time = null;
         $to_date_time = null;
 
@@ -1703,7 +1702,7 @@ class PosController extends Controller
         }
         $user_id = \Yii::$app->user->id;
         // $cal_date = date('Y-m-d',strtotime("2022/06/22"));
-        $cal_date =  date('Y-m-d') > date('Y-m-d',strtotime($login_date))?date('Y-m-d'):$login_date;
+        $cal_date = date('Y-m-d');
 
         //\common\models\TransactionCarSale::deleteAll(['date(trans_date)'=>date('Y-m-d')]);
         //\common\models\TransactionPosSaleSum::deleteAll(['date(trans_date)' => $cal_date]);
@@ -2409,6 +2408,8 @@ class PosController extends Controller
         $find_user_id = \Yii::$app->request->post('find_user_id');
         $is_invoice_req = \Yii::$app->request->post('is_invoice_req');
         $btn_order_type = \Yii::$app->request->post('btn_order_type');
+
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_print_sale_summary', [
             'from_date' => $from_date,
             'to_date' => $to_date,
@@ -2418,6 +2419,7 @@ class PosController extends Controller
             'branch_id' => $branch_id,
             'is_invoice_req' => $is_invoice_req,
             'btn_order_type'=>$btn_order_type,
+            'is_admin'=>$is_admin,
         ]);
     }
     public function actionPrintpossummary()
@@ -2468,6 +2470,8 @@ class PosController extends Controller
         $find_user_id = \Yii::$app->request->post('find_user_id');
         $is_invoice_req = \Yii::$app->request->post('is_invoice_req');
         $btn_order_type = \Yii::$app->request->post('btn_order_type');
+
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_print_sale_car_summary', [
             'from_date' => $from_date,
             'to_date' => $to_date,
@@ -2477,6 +2481,7 @@ class PosController extends Controller
             'branch_id' => $branch_id,
             'is_invoice_req' => $is_invoice_req,
             'btn_order_type'=>$btn_order_type,
+            'is_admin'=> $is_admin,
         ]);
     }
 
@@ -3165,35 +3170,6 @@ class PosController extends Controller
         return $data;
     }
 
-    public function actionPrintsummaryposnky()
-    {
-        $company_id = 0;
-        $branch_id = 0;
-
-        if (!empty(\Yii::$app->user->identity->company_id)) {
-            $company_id = \Yii::$app->user->identity->company_id;
-        }
-        if (!empty(\Yii::$app->user->identity->branch_id)) {
-            $branch_id = \Yii::$app->user->identity->branch_id;
-        }
-
-        $from_date = \Yii::$app->request->post('from_date');
-        $to_date = \Yii::$app->request->post('to_date');
-        $find_sale_type = \Yii::$app->request->post('find_sale_type');
-        $find_user_id = \Yii::$app->request->post('find_user_id');
-        $is_invoice_req = \Yii::$app->request->post('is_invoice_req');
-        $btn_order_type = \Yii::$app->request->post('btn_order_type');
-        return $this->render('_print_sale_summary_pos_nky', [
-            'from_date' => $from_date,
-            'to_date' => $to_date,
-            'find_sale_type' => $find_sale_type,
-            'find_user_id' => $find_user_id,
-            'company_id' => $company_id,
-            'branch_id' => $branch_id,
-            'is_invoice_req' => $is_invoice_req,
-            'btn_order_type'=>$btn_order_type,
-        ]);
-    }
     public function actionPrintsummarycarnky()
     {
         $company_id = 0;
@@ -3212,6 +3188,7 @@ class PosController extends Controller
         $find_user_id = \Yii::$app->request->post('find_user_id');
         $is_invoice_req = \Yii::$app->request->post('is_invoice_req');
         $btn_order_type = \Yii::$app->request->post('btn_order_type');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_print_sale_summary_car_nky', [
             'from_date' => $from_date,
             'to_date' => $to_date,
@@ -3221,6 +3198,39 @@ class PosController extends Controller
             'branch_id' => $branch_id,
             'is_invoice_req' => $is_invoice_req,
             'btn_order_type'=>$btn_order_type,
+            'is_admin' => $is_admin,
+        ]);
+    }
+
+   public function actionPrintsummaryposnky()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $find_sale_type = \Yii::$app->request->post('find_sale_type');
+        $find_user_id = \Yii::$app->request->post('find_user_id');
+        $is_invoice_req = \Yii::$app->request->post('is_invoice_req');
+        $btn_order_type = \Yii::$app->request->post('btn_order_type');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
+        return $this->render('_print_sale_summary_pos_nky', [
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'find_sale_type' => $find_sale_type,
+            'find_user_id' => $find_user_id,
+            'company_id' => $company_id,
+            'branch_id' => $branch_id,
+            'is_invoice_req' => $is_invoice_req,
+            'btn_order_type'=>$btn_order_type,
+            'is_admin'=>$is_admin,
         ]);
     }
 

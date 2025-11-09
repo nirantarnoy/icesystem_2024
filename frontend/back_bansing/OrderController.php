@@ -2224,23 +2224,23 @@ class OrderController extends Controller
 
     public function notifymessageorderclose($route_id, $user_id, $company_id, $branch_id)
     {
-        //$message = "This is test send request from camel paperless";
-        $line_api = 'https://notify-api.line.me/api/notify';
-        $line_token = '';
-
-        //   6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE   token omnoi
-        if ($company_id == 1 && $branch_id == 1) {
-            //  $line_token = 'ZMqo4ZqwBGafMOXKVht2Liq9dCGswp4IRofT2EbdRNN'; // vorapat
-            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-            //   $line_token = '6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE'; // omnoi
-            $line_token = trim($b_token);
-        } else if ($company_id == 1 && $branch_id == 2) {
-            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-            $line_token = trim($b_token);
-            //   $line_token = 'TxAUAOScIROaBexBWXaYrVcbjBItIKUwGzFpoFy3Jrx'; // BKT
-        }
-
-        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
+//        //$message = "This is test send request from camel paperless";
+//        $line_api = 'https://notify-api.line.me/api/notify';
+//        $line_token = '';
+//
+//        //   6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE   token omnoi
+//        if ($company_id == 1 && $branch_id == 1) {
+//            //  $line_token = 'ZMqo4ZqwBGafMOXKVht2Liq9dCGswp4IRofT2EbdRNN'; // vorapat
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            //   $line_token = '6kL3UlbKb1djsoGE7KFXSo9SQ1ikYb2MxmTHDeEy3GE'; // omnoi
+//            $line_token = trim($b_token);
+//        } else if ($company_id == 1 && $branch_id == 2) {
+//            $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//            $line_token = trim($b_token);
+//            //   $line_token = 'TxAUAOScIROaBexBWXaYrVcbjBItIKUwGzFpoFy3Jrx'; // BKT
+//        }
+//
+//        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
 
         // $queryData = array('message' => $message);
         $credit_total = \backend\models\Orders::findordercredit2($route_id, 1);
@@ -2270,21 +2270,33 @@ class OrderController extends Controller
           $message .= 'สามารถดูรายละเอียดได้ที่ http://141.98.16.4/icesystembansing/backend/web/index.php?r=dailysum/indexnew' . "\n"; // dindang
 
 
-        $queryData = array('message' => $message);
-        $queryData = http_build_query($queryData, '', '&');
-        $headerOptions = array(
-            'http' => array(
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
-                    . "Authorization: Bearer " . $line_token . "\r\n"
-                    . "Content-Length: " . strlen($queryData) . "\r\n",
-                'content' => $queryData
-            )
-        );
-        $context = stream_context_create($headerOptions);
-        $result = file_get_contents($line_api, FALSE, $context);
-        $res = json_decode($result);
-        return $res;
+//        $queryData = array('message' => $message);
+//        $queryData = http_build_query($queryData, '', '&');
+//        $headerOptions = array(
+//            'http' => array(
+//                'method' => 'POST',
+//                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+//                    . "Authorization: Bearer " . $line_token . "\r\n"
+//                    . "Content-Length: " . strlen($queryData) . "\r\n",
+//                'content' => $queryData
+//            )
+//        );
+//        $context = stream_context_create($headerOptions);
+//        $result = file_get_contents($line_api, FALSE, $context);
+//        $res = json_decode($result);
+//        return $res;
+
+        /// telegram
+        $telegram_api_url = "https://api.telegram.org/bot";
+        $telegram_token = "7730620672:AAEhlP5bQf5rfvK6BwXiou0c5nGTe7LURYc";
+        $telegram_chat_id = "-4660804187";// "7653537115"; //-4787477639 group chat id
+        // $message = "This is test send request from icesystem ";
+
+
+        $url = $telegram_api_url . $telegram_token . "/sendMessage?chat_id=" . $telegram_chat_id . "&text=" . urlencode($message);
+        //Send message to telegram
+        file_get_contents($url);
+        // end telegram
     }
 
     public function actionTestclosepos()
@@ -2295,15 +2307,15 @@ class OrderController extends Controller
     // public function notifymessageorderPosclose($route_id, $user_id, $company_id, $branch_id)
     public function notifymessageorderPosclose($user_id, $company_id, $branch_id)
     {
-        //$message = "This is test send request from camel paperless";
-        $line_api = 'https://notify-api.line.me/api/notify';
-        $line_token = '';
-
-
-        $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
-        $line_token = trim($b_token);
-
-        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
+//        //$message = "This is test send request from camel paperless";
+//        $line_api = 'https://notify-api.line.me/api/notify';
+//        $line_token = '';
+//
+//
+//        $b_token = \backend\models\Branch::findLintoken($company_id, $branch_id);
+//        $line_token = trim($b_token);
+//
+//        // $line_token = 'N3x9CANrOE3qjoAejRBLjrJ7FhLuTBPFuC9ToXh0szh'
 
         // $queryData = array('message' => $message);
         $credit_total = \backend\models\Orders::findordercreditPos($user_id);
@@ -2331,21 +2343,33 @@ class OrderController extends Controller
         $message .= 'สามารถดูรายละเอียดได้ที่ http://141.98.16.4/icesystembansing/backend/web/index.php?r=dailysum/indexnew' . "\n"; // bkt
 
 
-        $queryData = array('message' => $message);
-        $queryData = http_build_query($queryData, '', '&');
-        $headerOptions = array(
-            'http' => array(
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
-                    . "Authorization: Bearer " . $line_token . "\r\n"
-                    . "Content-Length: " . strlen($queryData) . "\r\n",
-                'content' => $queryData
-            )
-        );
-        $context = stream_context_create($headerOptions);
-        $result = file_get_contents($line_api, FALSE, $context);
-        $res = json_decode($result);
-        return $res;
+//        $queryData = array('message' => $message);
+//        $queryData = http_build_query($queryData, '', '&');
+//        $headerOptions = array(
+//            'http' => array(
+//                'method' => 'POST',
+//                'header' => "Content-Type: application/x-www-form-urlencoded\r\n"
+//                    . "Authorization: Bearer " . $line_token . "\r\n"
+//                    . "Content-Length: " . strlen($queryData) . "\r\n",
+//                'content' => $queryData
+//            )
+//        );
+//        $context = stream_context_create($headerOptions);
+//        $result = file_get_contents($line_api, FALSE, $context);
+//        $res = json_decode($result);
+//        return $res;
+
+        /// telegram
+        $telegram_api_url = "https://api.telegram.org/bot";
+        $telegram_token = "7730620672:AAEhlP5bQf5rfvK6BwXiou0c5nGTe7LURYc";
+        $telegram_chat_id = "-4660804187";// "7653537115"; //-4787477639 group chat id
+        // $message = "This is test send request from icesystem ";
+
+
+        $url = $telegram_api_url . $telegram_token . "/sendMessage?chat_id=" . $telegram_chat_id . "&text=" . urlencode($message);
+        //Send message to telegram
+        file_get_contents($url);
+        // end telegram
     }
 
     public function findEmpName($user_id)
@@ -4912,6 +4936,7 @@ class OrderController extends Controller
         $qty = 0;
         $cancel_qty = 0;
         $second_user_id = [];
+        $filter_for_second_user_id = [];
         if ($product_id != null) {
 
             $model_login = \common\models\LoginLogCal::find()->where(['user_id' => $user_id])->orderBy(['id' => SORT_DESC])->one();
@@ -4926,11 +4951,12 @@ class OrderController extends Controller
             }
 
             if (count($second_user_id) > 0) {
-                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'production_type' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $second_user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
+                
+                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'production_type' => [1,2], 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
                 // $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id'=>$company_id,'branch_id'=>$branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s', strtotime($t_date))])->sum('qty');
-                $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $second_user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['and', ['>=', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))], ['<=', 'trans_date', date('Y-m-d H:i:s')]])->sum('qty');
+                $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id' => $company_id, 'branch_id' => $branch_id, 'created_by' => $user_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['and', ['>=', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))], ['<=', 'trans_date', date('Y-m-d H:i:s')]])->sum('qty');
             } else {
-                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'created_by' => $user_id, 'production_type' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
+                $qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 15, 'created_by' => $user_id, 'production_type' => [1,2], 'company_id' => $company_id, 'branch_id' => $branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('qty');
                 // $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'production_type' => 28, 'company_id'=>$company_id,'branch_id'=>$branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['between', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s', strtotime($t_date))])->sum('qty');
                 $cancel_qty = \backend\models\Stocktrans::find()->where(['activity_type_id' => 28, 'created_by' => $user_id, 'production_type' => 28, 'company_id' => $company_id, 'branch_id' => $branch_id])->andFilterWhere(['product_id' => $product_id])->andFilterWhere(['and', ['>=', 'trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime))], ['<=', 'trans_date', date('Y-m-d H:i:s')]])->sum('qty');
             }
@@ -4961,11 +4987,11 @@ class OrderController extends Controller
                     }
                 }
             }
-            if (count($second_user_id) > 0) {
-                $qty = \backend\models\Scrap::find()->join('inner join', 'scrap_line', 'scrap_line.scrap_id = scrap.id')->where(['scrap_line.product_id' => $product_id, 'created_by' => $second_user_id])->andFilterWhere(['between', 'scrap.trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('scrap_line.qty');
-            } else {
+           // if (count($second_user_id) > 0) {
+           //     $qty = \backend\models\Scrap::find()->join('inner join', 'scrap_line', 'scrap_line.scrap_id = scrap.id')->where(['scrap_line.product_id' => $product_id, 'created_by' => $second_user_id])->andFilterWhere(['between', 'scrap.trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('scrap_line.qty');
+           // } else {
                 $qty = \backend\models\Scrap::find()->join('inner join', 'scrap_line', 'scrap_line.scrap_id = scrap.id')->where(['scrap_line.product_id' => $product_id, 'created_by' => $user_id])->andFilterWhere(['between', 'scrap.trans_date', date('Y-m-d H:i:s', strtotime($user_login_datetime)), date('Y-m-d H:i:s')])->sum('scrap_line.qty');
-            }
+           // }
 
         }
         if ($qty == null) {
@@ -5595,7 +5621,8 @@ class OrderController extends Controller
                 $model->warehouse_id = $warehouse_id;//$warehouse_id;
                 $model->stock_type = 1;
                 $model->activity_type_id = 15; // 15 prod rec
-                $model->production_type = 1;
+              //  $model->production_type = 1;
+                $model->production_type = 2; // 1 is normal receive 2 is create auto new
                 $model->company_id = 1;
                 $model->branch_id = 1;
                 $model->created_by = $user_id;

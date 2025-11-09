@@ -862,6 +862,40 @@ class SiteController extends Controller
         }
 
     }
+    function actionResetPasswordWithValidation($username, $newPassword)
+    {
+        // ตรวจสอบความแข็งแกร่งของรหัสผ่าน
+        if (strlen($newPassword) < 8) {
+            \Yii::$app->session->setFlash('error', 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+            return false;
+        }
+
+        $model = \common\models\User::findByUsername($username);
+
+        if (!$model) {
+            \Yii::$app->session->setFlash('error', 'ไม่พบผู้ใช้: ' . $username);
+            return false;
+        }
+
+        // บันทึกรหัสผ่านเก่า (สำหรับ log)
+        $oldPasswordHash = $model->password_hash;
+
+        $model->setPassword($newPassword);
+        $model->generateAuthKey();
+        $model->updated_at = time(); // อัพเดท timestamp
+
+        if ($model->save()) {
+            \Yii::$app->session->setFlash('success', 'รีเซ็ตรหัสผ่านสำเร็จสำหรับ: ' . $username);
+
+            // Log การเปลี่ยนรหัสผ่าน
+            \Yii::info("Password reset for user: {$username} by admin", 'user');
+
+            return true;
+        } else {
+            \Yii::$app->session->setFlash('error', 'เกิดข้อผิดพลาด: ' . implode(', ', $model->getFirstErrors()));
+            return false;
+        }
+    }
 
     public
     function actionApiLogin()

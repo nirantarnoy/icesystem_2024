@@ -4701,7 +4701,7 @@ class OrderController extends Controller
                 \common\models\Orders::updateAll(['status' => 100], ['created_by' => $user_id, 'sale_channel_id' => 2, 'status' => 1]);
                 $status = 1;
                 array_push($data, ['message' => 'success']);
-                $this->notifymessageorderPosclose($user_id, $company_id, $branch_id);
+               // $this->notifymessageorderPosclose($user_id, $company_id, $branch_id);
             }
         }
         return ['status' => $status, 'data' => $data];
@@ -5736,7 +5736,7 @@ class OrderController extends Controller
                 $model->warehouse_id = $warehouse_id;//$warehouse_id;
                 $model->stock_type = 1;
                 $model->activity_type_id = 15; // 15 prod rec
-                $model->production_type = 1;
+                $model->production_type = 2; // 1 is normal receive 2 is create auto new
                 $model->company_id = 1;
                 $model->branch_id = 1;
                 $model->created_by = $user_id;
@@ -5843,4 +5843,16 @@ class OrderController extends Controller
     }
     // end issue temp confirm
 
+
+   // public function notifymessageorderclosebytelegram($route_id, $user_id, $company_id, $branch_id)
+   public function notifymessageorderclosebytelegram($route_id, $user_id, $company_id, $branch_id)
+   {
+        $telegram_api_url = "https://api.telegram.org/bot";
+        $telegram_token = "7182012715:AAH-m2X1l7q0cghwoDWnJf9jNndbDtc6Ej0";
+        $telegram_chat_id = "7653537115";
+        $message = "This is test send request from camel paperless";
+        $url = $telegram_api_url . $telegram_token . "/sendMessage?chat_id=" . $telegram_chat_id . "&text=" . urlencode($message);
+        //Send message to telegram
+        file_get_contents($url);
+    }
 }

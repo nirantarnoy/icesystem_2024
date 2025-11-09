@@ -198,6 +198,7 @@ class CustomerController extends Controller
     {
         $model = $this->findModel($id);
         $model_asset_list = \backend\models\Customerasset::find()->where(['customer_id' => $id])->all();
+        $model_delivery_address = \common\models\AddressInfo::find()->where(['party_id' => $id, 'address_type_id' => 2])->one();
 
         if ($model->load(Yii::$app->request->post())) {
 //            $group = \Yii::$app->request->post('customer_group_id');
@@ -285,6 +286,7 @@ class CustomerController extends Controller
             'model' => $model,
          //   'model_asset_list' => $model_asset_list,
             'model_asset_list' => $model_asset_list,
+            'model_delivery_address'=>$model_delivery_address,
         ]);
     }
 

@@ -12,6 +12,9 @@ use yii\web\Response;
 // เพิ่ม Font ให้กับ mPDF
 
 $user_id = \Yii::$app->user->id;
+$is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->identity->id);
+
+include \Yii::getAlias("@backend/helpers/ChangeAdminDate2.php");
 
 $defaultFontConfig = (new Mpdf\Config\FontVariables())->getDefaults();
 $fontData = $defaultFontConfig['fontdata'];

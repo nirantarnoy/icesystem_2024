@@ -477,6 +477,7 @@ class PaymentreceivecarController extends Controller
         $is_find_date = \Yii::$app->request->post('is_find_date');
         $find_customer_id_select = \Yii::$app->request->post('find_customer_id_select');
         $find_has_detail = \Yii::$app->request->post('find_has_detail');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
         return $this->render('_print_customer_car_loan_new', [
             'from_date' => $from_date,
             'to_date' => $to_date,
@@ -488,6 +489,7 @@ class PaymentreceivecarController extends Controller
             'branch_id' => $branch_id,
             'is_start_find' => $is_start_find,
             'find_has_detail'=>$find_has_detail,
+            'is_admin'=>$is_admin,
         ]);
     }
 

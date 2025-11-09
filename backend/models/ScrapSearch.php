@@ -4,6 +4,7 @@ namespace backend\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
+use DateTime;
 
 
 /**
@@ -41,6 +42,7 @@ class ScrapSearch extends \common\models\QueryScrap
      */
     public function search($params)
     {
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->identity->id);
         $query = \common\models\QueryScrap::find();
 
         // add conditions that should always apply here
@@ -69,6 +71,9 @@ class ScrapSearch extends \common\models\QueryScrap
         }
 
         if($this->from_date != null && $this->to_date != null){
+
+            include \Yii::getAlias("@backend/helpers/ChangeAdminDate.php");
+
             $fx_datetime = explode(' ',$this->from_date);
             $tx_datetime = explode(' ',$this->to_date);
 
@@ -82,7 +87,12 @@ class ScrapSearch extends \common\models\QueryScrap
 
             if(count($fx_datetime) > 0){
                 $f_date = $fx_datetime[0];
-                $f_time = $fx_datetime[1];
+                if(!empty($fx_datetime[1])){
+                    $f_time = $fx_datetime[1];
+                }else{
+                    $f_time = '00:01';
+                }
+              //  $f_time = $fx_datetime[1];
 
                 $x_date = explode('-', $f_date);
                 $xx_date = date('Y-m-d');
@@ -96,7 +106,12 @@ class ScrapSearch extends \common\models\QueryScrap
 
             if(count($tx_datetime) > 0){
                 $t_date = $tx_datetime[0];
-                $t_time = $tx_datetime[1];
+                //$t_time = $tx_datetime[1];
+                if(!empty($tx_datetime[1])){
+                    $t_time = $tx_datetime[1];
+                }else{
+                    $t_time = '59:59';
+                }
 
                 $n_date = explode('-', $t_date);
                 $nn_date = date('Y-m-d');
