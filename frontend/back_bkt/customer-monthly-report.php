@@ -53,6 +53,13 @@ $month_data = [['id' => 1, 'name' => 'ม.ค.'], ['id' => 2, 'name' => 'ก.พ
                 ], 'pluginOptions' => ['allowClear' => true, 'multiple' => false,],]);
             ?>
         </div>
+        <div class="col-lg-2">
+            <select name="for_year" id="" class="form-control">
+                <option value="2026" <?=$for_year == 2026?'selected':''?>>2026</option>
+                <option value="2025" <?=$for_year == 2025?'selected':''?>>2025</option>
+                <option value="2024" <?=$for_year == 2024?'selected':''?>>2024</option>
+            </select>
+        </div>
         <div class="col-lg-3">
             <button class="btn btn-sm btn-primary">
                 <i class="fa fa-search"></i> ค้นหา
@@ -72,7 +79,7 @@ $c_month = date('m');
             <td style="text-align: center;">#</td>
             <td style="text-align: center;">รหัส</td>
             <td>ลูกค้า</td>
-            <td style="text-align: center;">สายส่ง</td>
+            <td style="text-align: center; cursor: pointer;" onclick="sortTable(3, this)">สายส่ง <span class="sort-icon"></span></td>
             <?php if ($c_month >= 1): ?>
                 <td style="text-align: center;">ม.ค.</td>
             <?php endif; ?>
@@ -110,7 +117,10 @@ $c_month = date('m');
                 <td style="text-align: center;">ธ.ค.</td>
             <?php endif; ?>
             <td style="text-align: center;">คาดว่า</td>
-            <td style="text-align: center;"><span onclick="sortTable(<?=((int)$to_month - (int)$from_month)+ 6?>)">ประเภท</span></td>
+            <td style="text-align: center; cursor: pointer;" onclick="sortTable(<?= (int)$c_month + 5 ?>, this)">
+                ประเภท <span class="sort-icon"></span>
+            </td>
+
             <td style="text-align: center;">ส่วนต่าง</td>
             <!--        <th>รวม</th>-->
         </tr>
@@ -176,8 +186,7 @@ $c_month = date('m');
                 <td style="text-align: center;"><?= Html::encode($row['route_name']) ?></td>
 
                 <?php if ($c_month >= 1): ?>
-                    <td align=" right
-            "><?= number_format($row['Jan'], 2) ?></td><?php endif; ?>
+                    <td align="right"><?= number_format($row['Jan'], 2) ?></td><?php endif; ?>
                 <?php if ($c_month >= 2): ?>
                     <td align="right"><?= number_format($row['Feb'], 2) ?></td><?php endif; ?>
                 <?php if ($c_month >= 3): ?>
@@ -237,53 +246,61 @@ function printContent(el)
          window.print();
          document.body.innerHTML = restorepage;
      }
-function sortTable(n) {
+function sortTable(n, header) {
   let table = document.getElementById("table-data");
-  let rows = table.tBodies[0].rows;  // ✅ ใช้เฉพาะ tbody
-  let switching = true;
-  let dir = "asc"; 
-  let switchcount = 0;
+  let tbody = table.tBodies[0];
+  let rows = Array.from(tbody.rows);
   
-  // alert(n);
+  // Determine direction
+  let currentDir = header.getAttribute("data-sort-dir");
+  let dir = currentDir === "asc" ? "desc" : "asc";
+  
+  // Reset all icons and attributes in headers
+  let allHeaders = table.querySelectorAll("thead td");
+  allHeaders.forEach(td => {
+      let icon = td.querySelector(".sort-icon");
+      if(icon) icon.innerText = "";
+      td.removeAttribute("data-sort-dir");
+  });
 
-  while (switching) {
-    switching = false;
-    for (let i = 0; i < (rows.length - 1); i++) {
-      let shouldSwitch = false;
-      let x = rows[i].getElementsByTagName("TD")[n];
-      let y = rows[i + 1].getElementsByTagName("TD")[n];
+  // Set current header state
+  header.setAttribute("data-sort-dir", dir);
+  let icon = header.querySelector(".sort-icon");
+  if(icon) icon.innerText = dir === "asc" ? " ▲" : " ▼";
 
-      console.log(x);
-      // ถ้าไม่มี column นี้ ข้าม
-      if (!x || !y) continue;
-
-      let xVal = x.innerText.toLowerCase();
-      let yVal = y.innerText.toLowerCase();
-
-      if (!isNaN(xVal) && !isNaN(yVal)) {
-        xVal = Number(xVal);
-        yVal = Number(yVal);
+  // Check if column is numeric
+  let isNumeric = true;
+  for(let i=0; i<Math.min(rows.length, 10); i++) {
+      let cell = rows[i].getElementsByTagName("TD")[n];
+      if(!cell) continue;
+      let text = cell.innerText.replace(/,/g, '').trim();
+      if(text !== "" && isNaN(parseFloat(text))) {
+          isNumeric = false;
+          break;
       }
-
-      if (dir == "asc" && xVal > yVal) {
-        shouldSwitch = true;
-      } else if (dir == "desc" && xVal < yVal) {
-        shouldSwitch = true;
-      }
-
-      if (shouldSwitch) {
-        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-        switching = true;
-        switchcount++;
-        break;
-      }
-    }
-    if (!switching && switchcount == 0 && dir == "asc") {
-      dir = "desc";
-      switching = true;
-    }
-    
   }
+
+  // Sort rows
+  rows.sort((a, b) => {
+      let x = a.getElementsByTagName("TD")[n];
+      let y = b.getElementsByTagName("TD")[n];
+      
+      if (!x || !y) return 0;
+      
+      let xText = x.innerText.replace(/,/g, '').trim();
+      let yText = y.innerText.replace(/,/g, '').trim();
+      
+      if (isNumeric) {
+          let xNum = parseFloat(xText) || 0;
+          let yNum = parseFloat(yText) || 0;
+          return dir === "asc" ? xNum - yNum : yNum - xNum;
+      } else {
+          return dir === "asc" ? xText.localeCompare(yText, 'th') : yText.localeCompare(xText, 'th');
+      }
+  });
+
+  // Re-append sorted rows
+  rows.forEach(row => tbody.appendChild(row));
 }
 JS;
 $this->registerJs($js, static::POS_END);

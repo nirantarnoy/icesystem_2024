@@ -286,6 +286,7 @@ $model_line = $dataProvider->getModels();
                         $total_all_qty_credit = 0;
                         $last_product = '';
                         $total_all_qty_sum = 0;
+                        $total_all_cash_transfer = 0;
                         ?>
                         <?php foreach ($model_line as $value): ?>
                             <?php
@@ -298,6 +299,8 @@ $model_line = $dataProvider->getModels();
 
                             $total_all_cash = $total_all_cash + $value->line_total_cash;
                             $total_all_credit = $total_all_credit + $value->line_total_credit;
+
+                            $total_all_cash_transfer = $total_all_cash_transfer + $value->line_total_cash_transfer;
 
                             //     $total_all_qty_cash = $total_all_qty_cash + $value->line_qty_cash;
                             //    $total_all_qty_credit = $total_all_qty_credit + $value->line_qty_credit;
@@ -352,7 +355,7 @@ $model_line = $dataProvider->getModels();
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายสด</b></td>
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
-                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b>
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])) + $total_all_cash_transfer, 2) ?></b>
                             </td>
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายเชื่อ</b>
@@ -381,6 +384,36 @@ $model_line = $dataProvider->getModels();
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b><?= number_format(getPayment($route_id, $show_pos_date) + 0, 2) ?></b></td>
                         </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;border: 1px solid grey;text-align: center"><b></b>
+                            </td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b>ขายสดเงินสด</b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b></td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right"><b></b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;border: 1px solid grey;text-align: center"><b></b>
+                            </td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b>ขายสดเงินโอน</b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b><?= number_format($total_all_cash_transfer, 2) ?></b></td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right"><b></b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                            </td>
+                        </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -393,7 +426,7 @@ $model_line = $dataProvider->getModels();
 
             <br>
             <div class="row">
-                <div class="col-lg-12">
+                <div class="col-lg-6">
                     <p>สรุปรายละเอียดการรับเงินทั้งหมดจากรายงานขายสดและชำระหนี้(รวมทุกกลุ่มสินค้า)</p>
                 </div>
             </div>

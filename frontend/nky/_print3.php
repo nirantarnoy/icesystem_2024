@@ -43,6 +43,7 @@ if (count($xxtodate) > 1) {
         }
        
 
+
         table.table-header {
             border: 0px;
             border-spacing: 1px;
@@ -128,6 +129,14 @@ if (count($xxtodate) > 1) {
             <td colspan="2" style="text-align: left;border: none">วันที่เริ่ม
                 <span><b><?= date('d-m-Y', strtotime('+543 years', strtotime($from_date))) ?></b></span> ถึงวันที่
                 <span><b><?= $has_29_02 == 0 ? date('d-m-Y', strtotime('+543 years', strtotime($to_date))) : $to_date_new ?></b></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <b><?=$model->journal_no?></b>
+            </td>
+            <td>
+                ผู้ตรวจสอบ : ..............................
+            </td>
         </tr>
     </table>
     <br/>
@@ -297,7 +306,6 @@ if (count($xxtodate) > 1) {
         </tr>
         </tfoot>
     </table>
-    <br/>
     <br/>
     <br/>
     <table style="border: none">

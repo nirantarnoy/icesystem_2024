@@ -876,7 +876,7 @@
                         <li class="nav-item">
                             <a href="index.php?r=adminreport/customer-monthly-report" class="nav-link adminreport">
                                 <i class="far fa-circlez nav-icon"></i>
-                                <p>ยอดขายรายเดือน2025</p>
+                                <p>ยอดขายรายปี</p>
                             </a>
                         </li>
                         <?php //endif;?>
@@ -884,7 +884,7 @@
                             <li class="nav-item">
                                 <a href="index.php?r=adminreport/printcarcjbao" class="nav-link adminreport">
                                     <i class="far fa-circlez nav-icon"></i>
-                                    <p>ยอดขาย CJ BAO</p>
+                                    <p>ยอดขาย PT</p>
                                 </a>
                             </li>
                         <?php endif;?>

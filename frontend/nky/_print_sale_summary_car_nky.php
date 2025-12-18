@@ -63,15 +63,15 @@ if ($model_product != null) {
 }*/
 
 
-if ($find_user_id != null) {
-    $model_product_by_car = \common\models\QueryOrderCustomerCarProduct::find()->select(['product_id'])->where(['order_channel_id' => $find_user_id])->andFilterWhere(['>=', 'order_date', date('Y-m-d H:i:s', strtotime($from_date))])->andFilterWhere(['<=', 'order_date', date('Y-m-d H:i:s', strtotime($to_date))])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
+if($find_user_id!=null){
+    $model_product_by_car = \common\models\QueryOrderCustomerCarProduct::find()->select(['product_id'])->where(['order_channel_id'=>$find_user_id])->andFilterWhere(['>=','order_date',date('Y-m-d H:i:s',strtotime($from_date))])->andFilterWhere(['<=','order_date',date('Y-m-d H:i:s',strtotime($to_date))])->groupBy('product_id')->orderBy(['product_id'=>SORT_ASC])->all();
     if ($model_product_by_car != null) {
         foreach ($model_product_by_car as $value) {
             array_push($product_header_2, [$value->product_id]);
             array_push($product_header_3, [$value->product_id]);
         }
     }
-} else {
+}else{
     $model_product = \backend\models\Product::find()->where(['status' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['item_pos_seq' => SORT_ASC])->all();
     if ($model_product != null) {
         foreach ($model_product as $value) {
@@ -88,14 +88,14 @@ if ($from_date != null && $to_date != null) {
     $diff = $date1->diff($date2);
     $diff_month = ($diff->y * 12) + $diff->m;
 
-    $model_line = \common\models\QueryOrderCustomerProduct3::find()->select(['id', 'order_no', 'order_date', 'customer_id', 'order_channel_id'])
-        //  ->where(['BETWEEN', 'order_date', $from_date, $to_date])
+    $model_line = \common\models\QueryOrderCustomerProduct3::find()->select(['id', 'order_no','order_date','customer_id','order_channel_id'])
+      //  ->where(['BETWEEN', 'order_date', $from_date, $to_date])
         ->where(['status' => [1, 100]])
         ->andFilterWhere(['>', 'qty', 0]);
 
-    if ($is_admin == 1) {
+    if($is_admin == 1){
         $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date]);
-    } else {
+    }else{
         if ($to_date < $restrict_date) {
             $model_line = $model_line->andFilterWhere(['<=', 'order_date', date('Y-m-d H:i:s', strtotime('1970-01-01'))]);
         } else {
@@ -106,14 +106,15 @@ if ($from_date != null && $to_date != null) {
                     $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date]);
                 }
 
-            } else if (date('Y-m-d', strtotime($from_date)) == date('Y-m-d', strtotime($to_date)) || $diff_month <= 1) {
+            }else if(date('Y-m-d',strtotime($from_date)) == date('Y-m-d',strtotime($to_date)) || $diff_month <= 1){
                 if ($from_date < $restrict_date) {
                     $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $restrict_date, $to_date]);
-                } else {
+                }else{
                     $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $from_date, $to_date]);
                 }
 
-            } else {
+            }
+            else {
                 $model_line = $model_line->andFilterWhere(['BETWEEN', 'order_date', $restrict_date, $to_date]);
             }
         }
@@ -126,28 +127,28 @@ if ($from_date != null && $to_date != null) {
         $model_line = $model_line->andFilterWhere(['is_invoice_req' => $is_invoice_req]);
     }
     if ($find_sale_type != null && $find_sale_type != 0) {
-        if ($find_sale_type != 3) {
+        if ($find_sale_type !=3) {
             $model_line = $model_line->andFilterWhere(['payment_method_id' => $find_sale_type]);
-        } else {
-            $model_line = $model_line->andFilterWhere(['price' => 0]);
+        }else{
+            $model_line = $model_line->andFilterWhere(['price'=>0]);
         }
-        /*  if ($find_sale_type == 2) {
-              // $sql .= " AND (t2.order_channel_id = 0 OR t2.order_channel_id is null) AND t2.payment_method_id=" . $find_sale_type;
-              $model_line = $model_line->andFilterWhere(['or', ['!=','order_channel_id',0], ['is', 'order_channel_id', new \yii\db\Expression('null')]])->andFilterWhere(['payment_method_id' => $find_sale_type]);
-          }
-          if ($find_sale_type == 3) {
-  //            $sql .= " AND t2.order_channel_id > 0";
-  //            $sql .= " AND t4.is_other_branch = 0";
-              $model_line = $model_line->andFilterWhere(['>', 'order_channel_id', 0])->andFilterWhere(['is_other_branch' => 0]);
-          }
-          if ($find_sale_type == 4) {
-  //            $sql .= " AND t2.order_channel_id > 0";
-  //            $sql .= " AND t4.is_other_branch = 1";
-              $model_line = $model_line->andFilterWhere(['>', 'order_channel_id', 0])->andFilterWhere(['is_other_branch' => 1]);
-          }*/
+      /*  if ($find_sale_type == 2) {
+            // $sql .= " AND (t2.order_channel_id = 0 OR t2.order_channel_id is null) AND t2.payment_method_id=" . $find_sale_type;
+            $model_line = $model_line->andFilterWhere(['or', ['!=','order_channel_id',0], ['is', 'order_channel_id', new \yii\db\Expression('null')]])->andFilterWhere(['payment_method_id' => $find_sale_type]);
+        }
+        if ($find_sale_type == 3) {
+//            $sql .= " AND t2.order_channel_id > 0";
+//            $sql .= " AND t4.is_other_branch = 0";
+            $model_line = $model_line->andFilterWhere(['>', 'order_channel_id', 0])->andFilterWhere(['is_other_branch' => 0]);
+        }
+        if ($find_sale_type == 4) {
+//            $sql .= " AND t2.order_channel_id > 0";
+//            $sql .= " AND t4.is_other_branch = 1";
+            $model_line = $model_line->andFilterWhere(['>', 'order_channel_id', 0])->andFilterWhere(['is_other_branch' => 1]);
+        }*/
     }
 
-    $model_line = $model_line->groupBy(['id'])->orderBy(['order_channel_id' => SORT_ASC, 'id' => SORT_DESC])->all();
+    $model_line = $model_line->groupBy(['id'])->orderBy(['order_channel_id'=>SORT_ASC,'id' => SORT_DESC])->all();
 
 }
 
@@ -239,8 +240,8 @@ if ($from_date != null && $to_date != null) {
         <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
             <tr>
                 <td style="padding: 10px;"><span>เรียงตาม <div class="btn-group"><div
-                                    class="btn btn-sm <?= $btn_order_type == 1 ? "btn-success" : "btn-default" ?> btn-order-date">วันที่ขาย</div><div
-                                    class="btn btn-sm <?= $btn_order_type == 2 ? "btn-success" : "btn-default" ?> btn-order-price">ราคาขาย</div></div></span>
+                                class="btn btn-sm <?= $btn_order_type == 1 ? "btn-success" : "btn-default" ?> btn-order-date">วันที่ขาย</div><div
+                                class="btn btn-sm <?= $btn_order_type == 2 ? "btn-success" : "btn-default" ?> btn-order-price">ราคาขาย</div></div></span>
                 </td>
             </tr>
             <tr>
@@ -309,7 +310,7 @@ if ($from_date != null && $to_date != null) {
                             echo "selected";
                         } ?>>ฟรี
                         </option>
-
+                       
                     </select>
                 </td>
                 <td>
@@ -355,9 +356,7 @@ if ($from_date != null && $to_date != null) {
     <div id="div1">
         <table class="table-header" width="100%">
             <tr>
-                <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานยอดขายแยกตามประเภทสินค้า
-                    สายส่ง
-                </td>
+                <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานยอดขายแยกตามประเภทสินค้า สายส่ง</td>
             </tr>
         </table>
         <br>
@@ -401,23 +400,17 @@ if ($from_date != null && $to_date != null) {
             $total_all_qty = 0;
             $line_qty = 0;
             $product_list_text = '';
-            $current_route_id = 0;
-            $prev_route_id = 0;
-
-            $group_sum_qty = 0;
-            $group_sum_amount = 0;
-
-            for ($m = 0; $m <= count($product_header_2) - 1; $m++) {
-                if ($m < count($product_header_2) - 1) {
-                    $product_list_text .= $product_header_2[$m][0] . ',';
-                } else {
+            for($m=0;$m<=count($product_header_2)-1;$m++){
+                if($m < count($product_header_2)-1){
+                    $product_list_text .= $product_header_2[$m][0].',';
+                }else{
                     $product_list_text .= $product_header_2[$m][0];
                 }
             }
 
             ?>
             <?php if ($model_line != null): ?>
-
+               
                 <?php foreach ($model_line as $value): ?>
                     <?php
                     $loop_num += 1;
@@ -428,11 +421,11 @@ if ($from_date != null && $to_date != null) {
 //                    echo '</pre>'    ;
 
                     $customer_name = '';
-                    $customer_route_num = '';
-                    if ($value->customer_id != null) {
+                     $customer_route_num = '';
+                    if($value->customer_id != null){
                         $customer_name = \backend\models\Customer::findName($value->customer_id);
-                        $customer_route_num = \backend\models\Customer::findRouteNums($value->customer_id);
-                    } else {
+                          $customer_route_num = \backend\models\Customer::findRouteNums($value->customer_id);
+                    }else{
                         $customer_name = \backend\models\Deliveryroute::findName($value->order_channel_id);
                     }
 
@@ -440,42 +433,22 @@ if ($from_date != null && $to_date != null) {
                     $main_order_new = getOrderMain($value->id, $product_list_text);
 
                     $false_cutomer_pay_type = "";
-                    if (strpos($customer_name, '*') == false) {
+                    if(strpos($customer_name,'*') > 0){
                         $false_cutomer_pay_type = "color:red;";
                     }
-
-
-                    $group_sum_qty = $group_sum_qty + $line_total_qty;
-                    $group_sum_amount = $group_sum_amount + $line_total_amt;
-
-                    $line_slip = getOrderslip($value->id);
-
                     ?>
-
-                    <?php if ($current_route_id != $value->order_channel_id): ?>
-                        <tr>
-                            <?php $col_count = 5 + count($product_header_2) + 3; ?>
-                            <td style="border: 1px solid grey;background-color: lightseagreen;text-align: left;"
-                                colspan="<?= $col_count ?>">
-                                <b><?= \backend\models\Deliveryroute::findName($value->order_channel_id) ?></b>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
                     <tr>
                         <td style="text-align: center;border: 1px solid grey"><?= $loop_num ?></td>
-                        <td style="text-align: center;border: 1px solid grey">
+                        <td style="text-align: center;border: 1px solid grey;">
                             <?= $value->order_no; ?>
                         </td>
                         <td style="text-align: center;border: 1px solid grey">
                             <?= date('d-m-Y H:i:s', strtotime($value->order_date)); ?>
                         </td>
-                        <td style="text-align: center;border: 1px solid grey;<?= $false_cutomer_pay_type ?>">
+                        <td style="text-align: center;border: 1px solid grey;<?=$false_cutomer_pay_type?>">
                             <?= $customer_name; ?>
                         </td>
-                        <td style="text-align: center;border: 1px solid grey;<?= $false_cutomer_pay_type ?>">
-                            <?php if($line_slip!=''):?>
-                                <a href="<?=\Yii::$app->getUrlManager()->baseUrl.'/uploads/files/receive/'.$line_slip?>" target="_blank">View</a>
-                            <?php endif;?>
+                        <td style="text-align: center;border: 1px solid grey;<?=$false_cutomer_pay_type?>">
 
                         </td>
                         <td style="text-align: center;border: 1px solid grey">
@@ -494,9 +467,9 @@ if ($from_date != null && $to_date != null) {
 //                                $product_line_amt = $getorder_data[0]['amount'];
 //                            }
 
-                            if ($main_order_new != null) {
-                                for ($a = 0; $a <= count($main_order_new) - 1; $a++) {
-                                    if ($main_order_new[$a]['product_id'] == $product_header_3[$k][0]) {
+                            if($main_order_new!=null){
+                                for($a=0;$a<=count($main_order_new)-1;$a++){
+                                    if($main_order_new[$a]['product_id']==$product_header_3[$k][0]){
                                         $product_line_qty = $main_order_new[$a]['qty'];
                                         $product_line_amt = $main_order_new[$a]['amount'];
                                     }
@@ -528,16 +501,8 @@ if ($from_date != null && $to_date != null) {
                         <td style="text-align: right;border: 1px solid grey">
                             <b><?= number_format($line_total_amt, 2) ?></b></td>
                     </tr>
-                    <?php
-                    $prev_route_id = $current_route_id;
-                    $current_route_id = $value->order_channel_id; ?>
-<!--                    --><?php //if($prev_route_id <= $current_route_id):?>
-<!--                        <tr>-->
-<!--                            <td colspan="--><?php //= $col_count ?><!--" style="border: 1px solid grey"></td></tr>-->
-<!--                    --><?php //endif;?>
                 <?php endforeach; ?>
             <?php endif; ?>
-
             <tfoot>
             <tr>
                 <td colspan="5" style="font-size: 16px;border: 1px solid grey"></td>
@@ -580,10 +545,10 @@ if ($from_date != null && $to_date != null) {
 </html>
 
 <?php
-function getOrderMain($order_id, $product_list_text)
+function getOrderMain($order_id,$product_list_text)
 {
     $data = [];
-    $sql = "SELECT product_id,sum(qty) as qty,sum(line_total) as line_total FROM order_line WHERE order_id=" . $order_id . " AND product_id in(" . $product_list_text . ")" . " group by product_id";
+    $sql = "SELECT product_id,sum(qty) as qty,sum(line_total) as line_total FROM order_line WHERE order_id=" . $order_id. " AND product_id in(" . $product_list_text . ")" . " group by product_id";
 
     $query = \Yii::$app->db->createCommand($sql);
     $model = $query->queryAll();
@@ -599,11 +564,10 @@ function getOrderMain($order_id, $product_list_text)
     }
     return $data;
 }
-
-function getOrderNew($order_id, $product_id)
+function getOrderNew($order_id,$product_id)
 {
     $data = [];
-    $sql = "SELECT sum(qty) as qty,sum(line_total) as line_total FROM order_line WHERE order_id=" . $order_id . " AND product_id=" . $product_id . " group by product_id";
+    $sql = "SELECT sum(qty) as qty,sum(line_total) as line_total FROM order_line WHERE order_id=" . $order_id. " AND product_id=" . $product_id. " group by product_id";
 
     $query = \Yii::$app->db->createCommand($sql);
     $model = $query->queryAll();
@@ -717,22 +681,6 @@ function getOrder($product_id, $f_date, $t_date, $find_sale_type, $find_user_id,
         }
     }
     return $data;
-}
-
-function getOrderslip($order_id){
-    $slip_doc ='';
-    if($order_id != null){
-        $sql='SELECT t2.slip_doc';
-        $sql.=' FROM payment_receive_line as t1';
-        $sql.=' INNER JOIN payment_receive as t2 ON t1.payment_receive_id=t2.id';
-        $sql .= ' WHERE t1.order_id=' . $order_id;
-        $sql.=' LIMIT 1';
-
-        $query = \Yii::$app->db->createCommand($sql);
-        $model_slip = $query->queryScalar();
-            $slip_doc = $model_slip;
-    }
-    return $slip_doc;
 }
 
 ?>

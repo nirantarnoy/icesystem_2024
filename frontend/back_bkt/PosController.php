@@ -43,7 +43,9 @@ class PosController extends Controller
                         'actions' => [
                             'logout', 'index', 'indextest', 'indextest2', 'print', 'printindex', 'dailysum', 'getcustomerprice', 'getoriginprice', 'closesale', 'cancelorder', 'manageclose',
                             'salehistory', 'getbasicprice', 'delete', 'orderedit', 'posupdate', 'posttrans', 'saledailyend', 'saledailyend2', 'printdo', 'createissue', 'updatestock', 'listissue', 'updateissue', 'printsummary','printpossummary', 'printcarsummary','startcaldailymanager'
-                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky'
+                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky',
+                            'uploadslip', 'getslip',
+
                         ],
                         'allow' => true,
                         'roles' => ['@'],
@@ -831,6 +833,57 @@ class PosController extends Controller
 
             $this->renderPartial('_printindex2goapi', ['model' => $model_header, 'model_line' => $model_line, 'change_amount' => $ch_amt, 'branch_id' => $branch_id]);
         }
+    }
+
+    public function actionUploadslip()
+    {
+        $order_id = \Yii::$app->request->post('order_id');
+        if ($order_id) {
+            $uploadedFile = \yii\web\UploadedFile::getInstanceByName('slip_file');
+            if ($uploadedFile) {
+                $company_id = 1;
+                if (!empty(\Yii::$app->user->identity->company_id)) {
+                    $company_id = \Yii::$app->user->identity->company_id;
+                }
+                
+                $directory = \Yii::getAlias('@webroot') . '/uploads/company2/slip/';
+                if (!is_dir($directory)) {
+                    mkdir($directory, 0777, true);
+                }
+                
+                $fileName = 'slip_' . $order_id . '.' . $uploadedFile->extension;
+                $filePath = $directory . $fileName;
+                
+                if ($uploadedFile->saveAs($filePath)) {
+                    \Yii::$app->session->setFlash('msg', 'บันทึกสลิปเรียบร้อยแล้ว');
+                } else {
+                    \Yii::$app->session->setFlash('error', 'ไม่สามารถบันทึกไฟล์ได้');
+                }
+            }
+        }
+        return $this->redirect(['pos/salehistory']);
+    }
+
+    public function actionGetslip()
+    {
+        $order_id = \Yii::$app->request->post('id');
+        if ($order_id) {
+            $company_id = 1;
+            if (!empty(\Yii::$app->user->identity->company_id)) {
+                $company_id = \Yii::$app->user->identity->company_id;
+            }
+            
+            // Check for common image extensions
+            $extensions = ['jpg', 'jpeg', 'png', 'gif'];
+            foreach ($extensions as $ext) {
+                $fileName = 'slip_' . $order_id . '.' . $ext;
+                $filePath = \Yii::getAlias('@webroot') . '/uploads/company2/slip/' . $fileName;
+                if (file_exists($filePath)) {
+                    return \Yii::getAlias('@web') . '/uploads/company2/slip/' . $fileName;
+                }
+            }
+        }
+        return null;
     }
 
     public function actionPrintdo()

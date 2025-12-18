@@ -217,7 +217,7 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
                         <?php
                         echo \kartik\select2\Select2::widget([
                             'name' => 'route_id',
-                            'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1,'branch_id'=>1])->all(), 'id', 'name'),
+                            'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1,'branch_id'=>2])->all(), 'id', 'name'),
                             'value' => $route_id,
                             'options' => [
                                 'placeholder' => '--สายส่ง--'

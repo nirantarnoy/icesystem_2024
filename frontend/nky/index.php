@@ -2,51 +2,14 @@
 
 use yii\helpers\Html;
 use kartik\grid\GridView;
-use yii\bootstrap4\LinkPager;
 use yii\widgets\Pjax;
 use yii\helpers\Url;
+use yii\widgets\LinkPager;
 
-/* @var $this yii\web\View */
-/* @var $searchModel backend\models\CustomerrequestSearch */
-/* @var $dataProvider yii\data\ActiveDataProvider */
-
-$this->title = 'บันทึกการขาย (เปิดร้าน)';
+$this->title = 'วางบิล';
 $this->params['breadcrumbs'][] = $this->title;
-
 ?>
-<div class="customerrequest-index">
-    <!-- Flash Messages -->
-    <?php if (\Yii::$app->session->hasFlash('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('success') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('error') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('warning')): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <?= \Yii::$app->session->getFlash('warning') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('info')): ?>
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('info') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
+<div class="customerinvoice-index">
     <?php Pjax::begin(); ?>
     <div class="row">
         <div class="col-lg-10">
@@ -55,7 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
             </p>
         </div>
         <div class="col-lg-2" style="text-align: right">
-            <form id="form-perpage" class="form-inline" action="<?= Url::to(['customer/index'], true) ?>"
+            <form id="form-perpage" class="form-inline" action="<?= Url::to(['customerinvoice/index'], true) ?>"
                   method="post">
                 <div class="form-group">
                     <label>แสดง </label>
@@ -69,18 +32,12 @@ $this->params['breadcrumbs'][] = $this->title;
             </form>
         </div>
     </div>
-    <?php //echo $this->render('_search', ['model' => $searchModel, 'viewstatus' => $viewstatus]); ?>
+    <?php echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        //'filterModel' => $searchModel,
+        // 'filterModel' => $searchModel,
         'emptyCell' => '-',
-        'toolbar' => [
-            '{toggleData}',
-            '{export}',
-        ],
-        'panel' => ['type' => 'info', 'heading' => ''],
-        'toggleDataContainer' => ['class' => 'btn-group mr-2'],
         'layout' => "{items}\n{summary}\n<div class='text-center'>{pager}</div>",
         'summary' => "แสดง {begin} - {end} ของทั้งหมด {totalCount} รายการ",
         'showOnEmpty' => false,
@@ -97,81 +54,53 @@ $this->params['breadcrumbs'][] = $this->title;
                 'contentOptions' => ['style' => 'text-align: center'],
             ],
             'journal_no',
-//            [
-//                'attribute' => 'trans_date',
-//                'value' => function ($data) {
-//                    return date('d/m/Y', strtotime($data->trans_date));
-//                }
-//            ],
             [
-                'attribute' => 'created_at',
-                'label'=>'วันที่',
+                'attribute' => 'trans_date',
                 'value' => function ($data) {
-                    return date('d/m/Y H:i:s', $data->created_at);
+                    return date('d/m/Y', strtotime($data->trans_date));
                 }
             ],
             [
-                'attribute' => 'customer_ref_id',
+                'attribute' => 'customer_id',
                 'value' => function ($data) {
-                    return \backend\models\Customer::findCode($data->customer_ref_id);
-                }
-            ],
-            'company_name',
-            //'age',
-            //'idcard_no',
-            //'address',
-            //'moo',
-            //'district_id',
-            //'city_id',
-            //'province_id',
-            //'phone',
-            //'company_name',
-            //'route_id',
-            //'route_num',
-            //'start_date',
-            //'sale_price',
-            //'remark',
-            //'payment_method_id',
-            //'account_no',
-            //'credit_term',
-            //'account_credit_no',
-            //'after_invoice_day',
-            //'user_box',
-            [
-                'attribute' => 'marget_emp_id',
-                'value' => function ($data) {
-                    return \backend\models\Employee::findNameFromUserId($data->marget_emp_id);
-                }
-            ],
-            //'market_emp_date',
-            //'is_approve',
-            [
-                'attribute' => 'approve_emp_id',
-                'value' => function ($data) {
-                    return \backend\models\Employee::findNameFromUserId($data->approve_emp_id);
+                    return \backend\models\Customer::findName($data->customer_id);
                 }
             ],
             [
-                'attribute' => 'approve_date',
+                'attribute' => 'amount',
+                'headerOptions' => ['style' => 'text-align: right;'],
+                'contentOptions' => ['style' => 'text-align: right'],
+                'label' => 'ยอดเงิน',
                 'value' => function ($data) {
-                    return $data->approve_date != null ? date('d/m/Y', strtotime($data->approve_date)) : '';
+                    return number_format(\backend\models\Customerinvoice::getInvAmount($data->id), 2);
                 }
             ],
-            'remark',
-            //'is_shop_place',
-            //'emp_operate_id',
-            //'created_at',
-            //'created_by',
-            //'updated_at',
-            //'updated_by',
-
+            [
+                'attribute' => 'created_by',
+                'label' => 'ดำเนินการโดย',
+                'value' => function ($data) {
+                    return \backend\models\User::findName($data->created_by);
+                }
+            ],
+            [
+                'attribute' => 'status',
+                'label' => 'สถานะ',
+                'format' => 'html',
+                'value' => function ($data) {
+                    if ($data->status == 0) {
+                        return '<div class="badge badge-pill badge-warning">ไม่จบงาน</div>';
+                    } else if ($data->status == 100) {
+                        return '<div class="badge badge-pill badge-success">จบงาน</div>';
+                    }
+                }
+            ],
             [
 
                 'header' => 'ตัวเลือก',
                 'headerOptions' => ['style' => 'text-align:center;', 'class' => 'activity-view-link',],
                 'class' => 'yii\grid\ActionColumn',
                 'contentOptions' => ['style' => 'text-align: center'],
-                'template' => '{view} {update}{delete}',
+                'template' => '{view} {print} {closejob} {update}{delete}',
                 'buttons' => [
                     'view' => function ($url, $data, $index) {
                         $options = [
@@ -181,6 +110,26 @@ $this->params['breadcrumbs'][] = $this->title;
                         ];
                         return Html::a(
                             '<span class="fas fa-eye btn btn-xs btn-default"></span>', $url, $options);
+                    },
+                    'print' => function ($url, $data, $index) {
+                        $options = [
+                            'title' => Yii::t('yii', 'Print'),
+                            'aria-label' => Yii::t('yii', 'Print'),
+                            'data-pjax' => '0',
+                        ];
+                        return Html::a(
+                            '<span class="fas fa-list-alt btn btn-xs btn-default"></span>', $url, $options);
+                    },
+                    'closejob' => function ($url, $data, $index) {
+                        $options = array_merge([
+                            'title' => Yii::t('yii', 'Delete'),
+                            'aria-label' => Yii::t('yii', 'Delete'),
+                            'data-confirm' => Yii::t('yii', 'ต้องการจบงานใช่หรือไม่?'),
+                            'data-method' => 'post',
+                            'data-pjax' => '0',
+
+                        ]);
+                        return Html::a('<span class="fas fa-check-circle btn btn-xs btn-success"></span>', $url, $options);
                     },
                     'update' => function ($url, $data, $index) {
                         $options = array_merge([
@@ -217,6 +166,7 @@ $this->params['breadcrumbs'][] = $this->title;
         ],
         'pager' => ['class' => LinkPager::className()],
     ]); ?>
+
     <?php Pjax::end(); ?>
 
 </div>

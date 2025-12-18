@@ -1,10 +1,17 @@
 <?php
 
-namespace frontend\modules\api\controllers;
+namespace backend\controllers;
 
-use yii\filters\VerbFilter;
+use common\models\QueryPaymentReceive;
+use Yii;
+use backend\models\Paymentreceive;
+use backend\models\PaymentreceiveSearch;
+use yii\filters\AccessControl;
 use yii\web\Controller;
-
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
+use yii\web\UploadedFile;
 
 class PaymentreceiveController extends Controller
 {
@@ -16,205 +23,181 @@ class PaymentreceiveController extends Controller
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'list' => ['POST'],
-                    'paymentdaily' => ['POST'],
-                    'addpay' => ['POST'],
-                    'addpay2' => ['POST'],
-                    'deletepay' => ['POST'],
-                    'paymentcancel' => ['POST'],
-                    'paymenthistory' => ['POST'],
-                    'paymentcustomerlist' => ['POST'],
+                    'delete' => ['POST', 'GET'],
                 ],
             ],
+//            'access'=>[
+//                'class'=>AccessControl::className(),
+//                'denyCallback' => function ($rule, $action) {
+//                    throw new ForbiddenHttpException('คุณไม่ได้รับอนุญาติให้เข้าใช้งาน!');
+//                },
+//                'rules'=>[
+//                    [
+//                        'allow'=>true,
+//                        'roles'=>['@'],
+//                        'matchCallback'=>function($rule,$action){
+//                            $currentRoute = Yii::$app->controller->getRoute();
+//                            if(Yii::$app->user->can($currentRoute)){
+//                                return true;
+//                            }
+//                        }
+//                    ]
+//                ]
+//            ],
         ];
     }
 
-    public function actionList()
+    public function actionIndex()
     {
-        $customer_id = null;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $customer_id = $req_data['customer_id'];
+        $pageSize = \Yii::$app->request->post("perpage");
+        $searchModel = new \backend\models\PaymentreceiveSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $dataProvider->query->limit(300);
 
-        $data = [];
-        $status = false;
-        $model = null;
-        if ($customer_id != null) {
-            // $model = \common\models\JournalIssue::find()->one();
+        $dataProvider->setSort(['defaultOrder' => ['id' => SORT_DESC]]);
+        $dataProvider->pagination->pageSize = $pageSize;
 
-           // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $customer_id, 'sale_payment_method_id' => 2])->andfilterWhere(['OR', ['is', 'payment_amount', new \yii\db\Expression('null')], ['>', 'remain_amount', 0]])->all();
-
-//            $sql = "select t1.id as order_id,t1.order_no,t1.order_date,sum(t2.line_total) AS remain_amt, t2.customer_id";
-//            $sql .= " FROM orders as t1 INNER JOIN order_line as t2 ON t1.id = t2.order_id ";
-//            $sql .= " WHERE  t2.customer_id =" . $customer_id;
-//            $sql .= " AND t1.payment_status !=1";
-//            $sql .= " AND t1.payment_method_id = 2";
-//            $sql .= " AND t1.status != 3";
-//            $sql .= " AND t1.sale_from_mobile = 1";
-//            $sql .= " AND year(t1.order_date)>=2023";
-//            $sql .= " AND month(t1.order_date)>=01";
-//            $sql .= " GROUP BY t1.id";
-//            $sql .= " ORDER BY t1.id DESC";
-
-//            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(t2.payment_amount)as payment_amount, t1.line_total - SUM(t2.payment_amount) as remain_amount";
-//            $sql .= " FROM query_sale_by_customer_car as t1 INNER JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
-//            $sql .= " WHERE t1.customer_id=" . $cus_id;
-//            $sql .= " AND t1.payment_method_id=2";
-//            $sql .= " GROUP BY t1.customer_id,t1.order_id";
-//            $sql .= " ORDER BY t1.order_id";
-
-
-            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(t2.payment_amount)as payment_amount, t1.line_total - SUM(t2.payment_amount) as remain_amt";
-            $sql .= " FROM query_sale_by_customer_car as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
-            $sql .= " WHERE t1.customer_id=" . $customer_id;
-            $sql .= " AND t1.payment_method_id=2";
-           // $sql .= " AND t1.payment_status=0";
-            $sql .= " AND date(t1.order_date) >='2022-06-01'";
-            $sql .= " GROUP BY t1.customer_id,t1.order_id";
-            $sql .= " ORDER BY t1.order_id";
-
-            $sql_query = \Yii::$app->db->createCommand($sql);
-            $model = $sql_query->queryAll();
-
-            if ($model) {
-                $status = true;
-                for ($x=0;$x<=count($model)-1;$x++) {
-                    //if($model[$x]['remain_amt'] <= 0 || $model[$x]['remain_amt'] == null)continue;
-//                    if($model[$x]['remain_amt'] <= 0 )continue;
-                    //     $xtotal = $value->payment_amount == null ? 0: $value->line_total;
-                    $remain_new_amt = 0;
-                    if($model[$x]['remain_amt'] == null && $model[$x]['payment_amount'] == null){
-                        $remain_new_amt = $model[$x]['line_total'];
-                    }else{
-                        if($model[$x]['remain_amt'] <= 0 )continue;
-                        $remain_new_amt = $model[$x]['remain_amt'];
-                    }
-
-                    array_push($data, [
-                        'order_id' => $model[$x]['order_id'],
-                        'order_no' => \backend\models\Orders::getNumber($model[$x]['order_id']),
-                        'customer_id' => $model[$x]['customer_id'],
-                        'customer_code' => \backend\models\Customer::findName($model[$x]['customer_id']),
-                        'order_date' => $model[$x]['order_date'],
-                        'line_total' => (float)$remain_new_amt,
-                        //'payment_amount' => $value->payment_amount,
-                        'remain_amount' => (float)$remain_new_amt,
-                        //'pay_type' => $value->pay_type,
-                    ]);
-                }
-//                foreach ($model as $value) {
-//                    //     $xtotal = $value->payment_amount == null ? 0: $value->line_total;
-//                    $remain_amt = $value->line_total;
-//
-//                    if ($value->remain_amount == null && $value->payment_amount != null) {
-//                        $remain_amt = $value->line_total - $value->payment_amount;
-//                    }
-//                    array_push($data, [
-//                        'order_id' => $value->order_id,
-//                        'order_no' => \backend\models\Orders::getNumber($value->order_id),
-//                        'customer_id' => $value->customer_id,
-//                        'customer_code' => \backend\models\Customer::findName($value->customer_id),
-//                        'order_date' => $value->order_date,
-//                        'line_total' => (int)$value->line_total,
-//                        //'payment_amount' => $value->payment_amount,
-//                        'remain_amount' => (int)$remain_amt,
-//                        //'pay_type' => $value->pay_type,
-//                    ]);
-//                }
-            }
-        }
-
-        return ['status' => $status, 'data' => $data];
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+            'perpage' => $pageSize,
+        ]);
     }
 
-    public function actionAddpay()
+    public function actionView($id)
     {
-        $order_id = 0;
-        $payment_channel_id = 0;
-        $customer_id = 0;
-        $pay_amount = 0;
-        $pay_date = null;
-        $company_id = 1;
-        $branch_id = 1;
-        $user_id = 0;
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
 
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $order_id = $req_data['order_id'];
-        $payment_channel_id = $req_data['payment_channel_id'];
-        $customer_id = $req_data['customer_id'];
-        $pay_amount = $req_data['pay_amount'];
-        $pay_date = $req_data['pay_date'];
-        $company_id = $req_data['company_id'];
-        $branch_id = $req_data['branch_id'];
-        $user_id = $req_data['user_id'];
+    public function actionCreate()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+        $user_id = 1;
 
-        $xdate = explode('-', trim($pay_date));
-        $t_date = date('Y-m-d');
-        if (count($xdate) > 1) {
-            $t_date = $xdate[2] . '/' . $xdate[1] . '/' . $xdate[0];
-        }
-        $data = [];
-        $status = false;
-        if ($customer_id && $order_id) {
-            //  $t_date = date('Y-m-d');
+        $find_from_date = date('Y-m-d');
+        $find_to_date = date('Y-m-d');
 
-            $xdate = explode('-', trim($pay_date));
-            $t_date = date('Y-m-d');
-            if (count($xdate) > 1) {
-                $t_date = $xdate[2] . '-' . $xdate[1] . '-' . $xdate[0];
-            }
-
-            $check_record = $this->checkHasRecord($customer_id, $t_date);
-            if ($check_record != null) {
-                //if(count($check_record) > 0){
-                $model_line = new \common\models\PaymentReceiveLine();
-                $model_line->payment_receive_id = $check_record->id;
-                $model_line->order_id = $order_id;
-                $model_line->payment_amount = $pay_amount;
-                $model_line->payment_channel_id = $payment_channel_id;
-                $model_line->status = 1;
-                if ($model_line->save(false)) {
-                    $status = true;
-                    \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$order_id]);
-                    //$this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
-                }
-                // }
+        if (!empty(\Yii::$app->user->id)) {
+            if (\Yii::$app->user->id == null) {
+                $user_id = 1;
             } else {
-                $model = new \backend\models\Paymentreceive();
-                $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date . ' ' . date('H:i:s')));//date('Y-m-d H:i:s');
-                $model->customer_id = $customer_id;
-                $model->journal_no = $model->getLastNo2(date('Y-m-d'), $company_id, $branch_id);
-                $model->status = 1;
-                $model->company_id = $company_id;
-                $model->branch_id = $branch_id;
-                $model->crated_by = $user_id;
-
-                if ($model->save()) {
-                    $model_line = new \common\models\PaymentReceiveLine();
-                    $model_line->payment_receive_id = $model->id;
-                    $model_line->order_id = $order_id;
-                    $model_line->payment_amount = $pay_amount;
-                    $model_line->payment_channel_id = $payment_channel_id;
-                    $model_line->status = 1;
-                    if ($model_line->save(false)) {
-                        $status = true;
-                        \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$order_id]);
-                        //$this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
-                    }
-                }
+                $user_id = \Yii::$app->user->id;
             }
 
         }
-        // array_push($data,['date'=>$t_date]);
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
 
-        return ['status' => $status, 'data' => $data];
-    }
+        if(\Yii::$app->request->post('find_from_date') !=null){
+            $find_from_date = \Yii::$app->request->post('find_from_date');
+        }
+        if(\Yii::$app->request->post('find_to_date') !=null){
+            $find_to_date = \Yii::$app->request->post('find_to_date');
+        }
 
-    public function checkHasRecord($customer_id, $trans_date)
-    {
-        $model = \common\models\PaymentReceive::find()->where(['date(trans_date)' => $trans_date, 'customer_id' => $customer_id])->one();
-        return $model;
+        $model = new Paymentreceive();
+
+        if ($model->load(Yii::$app->request->post())) {
+
+            $line_order = \Yii::$app->request->post('line_order_id');
+            $line_pay_type = \Yii::$app->request->post('line_pay_type');
+            $line_pay = \Yii::$app->request->post('line_pay');
+            $line_number = \Yii::$app->request->post('line_number');
+            $payment_customer_id = \Yii::$app->request->post('customer_car_id');
+
+//            echo count($line_order).'<br/>';
+//            echo count($line_pay_type).'<br/>';
+//            echo count($line_number).'<br/>';
+//            echo count($line_pay);return;
+
+//             print_r($line_pay);return;
+
+            $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+            $uploaded_doc_file = UploadedFile::getInstancesByName('receive_doc');
+
+            $xdate = explode('/', $model->trans_date);
+            $t_date = date('Y-m-d H:i:s');
+            if (count($xdate) > 1) {
+                $t_date = $xdate[2] . '-' . $xdate[1] . '-' . $xdate[0] . ' ' . date('H:i:s');
+            }
+
+            $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date));
+            $model->journal_no = $model->getLastNo(date('Y-m-d'));
+            $model->status = 1;
+            if($payment_customer_id != null){
+                $model->customer_id = $payment_customer_id;
+            }
+
+            $model->company_id = $company_id;
+            $model->branch_id = $branch_id;
+            $model->crated_by = $user_id;
+            if ($model->save(false)) {
+               // echo "ok";return;
+                if ($line_order != null) {
+                    if (count($line_order) > 0) {
+
+                        for ($i = 0; $i <= count($line_order) - 1; $i++) {
+                            if($i > count($line_pay)-1 ){continue;}
+                            if ($line_pay[$i] == 0 || $line_pay[$i] == null)
+                            {
+                               // $i++;
+                                continue;
+                            }
+
+                              // echo $line_pay[$i];return;
+                            $model_line = new \common\models\PaymentReceiveLine();
+                            $model_line->order_id = $line_order[$i];
+                            $model_line->payment_receive_id = $model->id;
+                            $model_line->payment_amount = $line_pay[$i];
+                            $model_line->payment_channel_id = $line_pay_type[$i];
+                            $model_line->payment_method_id = 2;
+                            $model_line->status = 1;
+
+                            if ($i == $line_number[$i]) {
+                                if (!empty($uploaded_file)) {
+                                    foreach ($uploaded_file as $files) {
+                                        $file_name = time() . '.' . $files->getExtension();
+                                        $files->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_name);
+                                        $model_line->doc = $file_name;
+                                    }
+                                }
+
+                            }
+
+                            if ($model_line->save(false)) {
+                                \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$line_order[$i]]);
+                                $this->updatePaymenttransline($model->customer_id, $line_order[$i], $line_pay[$i], 1);
+                            }
+                        }
+                        if (!empty($uploaded_doc_file)) {
+                            foreach ($uploaded_doc_file as $filex) {
+                                $file_namex = time() . '.' . $filex->getExtension();
+                                $filex->saveAs(\Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_namex);
+                                $model->slip_doc = $file_namex;
+                                $model->save(false);
+                            }
+                        }
+                    }
+                }
+                $session = Yii::$app->session;
+                $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
+                return $this->redirect(['index']);
+            }
+
+        }
+
+        return $this->render('create', [
+            'model' => $model,
+            'find_from_date' => $find_from_date,
+            'find_to_date' => $find_to_date,
+        ]);
     }
 
     public function updatePaymenttransline($customer_id, $order_id, $pay_amt, $pay_type)
@@ -234,381 +217,631 @@ class PaymentreceiveController extends Controller
         }
     }
 
-
-    public function actionAddpay2()
+    /**
+     * Updates an existing Paymentreceive model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
     {
-        $order_id = 0;
-        $payment_channel_id = 1;
+        $model = $this->findModel($id);
+        $model_line = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id' => $id])->all();
 
-        $pay_amount = 0;
-        $pay_date = null;
-        $company_id = 0;
-        $branch_id = 0;
-        $user_id = null;
-        $data_list = null;
+        if ($model->load(Yii::$app->request->post())) {
 
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $payment_channel_id = $req_data['payment_channel_id']; // 1 cash 2 transfer
-        $pay_date = $req_data['pay_date'];
-        $company_id = $req_data['company_id'];
-        $branch_id = $req_data['branch_id'];
-        $user_id = $req_data['user_id'];
-        $data_list = $req_data['data'];
+            $line_order = \Yii::$app->request->post('line_order_id');
+            $line_pay_type = \Yii::$app->request->post('line_pay_type');
+            $line_pay = \Yii::$app->request->post('line_pay');
+            $line_id = \Yii::$app->request->post('line_id');
+            $line_number = \Yii::$app->request->post('line_number');
 
-        $base64_string = $req_data['image'];
-       // $base64_string = null;
+            $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+            $uploaded_doc_file = UploadedFile::getInstancesByName('receive_doc');
 
-        $xdate = explode('-', trim($pay_date));
-        $t_date = date('Y-m-d');
-        if (count($xdate) > 1) {
-            $t_date = $xdate[2] . '/' . $xdate[1] . '/' . $xdate[0];
-        }
-        $data = [];
-        $status = false;
+            $xdate = explode('/', $model->trans_date);
+            $t_date = date('Y-m-d H:i:s');
+            if (count($xdate) > 1) {
+                $t_date = $xdate[2] . '-' . $xdate[1] . '-' . $xdate[0] . ' ' . date('H:i:s');
+            }
 
-        if($user_id == null){
-            $user_id = 1;// admin
-        }
+            $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date));
+            if ($model->save()) {
+                if ($line_order != null) {
+                    if (count($line_order) > 0) {
+                        for ($i = 0; $i <= count($line_order) - 1; $i++) {
 
-        if ($company_id != null && $branch_id != null && $pay_date != null && $data_list != null && $user_id != null) {
-            if (count($data_list) > 0) {
-                for ($i = 0; $i <= count($data_list) - 1; $i++) {
-                    if ($data_list[$i]['order_id'] == null || $data_list[$i]['pay_amount'] == null || $data_list[$i]['pay_amount'] <= 0) continue;
-                    $customer_id = 0;
-                    $customer_id = $data_list[$i]['customer_id'];
-                    $order_id = $data_list[$i]['order_id'];
-                    $pay_amount = $data_list[$i]['pay_amount'];
-
-//                    $check_has_order_pay = \common\models\PaymentReceiveLine::find()->where(['order_id'=>$data_list[$i]['order_id'],'payment_method_id'=>2,'payment_amount'=>$pay_amount])->one();
-//                    if($check_has_order_pay)continue;
-
-                    $check_record = $this->checkHasRecord($customer_id, $t_date);
-                    if ($check_record != null) {
-                        //if(count($check_record) > 0){
-                        $model_line = new \common\models\PaymentReceiveLine();
-                        $model_line->payment_receive_id = $check_record->id;
-                        $model_line->order_id = $order_id;
-                        $model_line->payment_amount = $pay_amount;
-                        $model_line->payment_channel_id = $payment_channel_id;
-                        $model_line->payment_method_id = 2; // 2 เชื่อ
-                        $model_line->status = 1;
-                        if ($model_line->save(false)) {
-                            $status = true;
-                            // $this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
-                            $data = ['pay successfully'];
-
-                                if ($base64_string != null && $i == 0) {
-
-//                                    $newfile = time() . ".jpg";
-//                                    $outputfile = '../web/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
-//                                    //$outputfile = \Yii::$app->urlManagerBackend->getBaseUrl() . '/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
-//
-//                                    $filehandler = fopen($outputfile, 'wb');
-//                                    // fwrite($filehandler, base64_decode(trim($base64_string[$xp])));
-//                                    fwrite($filehandler, base64_decode(trim($base64_string)));
-//                                    // we could add validation here with ensuring count($data)>1
-//
-//                                    // clean up the file resource
-//                                    fclose($filehandler);
-//
-//                                   \backend\models\Paymentreceive::updateAll(['slip_doc'=>$newfile],['id'=>$check_record->id]);
-
-                                    if (!empty($base64_string) && is_array($base64_string)) {
-                                        $new_file_to_save = '';
-                                        foreach ($base64_string as $index => $base64) {
-                                            if (!empty($base64)) {
-                                                // ตั้งชื่อไฟล์ไม่ซ้ำกัน (timestamp + index)
-                                                $newfile = time() . "_{$index}.jpg";
-                                                $outputfile = '../web/uploads/files/receive/' . $newfile;
-
-                                                // เขียนไฟล์ลงโฟลเดอร์
-                                                $filehandler = fopen($outputfile, 'wb');
-                                                fwrite($filehandler, base64_decode(trim($base64)));
-                                                fclose($filehandler);
-                                                $new_file_to_save = $new_file_to_save.','.$newfile.',';
-
-                                            }
+                            if ($line_id != null) {
+                                $model_chk = \common\models\PaymentReceiveLine::find()->where(['id' => $line_id[$i]])->one();
+                                if ($model_chk) {
+                                    $model_chk->payment_channel_id = $line_pay_type[$i];
+                                    $model_chk->payment_amount = $line_pay[$i];
+                                }
+                            } else {
+                                $model_line = new \common\models\PaymentReceiveLine();
+                                $model_line->order_id = $line_order[$i];
+                                $model_line->payment_receive_id = $model->id;
+                                $model_line->payment_amount = $line_pay[$i];
+                                $model_line->payment_method_id = 2;
+                                $model_line->status = 1;
+                                if ($i == $line_number[$i]) {
+                                    if (!empty($uploaded_file)) {
+                                        foreach ($uploaded_file as $files) {
+                                            $file_name = time() . '.' . $files->getExtension();
+                                            $files->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_name);
+                                            $model_line->doc = $file_name;
                                         }
-                                        // บันทึกชื่อไฟล์ลงฐานข้อมูล — ถ้าต้องการบันทึกหลายแถวให้เปลี่ยน logic ตาม schema
-                                        \backend\models\Paymentreceive::updateAll(
-                                            ['slip_doc' => $new_file_to_save],
-                                            ['id' => $check_record->id]
-                                        );
                                     }
-
                                 }
-                        }
-                        // }
-                    } else {
-                        $model = new \backend\models\Paymentreceive();
-                        $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date . ' ' . date('H:i:s')));//date('Y-m-d H:i:s');
-                        $model->customer_id = $customer_id;
-                        $model->journal_no = $model->getLastNo2(date('Y-m-d'), $company_id, $branch_id);
-                        $model->status = 1;
-                        $model->company_id = $company_id;
-                        $model->branch_id = $branch_id;
-                        $model->created_at = time();
-                        $model->crated_by = $user_id;
-                        if ($model->save()) {
-                            $model_line = new \common\models\PaymentReceiveLine();
-                            $model_line->payment_receive_id = $model->id;
-                            $model_line->order_id = $order_id;
-                            $model_line->payment_amount = $pay_amount;
-                            $model_line->payment_channel_id = $payment_channel_id;
-                            $model_line->payment_method_id = 2; // 2 เชื่อ
-                            $model_line->status = 1;
-                            if ($model_line->save(false)) {
-                                $status = true;
-                                // $this->updatePaymenttransline($customer_id, $order_id, $pay_amount, $payment_channel_id);
-                                $data = ['pay successfully'];
+                                $model_line->save(false);
                             }
-                           
-//                                  if ($base64_string != null && $i == 0) {
-////                                    for ($xp = 0; $xp <= count($base64_string) - 1; $xp++) {
-////                                        if ($xp == 0) { // only first
-//                                    $newfile = time() . ".jpg";
-//                                    $outputfile = '../web/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
-//                                    //$outputfile = \Yii::$app->urlManagerBackend->getBaseUrl() . '/uploads/files/receive/' . $newfile;          //save as image.jpg in uploads/ folder
-//
-//                                    $filehandler = fopen($outputfile, 'wb');
-//                                    // fwrite($filehandler, base64_decode(trim($base64_string[$xp])));
-//                                    fwrite($filehandler, base64_decode(trim($base64_string)));
-//                                    // we could add validation here with ensuring count($data)>1
-//
-//                                    // clean up the file resource
-//                                    fclose($filehandler);
-//
-//                                    $model->slip_doc = $newfile;
-//                                    $model->save(false);
-////                                        }
-////
-////                                    }
-//                                }
+                        }
 
-                            if (!empty($base64_string) && is_array($base64_string)) {
-                                $new_file_to_save = '';
-                                foreach ($base64_string as $index => $base64) {
-                                    if (!empty($base64)) {
-                                        // ตั้งชื่อไฟล์ไม่ซ้ำกัน (timestamp + index)
-                                        $newfile = time() . "_{$index}.jpg";
-                                        $outputfile = '../web/uploads/files/receive/' . $newfile;
-
-                                        // เขียนไฟล์ลงโฟลเดอร์
-                                        $filehandler = fopen($outputfile, 'wb');
-                                        fwrite($filehandler, base64_decode(trim($base64)));
-                                        fclose($filehandler);
-                                        $new_file_to_save = $new_file_to_save.','.$newfile.',';
-
-                                    }
-                                }
-                                // บันทึกชื่อไฟล์ลงฐานข้อมูล — ถ้าต้องการบันทึกหลายแถวให้เปลี่ยน logic ตาม schema
-                                $model->slip_doc = $new_file_to_save;
+                        if (!empty($uploaded_doc_file)) {
+                            foreach ($uploaded_doc_file as $filex) {
+                                $file_namex = time() . '.' . $filex->getExtension();
+                                $filex->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_namex);
+                                $model->slip_doc = $file_namex;
                                 $model->save(false);
                             }
-                          
                         }
                     }
-                    \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$order_id]);
+                }
+                $session = Yii::$app->session;
+                $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
+                return $this->redirect(['index']);
+            }
+        }
+
+        return $this->render('update', [
+            'model' => $model,
+            'model_line' => $model_line
+        ]);
+    }
+
+    /**
+     * Deletes an existing Paymentreceive model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param integer $id
+     * @return mixed
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionDelete($id)
+    {
+        $customer_id = 0;
+        $order_id = 0;
+        $qty = 0;
+        if ($id) {
+            $model = \backend\models\Paymentreceive::find()->where(['id' => $id])->one();
+            if ($model) {
+                $customer_id = $model->customer_id;
+                $model_line = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id' => $id])->one();
+                if ($model_line) {
+                    $this->updatePaymenttransline($model->customer_id, $model_line->order_id, $model_line->payment_amount, 0);
+                    if (\common\models\PaymentReceiveLine::deleteAll(['payment_receive_id' => $id])) {
+                        \common\models\Orders::updateAll(['payment_status'=>0],['id'=>$model_line->order_id]);
+                        $this->findModel($id)->delete();
+                    }
+                }else{
+                    $this->findModel($id)->delete();
                 }
             }
+
+//            if(\common\models\PaymentReceiveLine::deleteAll(['payment_receive_id'=>$id])){
+//                $this->findModel($id)->delete();
+//            }
         }
-        return ['status' => $status, 'data' => $data];
+
+        return $this->redirect(['index']);
     }
 
-    public function actionDeletepay()
-    {
-        $status = false;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $id = $req_data['id'];
+//    public function updatePaymenttransline($customer_id, $order_id, $qty){
+//         if($customer_id && $order_id && $qty){
+//             $model = \backend\models\Paymenttransline::find(['customer_id'=>$customer_id,'order_ref_id'=>$order_id])->one();
+//             if($model){
+//                 $old_q = $model->payment_amount;
+//                 $model->payment_amount = ($old_q - $qty);
+//                 $model->save(false);
+//             }
+//         }
+//    }
 
-        $data = [];
-        if ($id) {
-            if (\common\models\PaymentReceiveLine::deleteAll(['id' => $id])) {
-                $status = true;
+    /**
+     * Finds the Paymentreceive model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Paymentreceive the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Paymentreceive::findOne($id)) !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('The requested page does not exist.');
+    }
+
+    public function actionGetitem()
+    {
+        $cus_id = \Yii::$app->request->post('customer_id');
+        $html = '';
+        $total_amount = 0;
+        if ($cus_id) {
+            // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andFilterWhere(['>', 'remain_amount', 0])->all();
+            $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR', ['is', 'payment_amount', new \yii\db\Expression('null')], ['>', 'remain_amount', 0]])->all();
+            if ($model) {
+//                $html = $cus_id;
+                $i = 0;
+                foreach ($model as $value) {
+                    $i += 1;
+                    //   $total_amount = $total_amount + ($value->remain_amount == null ? 0 : $value->remain_amount);
+                    $remain_amt = $value->line_total;
+
+                    if ($value->remain_amount == null && $value->payment_amount != null) {
+                        $remain_amt = $value->line_total - $value->payment_amount;
+                    } else {
+                        $remain_amt = $value->remain_amount;
+                    }
+                    //  $remain_amt = $value->remain_amount == null?$value->payment_amount:$value->remain_amount;
+                    $html .= '<tr>';
+                    $html .= '<td style="text-align: center">' . $i . '</td>';
+                    $html .= '<td style="text-align: center">' . \backend\models\Orders::getNumber($value->order_id) . '</td>';
+                    $html .= '<td style="text-align: center">' . date('d/m/Y', strtotime($value->order_date)) . '</td>';
+                    $html .= '<td>
+                            <select name="line_pay_type[]" id=""  class="form-control" onchange="checkpaytype($(this))">
+                                <option value="1">เงินสด</option>
+                                <option value="2">โอนธนาคาร</option>
+                            </select>
+                            <input type="file" class="line-doc" name="line_doc[]" style="display: none">
+                            <input type="hidden" class="line-order-id" name="line_order_id[]" value="' . $value->order_id . '">
+                            <input type="hidden" class="line-number" name="line_number[]" value="' . ($i - 1) . '">
+                    </td>';
+//                    $html .= '<td style="text-align: center"><input type="file" class="form-control"></td>';
+                    $html .= '<td>
+                            <input type="text" class="form-control line-remain" style="text-align: right" name="line_remain[]" value="' . number_format($remain_amt, 2) . '" readonly>
+                            <input type="hidden" class="line-remain-qty" value="' . $remain_amt . '">
+                            </td>';
+                    $html .= '<td><input type="number" class="form-control line-pay" name="line_pay[]" value="0" min="0" onchange="linepaychange($(this))"></td>';
+                    $html .= '</tr>';
+
+                }
+                // $html .= '<tr><td colspan="4" style="text-align: right">รวม</td><td style="text-align: right;font-weight: bold">' . number_format($total_amount, 2) . '</td><td style="text-align: right;font-weight: bold"><span class="line-pay-total">0</span></td></tr>';
             }
         }
-        return ['status' => $status, 'data' => $data];
+
+        echo $html;
     }
 
-    public function actionPaymentdaily()
+    public function actionGetitemnew()
     {
-        $route_id = null;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $route_id = $req_data['route_id'];
+        $cus_id = \Yii::$app->request->post('customer_id');
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
 
-        $data = [];
-        $status = false;
-        if ($route_id != null) {
-            // $model = \common\models\JournalIssue::find()->one();
-// old           $model = \common\models\QueryPaymentReceive::find()->where(['route_id' => $route_id, 'payment_method_id' => 2])->andFilterWhere(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['!=','status',100])->sum('payment_amount');
-            $pay_amount = 0;
+        $pre_date ="2024-01-01 00:00:01";
 
-            $sql = "SELECT SUM(t1.payment_amount) as pay_amount";
-            $sql .= " FROM query_payment_receive as t1 INNER JOIN customer as t2 ON t1.customer_id = t2.id";
-            $sql .= " WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d') . "'" . " ";
-            $sql .= " AND t1.payment_method_id = 2";
-            $sql .= " AND t2.delivery_route_id=" . $route_id;
-            $sql .= " GROUP BY t2.delivery_route_id";
+        $xt1 = explode("/", $from_date);
+        $xt2 = explode("/", $to_date);
+
+        $f_date = '';
+        $t_date = '';
+
+        if($xt1!=null){
+            if(count($xt1)>1){
+                $f_date = $xt1[2].'/'.$xt1[1].'/'.$xt1[0];
+            }
+        }
+        if($xt2!=null){
+            if(count($xt2)>1){
+                $t_date = $xt2[2].'/'.$xt2[1].'/'.$xt2[0];
+            }
+        }
+
+
+        $html = '';
+        $total_amount = 0;
+        if ($cus_id) {
+            // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andFilterWhere(['>', 'remain_amount', 0])->all();
+            //  $model = \common\models\QuerySalePosPaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR',['is','payment_amount',new \yii\db\Expression('null')],['>', 'remain_amount', 0]])->all();
+
+            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(CASE WHEN t2.payment_amount IS NULL THEN 0 ELSE t2.payment_amount END)as payment_amount, t1.line_total - SUM(CASE WHEN t2.payment_amount IS NULL THEN 0 ELSE t2.payment_amount END) as remain_amount";
+            $sql .= " FROM query_sale_by_customer_pos as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
+            $sql .= " WHERE t1.customer_id=" . $cus_id;
+            $sql .= " AND t1.payment_method_id=2";
+           // $sql .= " GROUP BY t1.customer_id,t1.order_id";
+          //  $sql .= " ORDER BY t1.order_id asc ";
+            //$sql.=" AND t1.payment"
+
+            if($f_date != '' && $t_date != ''){
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($f_date))."'";
+                $sql .= " AND date(t1.order_date) <='". date('Y-m-d',strtotime($t_date))."'";
+            }else{
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            }
+           
+             $sql .= " GROUP BY t1.customer_id,t1.order_id";
+            $sql .= " ORDER BY t1.order_id asc ";
+
+
             $query = \Yii::$app->db->createCommand($sql);
             $model = $query->queryAll();
-            if ($model) {
-                for ($i = 0; $i <= count($model) - 1; $i++) {
-                    $pay_amount = $model[$i]['pay_amount'];
+
+
+            if ($model != null) {
+//                $html = $cus_id;
+                $i = 0;
+                for ($x = 0; $x <= count($model) - 1; $x++) {
+                    $i += 1;
+                    //   $total_amount = $total_amount + ($value->remain_amount == null ? 0 : $value->remain_amount);
+                    $remain_amt = $model[$x]['line_total'];
+
+                    if ($model[$x]['remain_amount'] == null && $model[$x]['payment_amount'] != null) {
+                        $remain_amt = $model[$x]['line_total'] - $model[$x]['payment_amount'];
+                    } else {
+                        $remain_amt =  $model[$x]['remain_amount'];
+                    }
+                    if ($remain_amt <= 0) continue;
+                    //  $remain_amt = $value->remain_amount == null?$value->payment_amount:$value->remain_amount;
+                    $html .= '<tr>';
+                    $html .= '<td style="text-align: center">' . $i . '</td>';
+                    $html .= '<td style="text-align: center">' . \backend\models\Orders::getNumber($model[$x]['order_id']) . '</td>';
+                    $html .= '<td style="text-align: center">' . date('d/m/Y', strtotime($model[$x]['order_date'])) . '</td>';
+
+//                    $html .= '<td>
+//                            <select name="line_pay_type[]" id=""  class="form-control" onchange="checkpaytype($(this))">
+//                                <option value="1">เงินสด</option>
+//                                <option value="2">โอนธนาคาร</option>
+//                            </select>
+//                            <input type="file" class="line-doc" name="line_doc[]" style="display: none">
+//                            <input type="hidden" class="line-order-id" name="line_order_id[]" value="' . $model[$x]['order_id'] . '">
+//                            <input type="hidden" class="line-number" name="line_number[]" value="' . ($i - 1) . '">
+//                    </td>';
+
+                    $html .= '<td style="text-align: center;">
+                            <div class="btn-group">
+                                    <div class="btn btn-success line-pay-cash" data-var="1"
+                                         onclick="checkpaytype2($(this))">เงินสด
+                                    </div>
+                                    <div class="btn btn-default line-pay-bank" data-var="2"
+                                         onclick="checkpaytype3($(this))">โอนธนาคาร
+                                    </div>
+
+                                </div>
+                                <input type="hidden" class="line-payment-type" name="line_pay_type[]" value="1">
+                            <input type="file" class="line-doc" name="line_doc[]" style="display: none">
+                            <input type="hidden" class="line-order-id" name="line_order_id[]" value="' . $model[$x]['order_id'] . '">
+                            <input type="hidden" class="line-number" name="line_number[]" value="' . ($i - 1) . '">
+                    </td>';
+
+
+//                    $html .= '<td style="text-align: center"><input type="file" class="form-control"></td>';
+                    $html .= '<td>
+                            <input type="text" class="form-control line-remain" style="text-align: right" name="line_remain[]" value="' . number_format($remain_amt, 2) . '" readonly>
+                            <input type="hidden" class="line-remain-qty" value="' . $remain_amt . '">
+                            </td>';
+                    $html .= '<td><input type="number" class="form-control line-pay" name="line_pay[]" value="0" min="0" step="any" onchange="linepaychange($(this))"></td>';
+                    $html .= '</tr>';
+
                 }
+                // $html .= '<tr><td colspan="4" style="text-align: right">รวม</td><td style="text-align: right;font-weight: bold">' . number_format($total_amount, 2) . '</td><td style="text-align: right;font-weight: bold"><span class="line-pay-total">0</span></td></tr>';
             }
-            //return $pay_amount;
-
-
-
-            $order_close_count = \backend\models\Orders::find()->where(['order_channel_id' => $route_id, 'date(order_date)' => date('Y-m-d'), 'status' => 100])->count();
-            array_push($data, [
-                'payment_amount' => $pay_amount == null ? 0 : $pay_amount,
-                'order_close_status' => 0, //$order_close_count,
-            ]);
         }
 
-        return ['status' => $status, 'data' => $data];
+        echo $html;
     }
 
-    public function actionPaymenthistory()
+    public function actionGetitemnewcar()
     {
-        $route_id = null;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $route_id = $req_data['route_id'];
+        $cus_id = \Yii::$app->request->post('customer_id');
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
 
-        $data = [];
-        $status = false;
-        $total = 0;
-        if ($route_id != null) {
-            // $model = \common\models\JournalIssue::find()->one();
-            $model = \common\models\QuerySaleCustomerPaySummary::find()->where(['route_id' => $route_id, 'status' => 1,'pay_type'=>2, 'date(payment_date)'=>date('Y-m-d')])->andFilterWhere(['>','payment_amount',0])->all();
-          //  $model = \common\models\QuerySaleCustomerPaySummary::find()->where(['route_id' => 884, 'status' => 1])->andFilterWhere(['>','payment_amount',0])->limit(5)->all();
-            //   $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $customer_id])->all();
-            if ($model) {
-                $status = true;
-                foreach ($model as $value) {
-                   // $total+= $value->payment_amount;
-                    array_push($data, [
-                        'payment_id' => $value->payment_id,
-                        'order_id' => $value->order_ref_id,
-                        'customer_name' => $value->cus_name,
-                        'customer_id' => $value->customer_id,
-                        'journal_no' => $value->journal_no,
-                        'journal_date' => $value->payment_date,
-                        'amount' => (int)$value->payment_amount,
-                        'status' => 1,
-                        'order_no' =>\backend\models\Orders::getNumber($value->order_ref_id),
-                        'order_date' => date('Y-m-d H:i:s', strtotime(\backend\models\Orders::getOrderdate($value->order_ref_id))),
-                    ]);
+        $pre_date ="2024-01-01 00:00:01";
+
+        $xt1 = explode("/", $from_date);
+        $xt2 = explode("/", $to_date);
+
+        $f_date = '';
+        $t_date = '';
+
+        if($xt1!=null){
+            if(count($xt1)>1){
+                $f_date = $xt1[2].'/'.$xt1[1].'/'.$xt1[0];
+            }
+        }
+        if($xt2!=null){
+            if(count($xt2)>1){
+                $t_date = $xt2[2].'/'.$xt2[1].'/'.$xt2[0];
+            }
+        }
+        $html = '';
+        $total_amount = 0;
+        if ($cus_id) {
+            // $model = \common\models\QuerySalePaySummary::find()->where(['customer_id' => $cus_id])->andFilterWhere(['>', 'remain_amount', 0])->all();
+            //  $model = \common\models\QuerySalePosPaySummary::find()->where(['customer_id' => $cus_id])->andfilterWhere(['OR',['is','payment_amount',new \yii\db\Expression('null')],['>', 'remain_amount', 0]])->all();
+
+            $sql = "SELECT t1.customer_id,t1.order_id,t1.order_date,t1.line_total,SUM(t2.payment_amount)as payment_amount, t1.line_total - SUM(t2.payment_amount) as remain_amount";
+            $sql .= " FROM query_sale_by_customer_car as t1 LEFT JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
+            $sql .= " WHERE t1.customer_id=" . $cus_id;
+            $sql .= " AND t1.payment_method_id=2";
+
+
+            if($f_date != '' && $t_date != ''){
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($f_date))."'";
+                $sql .= " AND date(t1.order_date) <='". date('Y-m-d',strtotime($t_date))."'";
+            }else{
+                $sql .= " AND date(t1.order_date) >='". date('Y-m-d',strtotime($pre_date))."'";
+            }
+
+            $sql .= " GROUP BY t1.customer_id,t1.order_id";
+            $sql .= " ORDER BY t1.order_id";
+            //$sql.=" AND t1.payment"
+
+            $query = \Yii::$app->db->createCommand($sql);
+            $model = $query->queryAll();
+
+            if ($model != null) {
+//                $html = $cus_id;
+                $i = 0;
+                for ($x = 0; $x <= count($model) - 1; $x++) {
+                    $i += 1;
+                    //   $total_amount = $total_amount + ($value->remain_amount == null ? 0 : $value->remain_amount);
+                    $remain_amt = $model[$x]['line_total'];
+
+                    if ($model[$x]['remain_amount'] == null && $model[$x]['payment_amount'] != null) {
+                        $remain_amt = $model[$x]['line_total'] - $model[$x]['payment_amount'];
+                    } else {
+                        if($model[$x]['remain_amount'] != null){
+                            $remain_amt = $model[$x]['remain_amount'];
+                        }
+
+                    }
+                    if ($remain_amt <= 0) continue;
+                    //  $remain_amt = $value->remain_amount == null?$value->payment_amount:$value->remain_amount;
+                    $html .= '<tr>';
+                    $html .= '<td style="text-align: center">' . $i . '</td>';
+                    $html .= '<td style="text-align: center">' . \backend\models\Orders::getNumber($model[$x]['order_id']) . '</td>';
+                    $html .= '<td style="text-align: center">' . date('d/m/Y', strtotime($model[$x]['order_date'])) . '</td>';
+//                    $html .= '<td>
+//                            <select name="line_pay_type[]" id=""  class="form-control" onchange="checkpaytype($(this))">
+//                                <option value="1">เงินสด</option>
+//                                <option value="2">โอนธนาคาร</option>
+//                            </select>
+//                            <input type="file" class="line-doc" name="line_doc[]" style="display: none">
+//                            <input type="hidden" class="line-order-id" name="line_order_id[]" value="' . $model[$x]['order_id'] . '">
+//                            <input type="hidden" class="line-number" name="line_number[]" value="' . ($i - 1) . '">
+//                    </td>';
+                    $html .= '<td style="text-align: center;">
+                            <div class="btn-group">
+                                    <div class="btn btn-success line-pay-cash" data-var="1"
+                                         onclick="checkpaytype2($(this))">เงินสด
+                                    </div>
+                                    <div class="btn btn-default line-pay-bank" data-var="2"
+                                         onclick="checkpaytype3($(this))">โอนธนาคาร
+                                    </div>
+
+                                </div>
+                                <input type="hidden" class="line-payment-type" name="line_pay_type[]" value="0">
+                            <input type="file" class="line-doc" name="line_doc[]" style="display: none">
+                            <input type="hidden" class="line-order-id" name="line_order_id[]" value="' . $model[$x]['order_id'] . '">
+                            <input type="hidden" class="line-number" name="line_number[]" value="' . ($i - 1) . '">
+                    </td>';
+
+
+
+//                    $html .= '<td style="text-align: center"><input type="file" class="form-control"></td>';
+                    $html .= '<td>
+                            <input type="text" class="form-control line-remain" style="text-align: right" name="line_remain[]" value="' . number_format($remain_amt, 2) . '" readonly>
+                            <input type="hidden" class="line-remain-qty" value="' . $remain_amt . '">
+                            </td>';
+                    $html .= '<td><input type="number" class="form-control line-pay" name="line_pay[]" value="0" min="0" step="any" onchange="linepaychange($(this))"></td>';
+                    $html .= '</tr>';
+
                 }
+                // $html .= '<tr><td colspan="4" style="text-align: right">รวม</td><td style="text-align: right;font-weight: bold">' . number_format($total_amount, 2) . '</td><td style="text-align: right;font-weight: bold"><span class="line-pay-total">0</span></td></tr>';
             }
         }
 
-        return ['status' => $status, 'data' => $data];
+        echo $html;
     }
-    public function actionPaymentcancel()
-    {
-        $status = false;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $id = $req_data['payment_id'];
-        $order_id = $req_data['order_id'];
-        $cancel_amount = $req_data['amount'];
 
+    public function actionCustomerloan()
+    {
+        $searchModel = new \backend\models\SaleorderCustomerLoanSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $dataProvider->query->limit(100);
+        $dataProvider->query->andFilterWhere(['>', 'line_total', 'payment_amount']);
+        $dataProvider->setSort([
+            'defaultOrder' => ['customer_id' => SORT_ASC, 'order_date' => SORT_ASC]
+        ]);
+
+        return $this->render('_customerloan', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
+//        return $this->render('_customerloan', [
+//            'model' => null,
+//        ]);
+    }
+
+    public function actionFindpayhistory()
+    {
+//        $company_id = 1;
+//        $branch_id = 1;
+//        if (!empty(\Yii::$app->user->identity->company_id)) {
+//            $company_id = \Yii::$app->user->identity->company_id;
+//        }
+//        if (!empty(\Yii::$app->user->identity->branch_id)) {
+//            $branch_id = \Yii::$app->user->identity->branch_id;
+//        }
+
+        $customer_id = \Yii::$app->request->post('customer_id');
+        $order_id = \Yii::$app->request->post('order_id');
+        $html = '';
+
+        //  $model = \backend\models\Querypaymentreceive::find()->where(['order_id'=>$order_id,'company_id' => $company_id, 'branch_id' => $branch_id])->all();
+        $model = \common\models\QueryPaymentReceive::find()->where(['order_id' => $order_id, 'customer_id' => $customer_id])->all();
+        if ($model) {
+            $total = 0;
+            foreach ($model as $value) {
+                $total = ($total + $value->payment_amount);
+                $payment_channel = 'เงินสด';
+                if ($value->payment_channel_id == 1) {
+                    $payment_channel = 'เงินสด';
+                } else if ($value->payment_channel_id == 2) {
+                    $payment_channel = 'โอนธนาคาร';
+                }
+                $html .= '<tr>';
+                $html .= '<td style="text-align: center">' . $value->journal_no . '</td>';
+                $html .= '<td style="text-align: center">' . date('d/m/Y', strtotime($value->trans_date)) . '</td>';
+
+                $html .= '<td style="text-align: right">' . number_format($value->payment_amount) . '</td>';
+                $html .= '<td style="text-align: center">' . $payment_channel . '</td>';
+                $html .= '</tr>';
+            }
+            $html .= '<tr>';
+            $html .= '<td style="text-align: right" colspan="2"><h5 class="text-orange">รวมรับชำระ</h5></td>';
+            $html .= '<td style="text-align: right"><b>' . number_format($total) . '</b></td>';
+            $html .= '<td style="text-align: center"></td>';
+            $html .= '</tr>';
+        }
+
+        echo $html;
+    }
+
+    public function actionFindcustomer()
+    {
+        $list = \Yii::$app->request->post('customer_list');
+        $html = '';
         $data = [];
-        if ($id && $order_id) {
-            //if (\common\models\PaymentReceive::updateAll(['status'=>100],['id' => $id])) {
-                $model = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id'=>$id,'order_id'=>$order_id])->andFilterWhere(['>','payment_amount',0])->one();
-                if($model){
-                   // $model->payment_amount = ($model->payment_amount - $cancel_amount);
-                    $model->payment_amount = 0;
-                    $model->status = 3;
+        if ($list != null) {
+//            for($i=0;$i<=count($list)-1;$i++){
+//                array_push($data,$list[$i]);
+//            }
+            //$ids = explode(',',$list);
+
+            if (count($list) > 0) {
+                $model = \common\models\QueryCustomerInfo::find()->where(['rt_id' => $list])->all();
+                // $model = \common\models\QueryCustomerInfo::find()->all();
+                if ($model) {
+                    foreach ($model as $value) {
+                        $html .= '<option id="' . $value->customer_id . '">';
+                        $html .= $value->cus_name;
+                        $html .= '</option>';
+                    }
+                }
+            }
+        }
+        //echo $list[0];
+        echo $html;
+    }
+
+    public function actionCustomerloanprint()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $is_find_date = \Yii::$app->request->post('is_find_date');
+        $find_pay_type = \Yii::$app->request->post('find_pay_type');
+        //   echo $is_find_date;return;
+        if ($from_date == null && $to_date == null) {
+            $from_date = date('Y-m-d H:i');
+            $to_date = date('Y-m-d H:i');
+        }
+        //  $find_sale_type = \Yii::$app->request->post('find_sale_type');
+        $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        $is_admin = \backend\models\User::checkIsAdmin(\Yii::$app->user->id);
+        return $this->render('_print_customer_loan', [
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'is_find_date' => $is_find_date,
+            //    'find_sale_type'=>$find_sale_type,
+            'find_customer_id' => $find_customer_id,
+            'company_id' => $company_id,
+            'branch_id' => $branch_id,
+            'find_pay_type' => $find_pay_type,
+            'is_admin'=>$is_admin,
+        ]);
+    }
+
+    public function actionPossummaryupdate()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        if ($from_date == null && $to_date == null) {
+            $from_date = date('Y-m-d H:i');
+            $to_date = date('Y-m-d H:i');
+        }
+        //  $find_sale_type = \Yii::$app->request->post('find_sale_type');
+        $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        return $this->render('_print_customer_loan_new_update', [
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            //    'find_sale_type'=>$find_sale_type,
+            'find_customer_id' => $find_customer_id,
+            'company_id' => $company_id,
+            'branch_id' => $branch_id,
+        ]);
+    }
+
+    public function actionSaveupdate()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+        $order_id = \Yii::$app->request->post('order_id');
+        $delivery_no = \Yii::$app->request->post('delivery_no');
+        if ($order_id != null) {
+            for ($i = 0; $i <= count($order_id) - 1; $i++) {
+                if ($delivery_no[$i] == null) continue;
+                $model = \backend\models\Orders::find()->where(['id' => $order_id[$i]])->one();
+                if ($model) {
+                    $model->customer_ref_no = $delivery_no[$i];
                     $model->save(false);
                 }
-                $status = true;
-                array_push($data,['message'=>'Cancel completed']);
-           // }
+            }
         }
-        return ['status' => $status, 'data' => $data];
+        return $this->redirect(['paymentreceive/possummaryupdate']);
     }
-    public function actionPaymentcustomerlist(){
-        $route_id = null;
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $req_data = \Yii::$app->request->getBodyParams();
-        $route_id = $req_data['route_id'];
 
-        $data = [];
-        $status = false;
-        if ($route_id != null) {
-//            $sql = "select t2.customer_id, t3.name";
-//            $sql .= " FROM orders as t1 INNER JOIN order_line as t2 ON t1.id = t2.order_id INNER JOIN customer as t3 ON t2.customer_id = t3.id";
-//            $sql .= " WHERE  t1.order_channel_id =" . $route_id;
-//            $sql .= " AND t1.payment_status !=1";
-//            $sql .= " AND t1.payment_method_id = 2";
-//            $sql .= " AND t1.status != 3";
-//            $sql .= " AND t1.sale_from_mobile = 1";
-//            $sql .= " AND year(t1.order_date)>=2022";
-//            $sql .= " AND month(t1.order_date)>=01";
-//            $sql .= " GROUP BY t2.customer_id";
-
-//            $sql = "SELECT t1.customer_id,t1.order_id,t1.line_total,SUM(t2.payment_amount)as pay_amount";
-//            $sql .= " FROM query_sale_by_customer_car as t1 INNER JOIN query_sale_customer_pay_summary as t2 ON t2.order_ref_id=t1.order_id and t2.customer_id=t1.customer_id";
-//            $sql .= " WHERE t1.order_channel_id=" . $route_id;
-//            $sql .= " AND t1.payment_method_id=2";
-//            // $sql .= " AND t1.payment_status=0";
-//            $sql .= " AND date(t1.order_date) >='2022-01-01'";
-//           // $sql .= " AND t1.line_total > SUM(t2.payment_amount)";
-//            $sql .= " GROUP BY t1.customer_id";
-//            $sql .= " ORDER BY t1.customer_id";
-//
-//            $sql_query = \Yii::$app->db->createCommand($sql);
-//            $model = $sql_query->queryAll();
-
-            $sql = "SELECT t2.id,t2.customer_id, sum(t2.line_total_credit) as total_credit
-             FROM query_sale_mobile_data_new2 as t2
-             WHERE  date(t2.order_date) >='2023-01-01'
-             AND t2.route_id =" . $route_id . " 
-             AND t2.payment_method_id = 2";
-
-
-            $sql .= " GROUP BY t2.customer_id";
-            $sql .= " ORDER BY t2.customer_id";
-
-            $sql_query = \Yii::$app->db->createCommand($sql);
-            $model = $sql_query->queryAll();
-
-            if ($model) {
-                $status = true;
-                for ($x = 0; $x <= count($model) - 1; $x++) {
-                    $total_pay = $this->getPaytrans($model[$x]['id'], $model[$x]['customer_id']);
-
-                    if ((double)$model[$x]['total_credit'] - (double)$total_pay <= 0) {
-                        continue;
-                    }
-                        array_push($data, [
-                            'customer_id' => $model[$x]['customer_id'],
-                            'customer_name' => \backend\models\Customer::findName($model[$x]['customer_id']),
-                            'remain' => 0,
-
-                        ]);
-
-
+    public function actionUpdatepaymentorder(){
+        $model = \common\models\Orders::find()->select('id')->where(['payment_method_id'=>2,'sale_from_mobile'=>1])->andFilterWhere(['!=','payment_status',1])->andFilterWhere(['>=','id',129167])->limit(30)->all();
+        if($model){
+            foreach ($model as $value){
+                $model_update = \common\models\PaymentReceiveLine::find()->select('id')->where(['order_id'=>$value->id])->one();
+                if($model_update){
+                   \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$value->id]);
                 }
             }
         }
-        return ['status' => $status, 'data' => $data];
+        echo "success";
     }
-    function getPaytrans($order_id, $customer_id)
-    {
-        $pay_total = 0;
-        if ($order_id) {
-            $model = \common\models\QueryPaymentReceive::find()->where(['order_id' => $order_id, 'customer_id' => $customer_id])->sum('payment_amount');
-            $pay_total = $model;
-        }
-        return $pay_total;
-    }
+
 }

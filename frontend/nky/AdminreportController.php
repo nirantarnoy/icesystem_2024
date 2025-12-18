@@ -358,6 +358,9 @@ class AdminreportController extends Controller
         $add_line_date = \Yii::$app->request->post('add_line_date');
         $add_amount = \Yii::$app->request->post('add_amount');
         $cash_transfer_amount = \Yii::$app->request->post('cash_transfer_amount');
+        $payment_name = \Yii::$app->request->post('payment_name');
+        $payment_account = \Yii::$app->request->post('payment_account');
+
 
         if ($route_id) {
             //  echo $add_line_date;return;
@@ -384,10 +387,14 @@ class AdminreportController extends Controller
                     $model->cash_transfer_amount = $cash_transfer_amount;
                     $model->not_full_amount = $add_amount;
                     $model->trans_date = date('Y-m-d', strtotime($t_date));
+                    $model->payment_name = $payment_name;
+                    $model->payment_account = $payment_account;
                     $model->save(false);
                 } else {
                     $check_has->not_full_amount = $add_amount;
                     $check_has->cash_transfer_amount = $cash_transfer_amount;
+                    $check_has->payment_name = $payment_name;
+                    $check_has->payment_account = $payment_account;
                     $check_has->save(false);
                 }
             }
@@ -532,12 +539,13 @@ class AdminreportController extends Controller
             'route_id' => $route_id
         ]);
     }
-    public function actionCustomerMonthlyReport($year = 2025)
+    public function actionCustomerMonthlyReport()
     {
         $route_id = \Yii::$app->request->post('route_id', []);
         $customer_group_id = \Yii::$app->request->post('customer_group_id', []);
         $from_month = \Yii::$app->request->post('from_month');
         $to_month = \Yii::$app->request->post('to_month');
+        $year = \Yii::$app->request->post('for_year');
 
         // ถ้าเป็น string ให้แปลงเป็น array
         if (!is_array($route_id)) {
@@ -609,11 +617,12 @@ class AdminreportController extends Controller
 
         return $this->render('customer-monthly-report', [
             'data' => $data,
-            'year' => $year,
+            'for_year' => $year,
             'route_id' => $route_id,
             'customer_group_id' => $customer_group_id,
             'from_month' => $from_month,
             'to_month'=>$to_month,
+            'year'=> $year,
         ]);
     }
 

@@ -176,7 +176,7 @@ class DailysumController extends Controller
         if($route_id != null){
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
             $dataProvider->query->select(['product_id','code', 'name', 'price', 'SUM(qty) as qty',
-                'SUM(line_total) as line_total','SUM(line_total_cash) as line_total_cash,SUM(line_total_credit) as line_total_credit',
+                'SUM(line_total) as line_total','SUM(line_total_cash) as line_total_cash,SUM(line_total_cash_transfer) as line_total_cash_transfer,SUM(line_total_credit) as line_total_credit',
                 'SUM(line_qty_cash) as line_qty_cash','SUM(line_qty_credit) as line_qty_credit','SUM(line_qty_free) as line_qty_free']);
             $dataProvider->pagination->pageSize = 100;
             $dataProvider->query->andFilterWhere(['>', 'qty', 0]);
@@ -191,7 +191,7 @@ class DailysumController extends Controller
            // echo "ok";return;
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
             $dataProvider->query->select(['product_id','code', 'name', 'price', 'SUM(qty) as qty',
-                'SUM(line_total) as line_total','SUM(line_total_cash) as line_total_cash,SUM(line_total_credit) as line_total_credit',
+                'SUM(line_total) as line_total','SUM(line_total_cash) as line_total_cash,SUM(line_total_cash_transfer) as line_total_cash_transfer,SUM(line_total_credit) as line_total_credit',
                 'SUM(line_qty_cash) as line_qty_cash','SUM(line_qty_credit) as line_qty_credit','SUM(line_qty_free) as line_qty_free']);
             $dataProvider->pagination->pageSize = 100;
 //            $dataProvider->query->andFilterWhere(['=', 'route_id', 0]);

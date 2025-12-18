@@ -92,7 +92,7 @@ class CustomerinvoiceController extends Controller
         $pageSize = \Yii::$app->request->post("perpage");
         $searchModel = new CustomerinvoiceSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        $dataProvider->query->andFilterWhere(['customer_invoice.status' => 0,'invoice_type'=>1]);
+        $dataProvider->query->andFilterWhere(['customer_invoice.status' => [0,100],'invoice_type'=>1]);
         $dataProvider->setSort(['defaultOrder' => ['id' => SORT_DESC]]);
         $dataProvider->pagination->pageSize = $pageSize;
 
@@ -710,5 +710,14 @@ class CustomerinvoiceController extends Controller
             }
         }
         return $new_price;
+    }
+
+    public function actionClosejob($id)
+    {
+      //  $id = \Yii::$app->request->post('id');
+        if($id){
+            \backend\models\Customerinvoice::updateAll(['status'=>100],['id'=>$id]);
+        }
+        return $this->redirect(['customerinvoice/index']);
     }
 }

@@ -470,12 +470,25 @@ class AdminreportController extends Controller
         ]);
     }
 
-    public function actionCustomerMonthlyReport($year = 2025)
+    public function actionPrintcarcjbao()
+    {
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $route_id = \Yii::$app->request->post('route_id');
+        return $this->render('_cardaily_cjbao',[
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'route_id' => $route_id
+        ]);
+    }
+
+    public function actionCustomerMonthlyReport()
     {
         $route_id = \Yii::$app->request->post('route_id', []);
         $customer_group_id = \Yii::$app->request->post('customer_group_id', []);
         $from_month = \Yii::$app->request->post('from_month');
         $to_month = \Yii::$app->request->post('to_month');
+        $year = \Yii::$app->request->post('for_year');
 
         // ถ้าเป็น string ให้แปลงเป็น array
         if (!is_array($route_id)) {
@@ -547,11 +560,12 @@ class AdminreportController extends Controller
 
         return $this->render('customer-monthly-report', [
             'data' => $data,
-            'year' => $year,
+            'for_year' => $year,
             'route_id' => $route_id,
             'customer_group_id' => $customer_group_id,
             'from_month' => $from_month,
             'to_month'=>$to_month,
+            'year'=> $year,
         ]);
     }
 }

@@ -71,11 +71,122 @@ class PaymentreceiveController extends Controller
         ]);
     }
 
+//    public function actionCreate()
+//    {
+//        $company_id = 0;
+//        $branch_id = 0;
+//        $user_id = 1;
+//        if (!empty(\Yii::$app->user->id)) {
+//            if (\Yii::$app->user->id == null) {
+//                $user_id = 1;
+//            } else {
+//                $user_id = \Yii::$app->user->id;
+//            }
+//
+//        }
+//        if (!empty(\Yii::$app->user->identity->company_id)) {
+//            $company_id = \Yii::$app->user->identity->company_id;
+//        }
+//        if (!empty(\Yii::$app->user->identity->branch_id)) {
+//            $branch_id = \Yii::$app->user->identity->branch_id;
+//        }
+//
+//        $model = new Paymentreceive();
+//
+//        if ($model->load(Yii::$app->request->post())) {
+//
+//            $line_order = \Yii::$app->request->post('line_order_id');
+//            $line_pay_type = \Yii::$app->request->post('line_pay_type');
+//            $line_pay = \Yii::$app->request->post('line_pay');
+//            $line_number = \Yii::$app->request->post('line_number');
+//            $payment_customer_id = \Yii::$app->request->post('customer_car_id');
+//
+////            echo count($line_order).'<br/>';
+////            echo count($line_pay_type).'<br/>';
+////            echo count($line_number).'<br/>';
+////            echo count($line_pay);return;
+//
+////             print_r($line_pay);return;
+//
+//            $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+//
+//            $xdate = explode('/', $model->trans_date);
+//            $t_date = date('Y-m-d H:i:s');
+//            if (count($xdate) > 1) {
+//                $t_date = $xdate[2] . '-' . $xdate[1] . '-' . $xdate[0] . ' ' . date('H:i:s');
+//            }
+//
+//            $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date));
+//            $model->journal_no = $model->getLastNo(date('Y-m-d'));
+//            $model->status = 1;
+//            if($payment_customer_id != null){
+//                $model->customer_id = $payment_customer_id;
+//            }
+//
+//            $model->company_id = $company_id;
+//            $model->branch_id = $branch_id;
+//            $model->crated_by = $user_id;
+//            if ($model->save(false)) {
+//               // echo "ok";return;
+//                if ($line_order != null) {
+//                    if (count($line_order) > 0) {
+//
+//                        for ($i = 0; $i <= count($line_order) - 1; $i++) {
+//                            if($i > count($line_pay)-1 ){continue;}
+//                            if ($line_pay[$i] == 0 || $line_pay[$i] == null)
+//                            {
+//                               // $i++;
+//                                continue;
+//                            }
+//
+//                              // echo $line_pay[$i];return;
+//                            $model_line = new \common\models\PaymentReceiveLine();
+//                            $model_line->order_id = $line_order[$i];
+//                            $model_line->payment_receive_id = $model->id;
+//                            $model_line->payment_amount = $line_pay[$i];
+//                            $model_line->payment_channel_id = $line_pay_type[$i];
+//                            $model_line->payment_method_id = 2;
+//                            $model_line->status = 1;
+//
+//                            if ($i == $line_number[$i]) {
+//                                if (!empty($uploaded_file)) {
+//                                    foreach ($uploaded_file as $files) {
+//                                        $file_name = time() . '.' . $files->getExtension();
+//                                        $files->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_name);
+//                                        $model_line->doc = $file_name;
+//                                    }
+//                                }
+//
+//                            }
+//
+//                            if ($model_line->save(false)) {
+//                                \common\models\Orders::updateAll(['payment_status'=>1],['id'=>$line_order[$i]]);
+//                                $this->updatePaymenttransline($model->customer_id, $line_order[$i], $line_pay[$i], 1);
+//                            }
+//                        }
+//                    }
+//                }
+//                $session = Yii::$app->session;
+//                $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
+//                return $this->redirect(['index']);
+//            }
+//
+//        }
+//
+//        return $this->render('create', [
+//            'model' => $model,
+//        ]);
+//    }
+
     public function actionCreate()
     {
         $company_id = 0;
         $branch_id = 0;
         $user_id = 1;
+
+        $find_from_date = date('Y-m-d');
+        $find_to_date = date('Y-m-d');
+
         if (!empty(\Yii::$app->user->id)) {
             if (\Yii::$app->user->id == null) {
                 $user_id = 1;
@@ -89,6 +200,13 @@ class PaymentreceiveController extends Controller
         }
         if (!empty(\Yii::$app->user->identity->branch_id)) {
             $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        if(\Yii::$app->request->post('find_from_date') !=null){
+            $find_from_date = \Yii::$app->request->post('find_from_date');
+        }
+        if(\Yii::$app->request->post('find_to_date') !=null){
+            $find_to_date = \Yii::$app->request->post('find_to_date');
         }
 
         $model = new Paymentreceive();
@@ -109,6 +227,7 @@ class PaymentreceiveController extends Controller
 //             print_r($line_pay);return;
 
             $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+            $uploaded_doc_file = UploadedFile::getInstancesByName('receive_doc');
 
             $xdate = explode('/', $model->trans_date);
             $t_date = date('Y-m-d H:i:s');
@@ -127,7 +246,7 @@ class PaymentreceiveController extends Controller
             $model->branch_id = $branch_id;
             $model->crated_by = $user_id;
             if ($model->save(false)) {
-               // echo "ok";return;
+                // echo "ok";return;
                 if ($line_order != null) {
                     if (count($line_order) > 0) {
 
@@ -135,11 +254,11 @@ class PaymentreceiveController extends Controller
                             if($i > count($line_pay)-1 ){continue;}
                             if ($line_pay[$i] == 0 || $line_pay[$i] == null)
                             {
-                               // $i++;
+                                // $i++;
                                 continue;
                             }
 
-                              // echo $line_pay[$i];return;
+                            // echo $line_pay[$i];return;
                             $model_line = new \common\models\PaymentReceiveLine();
                             $model_line->order_id = $line_order[$i];
                             $model_line->payment_receive_id = $model->id;
@@ -164,6 +283,14 @@ class PaymentreceiveController extends Controller
                                 $this->updatePaymenttransline($model->customer_id, $line_order[$i], $line_pay[$i], 1);
                             }
                         }
+                        if (!empty($uploaded_doc_file)) {
+                            foreach ($uploaded_doc_file as $filex) {
+                                $file_namex = time() . '.' . $filex->getExtension();
+                                $filex->saveAs(\Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_namex);
+                                $model->slip_doc = $file_namex;
+                                $model->save(false);
+                            }
+                        }
                     }
                 }
                 $session = Yii::$app->session;
@@ -175,6 +302,8 @@ class PaymentreceiveController extends Controller
 
         return $this->render('create', [
             'model' => $model,
+            'find_from_date' => $find_from_date,
+            'find_to_date' => $find_to_date,
         ]);
     }
 
@@ -202,6 +331,72 @@ class PaymentreceiveController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
+//    public function actionUpdate($id)
+//    {
+//        $model = $this->findModel($id);
+//        $model_line = \common\models\PaymentReceiveLine::find()->where(['payment_receive_id' => $id])->all();
+//
+//        if ($model->load(Yii::$app->request->post())) {
+//
+//            $line_order = \Yii::$app->request->post('line_order_id');
+//            $line_pay_type = \Yii::$app->request->post('line_pay_type');
+//            $line_pay = \Yii::$app->request->post('line_pay');
+//            $line_id = \Yii::$app->request->post('line_id');
+//            $line_number = \Yii::$app->request->post('line_number');
+//
+//            $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+//
+//            $xdate = explode('/', $model->trans_date);
+//            $t_date = date('Y-m-d H:i:s');
+//            if (count($xdate) > 1) {
+//                $t_date = $xdate[2] . '-' . $xdate[1] . '-' . $xdate[0] . ' ' . date('H:i:s');
+//            }
+//
+//            $model->trans_date = date('Y-m-d H:i:s', strtotime($t_date));
+//            if ($model->save()) {
+//                if ($line_order != null) {
+//                    if (count($line_order) > 0) {
+//                        for ($i = 0; $i <= count($line_order) - 1; $i++) {
+//
+//                            if ($line_id != null) {
+//                                $model_chk = \common\models\PaymentReceiveLine::find()->where(['id' => $line_id[$i]])->one();
+//                                if ($model_chk) {
+//                                    $model_chk->payment_channel_id = $line_pay_type[$i];
+//                                    $model_chk->payment_amount = $line_pay[$i];
+//                                }
+//                            } else {
+//                                $model_line = new \common\models\PaymentReceiveLine();
+//                                $model_line->order_id = $line_order[$i];
+//                                $model_line->payment_receive_id = $model->id;
+//                                $model_line->payment_amount = $line_pay[$i];
+//                                $model_line->payment_method_id = 2;
+//                                $model_line->status = 1;
+//                                if ($i == $line_number[$i]) {
+//                                    if (!empty($uploaded_file)) {
+//                                        foreach ($uploaded_file as $files) {
+//                                            $file_name = time() . '.' . $files->getExtension();
+//                                            $files->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_name);
+//                                            $model_line->doc = $file_name;
+//                                        }
+//                                    }
+//                                }
+//                                $model_line->save();
+//                            }
+//                        }
+//                    }
+//                }
+//                $session = Yii::$app->session;
+//                $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
+//                return $this->redirect(['index']);
+//            }
+//        }
+//
+//        return $this->render('update', [
+//            'model' => $model,
+//            'model_line' => $model_line
+//        ]);
+//    }
+
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
@@ -216,6 +411,7 @@ class PaymentreceiveController extends Controller
             $line_number = \Yii::$app->request->post('line_number');
 
             $uploaded_file = UploadedFile::getInstancesByName('line_doc');
+            $uploaded_doc_file = UploadedFile::getInstancesByName('receive_doc');
 
             $xdate = explode('/', $model->trans_date);
             $t_date = date('Y-m-d H:i:s');
@@ -251,7 +447,16 @@ class PaymentreceiveController extends Controller
                                         }
                                     }
                                 }
-                                $model_line->save();
+                                $model_line->save(false);
+                            }
+                        }
+
+                        if (!empty($uploaded_doc_file)) {
+                            foreach ($uploaded_doc_file as $filex) {
+                                $file_namex = time() . '.' . $filex->getExtension();
+                                $filex->saveAs(Yii::getAlias('@backend') . '/web/uploads/files/receive/' . $file_namex);
+                                $model->slip_doc = $file_namex;
+                                $model->save(false);
                             }
                         }
                     }
