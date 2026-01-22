@@ -232,8 +232,7 @@ foreach ($selected_standard_items as $item) {
                                             <td colspan="3">
                                                 <input type="checkbox" <?= $model->payment_method_id == 2 ? 'checked' : '' ?>
                                                        onclick="return false;">
-                                                เครดิด วัน โอนผ่าน บ/ช. บจ.วรภัทร เลขที่
-                                                764-3002984
+                                                เครดิด <?=$model->credit_term?> วัน โอนผ่าน บ/ช. บจ.วรภัทร เลขที่ 764-3002984
                                             </td>
                                         </tr>
                                     <?php endif; ?>

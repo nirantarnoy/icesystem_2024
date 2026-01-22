@@ -1775,8 +1775,8 @@ class PosController extends Controller
 
 
                     $model_trans = new \common\models\TransactionPosSaleSum();
-                 //   $model_trans->trans_date = $cal_date;
-                    $model_trans->trans_date = date('Y-m-d', strtotime($login_date));
+                    $model_trans->trans_date = $cal_date;
+                  //  $model_trans->trans_date = date('Y-m-d', strtotime($login_date));
                     $model_trans->product_id = $line_prod_id[$i];
                     $model_trans->cash_qty = $this->getSalecashQty($line_prod_id[$i], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id);//$line_cash_qty[$i];
                     $model_trans->credit_qty = $this->getSaleCreditQty($line_prod_id[$i], $user_id, $login_date, date('Y-m-d H:i:s'), $company_id, $branch_id); // $line_credit_qty[$i];//$new_line_credit_qty;

@@ -43,7 +43,7 @@ class PosController extends Controller
                         'actions' => [
                             'logout', 'index', 'indextest', 'indextest2', 'print', 'printindex', 'dailysum', 'getcustomerprice', 'getoriginprice', 'closesale', 'cancelorder', 'manageclose',
                             'salehistory', 'getbasicprice', 'delete', 'orderedit', 'posupdate', 'posttrans', 'saledailyend', 'saledailyend2', 'printdo', 'createissue', 'updatestock', 'listissue', 'updateissue', 'printsummary','printpossummary', 'printcarsummary','startcaldailymanager'
-                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky',
+                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky','sales-by-route',
                             'uploadslip', 'getslip',
 
                         ],
@@ -3148,6 +3148,54 @@ class PosController extends Controller
             'is_invoice_req' => $is_invoice_req,
             'btn_order_type'=>$btn_order_type,
             'is_admin'=>$is_admin,
+        ]);
+    }
+
+    public function actionSalesByRoute()
+    {
+        $from_date_req = \Yii::$app->request->get('from_date');
+        $to_date_req = \Yii::$app->request->get('to_date');
+        $route_id = \Yii::$app->request->get('route_id');
+
+        $from_date = date('Y-m-d');
+        $to_date = date('Y-m-d');
+
+        if ($from_date_req != null) {
+            $from_date = \DateTime::createFromFormat('d/m/Y', $from_date_req)->format('Y-m-d');
+        }
+        if ($to_date_req != null) {
+            $to_date = \DateTime::createFromFormat('d/m/Y', $to_date_req)->format('Y-m-d');
+        }
+
+        $searchModel = new \backend\models\SalemobiledatanewSearch();
+        $queryParams = \Yii::$app->request->queryParams;
+
+        $dataProvider = $searchModel->search($queryParams);
+        $dataProvider->query->select(['product_id','code', 'name', 'price', 'SUM(qty) as qty',
+            'SUM(line_total) as line_total','SUM(line_total_cash) as line_total_cash,SUM(line_total_cash_transfer) as line_total_cash_transfer,SUM(line_total_credit) as line_total_credit',
+            'SUM(line_qty_cash) as line_qty_cash','SUM(line_qty_credit) as line_qty_credit','SUM(line_qty_free) as line_qty_free']);
+
+        $dataProvider->pagination->pageSize = 500;
+        $dataProvider->query->andFilterWhere(['>', 'qty', 0]);
+        $dataProvider->query->andFilterWhere(['BETWEEN', 'date(order_date)', $from_date, $to_date]);
+
+        if($route_id != null){
+            $dataProvider->query->andFilterWhere(['=', 'route_id', $route_id]);
+        }
+
+        $dataProvider->query->groupBy(['product_id','code', 'name', 'price']);
+        $dataProvider->setSort([
+            'defaultOrder' => [
+                'item_pos_seq' => SORT_ASC,
+                'price' => SORT_ASC
+            ]
+        ]);
+
+        return $this->render('_sales_by_route', [
+            'dataProvider' => $dataProvider,
+            'from_date' => $from_date_req != null ? $from_date_req : date('d/m/Y'),
+            'to_date' => $to_date_req != null ? $to_date_req : date('d/m/Y'),
+            'route_id' => $route_id,
         ]);
     }
 

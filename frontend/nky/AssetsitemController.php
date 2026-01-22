@@ -64,9 +64,7 @@ class AssetsitemController extends Controller
             $dataProvider->query->andFilterWhere(['is not','customer_asset.product_id', new \yii\db\Expression('NULL')]);
         }
 
-
-
-        $dataProvider->setSort(['defaultOrder' => ['id' => SORT_DESC]]);
+        $dataProvider->sort->defaultOrder = ['assets.id' => SORT_DESC];
         $dataProvider->pagination->pageSize = $pageSize;
 
         return $this->render('index', [

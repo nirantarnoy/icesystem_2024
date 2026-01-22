@@ -43,6 +43,7 @@ $mpdf->AddPageByArray([
 $model_cj = null;
 $sql = "SELECT customer_code,customer_name,route_code,branch_no FROM query_order_lotus_summary";
 $sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
+$sql .= " AND customer_group_code = 'Lotus'";
 if($route_id!=null){
     $where_item = "";
     for($i=0;$i<count($route_id);$i++){

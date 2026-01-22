@@ -1,0 +1,678 @@
+<?php
+date_default_timezone_set('Asia/Bangkok');
+
+use chillerlan\QRCode\QRCode;
+use common\models\LoginLog;
+use kartik\daterange\DateRangePicker;
+use yii\web\Response;
+
+//require_once __DIR__ . '/vendor/autoload.php';
+//require_once 'vendor/autoload.php';
+// เพิ่ม Font ให้กับ mPDF
+
+$user_id = \Yii::$app->user->id;
+$find_sale_type = 0;
+$defaultFontConfig = (new Mpdf\Config\FontVariables())->getDefaults();
+$fontData = $defaultFontConfig['fontdata'];
+$mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/tmp',
+//$mpdf = new \Mpdf\Mpdf([
+    //'tempDir' => '/tmp',
+    'mode' => 'utf-8',
+    // 'mode' => 'utf-8', 'format' => [80, 120],
+    'fontdata' => $fontData + [
+            'sarabun' => [ // ส่วนที่ต้องเป็น lower case ครับ
+                'R' => 'THSarabunNew.ttf',
+                'I' => 'THSarabunNewItalic.ttf',
+                'B' => 'THSarabunNewBold.ttf',
+                'BI' => "THSarabunNewBoldItalic.ttf",
+            ]
+        ],
+]);
+
+//$mpdf->SetMargins(-10, 1, 1);
+//$mpdf->SetDisplayMode('fullpage');
+$mpdf->AddPageByArray([
+    'margin-left' => 5,
+    'margin-right' => 0,
+    'margin-top' => 0,
+    'margin-bottom' => 1,
+]);
+
+//$customer_name = $trans_data[0]['customer_id']?getCustomername($connect, $trans_data[0]['customer_id']):$trans_data[0]['customer_name'];
+//$model_product_daily = \common\models\QueryProductTransDaily::find()->where(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->all();
+//$model_product_daily = \common\models\StockTrans::find()->select("product_id")->where(['BETWEEN', 'trans_date', date('Y-m-d H:i:s', strtotime($from_date)), date('Y-m-d H:i:s', strtotime($to_date))])->andFilterWhere(['activity_type_id' => 5, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy('product_id')->orderBy(['product_id' => SORT_ASC])->all();
+$model_product_daily = \backend\models\Product::find()->where(['status' => 1, 'company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['item_pos_seq' => SORT_ASC])->all();
+//$user_login_datetime = '';
+//$model_c_login = LoginLog::find()->select('MIN(login_date) as login_date')->where(['user_id' => $user_id, 'status' => 1])->one();
+//if ($model_c_login != null) {
+//    $user_login_datetime = date('Y-m-d H:i:s', strtotime($model_c_login->login_date));
+//} else {
+//    $user_login_datetime = date('Y-m-d H:i:s');
+//}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print</title>
+    <link href="https://fonts.googleapis.com/css?family=Sarabun&display=swap" rel="stylesheet">
+    <style>
+        /*body {*/
+        /*    font-family: sarabun;*/
+        /*    !*font-family: garuda;*!*/
+        /*    font-size: 18px;*/
+        /*}*/
+
+        #div1 {
+            font-family: sarabun;
+            /*font-family: garuda;*/
+            font-size: 16px;
+        }
+
+        table.table-header {
+            border: 0px;
+            border-spacing: 1px;
+        }
+
+        table.table-footer {
+            border: 0px;
+            border-spacing: 0px;
+        }
+
+        table.table-header td, th {
+            border: 0px solid #dddddd;
+            text-align: left;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        table.table-title {
+            border: 1px solid grey;
+            border-spacing: 0px;
+        }
+
+        table.table-title td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding-top: 2px;
+            padding-bottom: 2px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            /*background-color: #dddddd;*/
+        }
+
+        table.table-detail {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table.table-detail td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 2px;
+        }
+
+    </style>
+    <!--    <script src="vendor/jquery/jquery.min.js"></script>-->
+    <!--    <script type="text/javascript" src="js/ThaiBath-master/thaibath.js"></script>-->
+</head>
+
+<div>
+    <form action="<?= \yii\helpers\Url::to(['adminreport/printallsummary'], true) ?>" method="post" id="form-search">
+        <input type="hidden" class="btn-order-type" name="btn_order_type" value="<?= $btn_order_type ?>">
+        <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
+            <tr>
+
+                <td style="width: 20%">
+                    <?php
+                    echo DateRangePicker::widget([
+                        'name' => 'from_date',
+                        // 'value'=>'2015-10-19 12:00 AM',
+                        'value' => $from_date != null ? date('Y-m-d H:i', strtotime($from_date)) : date('Y-m-d H:i'),
+                        //    'useWithAddon'=>true,
+                        'convertFormat' => true,
+                        'options' => [
+                            'class' => 'form-control',
+                            'placeholder' => 'ถึงวันที่',
+                            //  'onchange' => 'this.form.submit();',
+                            'autocomplete' => 'off',
+                        ],
+                        'pluginOptions' => [
+                            'timePicker' => true,
+                            'timePickerIncrement' => 1,
+                            'locale' => ['format' => 'Y-m-d H:i'],
+                            'singleDatePicker' => true,
+                            'showDropdowns' => true,
+                            'timePicker24Hour' => true
+                        ]
+                    ]);
+                    ?>
+                </td>
+                <td>
+                    <input type="submit" class="btn btn-primary" value="ค้นหา">
+                </td>
+                <td style="width: 25%"></td>
+            </tr>
+        </table>
+    </form>
+    <br/>
+    <div id="div1">
+        <table class="table-header" width="100%">
+            <tr>
+                <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานสรุปจำนวนขายประจำเดือน</td>
+            </tr>
+        </table>
+        <br>
+        <table class="table-header" width="100%">
+            <tr>
+                <td style="text-align: center; font-size: 20px; font-weight: normal">
+                    เดือน <span
+                            style="color: red"><?= date('m', strtotime($from_date)) . '/' . date('Y', strtotime($from_date)) ?></span>
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table class="table-header" width="100%">
+        </table>
+        <table class="table-title" id="table-data" style="width: 100%">
+            <thead>
+            <tr>
+                <th style="text-align: center;">สินค้า</th>
+                <th style="text-align: center;">สาขาอื่น</th>
+                <th style="text-align: center;">ผลิต</th>
+                <th style="text-align: center;">แปรสภาพ</th>
+                <th style="text-align: center;">รับคืน</th>
+                <th style="text-align: center;">สด</th>
+                <th style="text-align: center;">เชื่อ</th>
+                <th style="text-align: center;">เชื่อรถ</th>
+                <th style="text-align: center;background-color: #9B7536">ผลต่าง</th>
+                <th style="text-align: center;background-color: yellow">ขายรถ</th>
+                <th style="text-align: center;">ขายรถ</th>
+                <th style="text-align: center;">ฟรี</th>
+                <th style="text-align: center;">เชื่อต่างสาขา</th>
+                <th style="text-align: center;">เบิกเติม</th>
+                <th style="text-align: center;">เสีย</th>
+                <th style="text-align: center;">ยกมา</th>
+                <th style="text-align: center;">ยกไป</th>
+            </tr>
+            </thead>
+
+            <?php
+            $line_total_prodrec_qty = 0;
+            $line_total_reprocess_qty = 0;
+            $line_total_transfer_in_qty = 0;
+            $line_total_return_qty = 0;
+            $line_total_cash_qty = 0;
+            $line_total_credit_qty = 0;
+            $line_total_credit_car_qty = 0;
+            $line_total_issue_transfer_qty = 0;
+            $line_total_free_qty = 0;
+            $line_total_scrap_qty = 0;
+            $line_total_refill_qty = 0;
+
+            $line_sale_car_qty = 0;
+            $line_balance_in_qty = 0;
+            $line_balance_out_qty = 0;
+            ?>
+            <?php foreach ($model_product_daily as $value): ?>
+                <?php
+                $line_total_prodrec_qty = getProdrecQty($from_date, $value->id);
+                $line_total_reprocess_qty = getReprocessQty($from_date, $value->id);
+                $line_total_transfer_in_qty = getTransferInQty($from_date, $value->id);
+                $line_total_return_qty = getReturnQty($from_date, $value->id);
+                $line_total_cash_qty = getCashQty($from_date, $value->id);
+                $line_total_credit_qty = getCreditQty($from_date, $value->id);
+                $line_total_credit_car_qty = getIssueCarQty($from_date, $value->id);
+                $line_total_issue_transfer_qty = getIssueTransferQty($from_date, $value->id);
+                $line_total_free_qty = getFreeQty($from_date, $value->id);
+                $line_total_scrap_qty = getScrapQty($from_date, $value->id);
+                $line_total_refill_qty = getIssueRefillQty($from_date, $value->id);
+                $line_total_balance_in_qty = getBalanceInQty($from_date, $value->id);
+                $line_total_balance_out_qty = getBalanceOutQty($from_date, $value->id);
+
+                $line_sale_car_qty = getSaleCarQty($from_date, $value->id);
+
+                $line_sale_car_deduct_free_qty = $line_sale_car_qty - $line_total_free_qty;
+                ?>
+                <tr>
+                    <td style="text-align: center;"><?= $value->code ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_transfer_in_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_prodrec_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_reprocess_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_return_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_cash_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_credit_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_credit_car_qty, 0) ?></td>
+                    <td style="text-align: center;background-color: #9B7536"><?= number_format($line_total_credit_car_qty - $line_sale_car_qty, 0) ?></td>
+                    <td style="text-align: center;background-color: yellow"><?= number_format($line_sale_car_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_sale_car_deduct_free_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_free_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_issue_transfer_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_refill_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_scrap_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_balance_in_qty, 0) ?></td>
+                    <td style="text-align: center;"><?= number_format($line_total_balance_out_qty, 0) ?></td>
+                </tr>
+            <?php endforeach; ?>
+
+            <tfoot>
+
+            </tfoot>
+        </table>
+    </div>
+    <br/>
+    <table width="100%" class="table-title" style="border: none;">
+        <td style="text-align: right">
+            <button id="btn-export-excel" class="btn btn-secondary">Export Excel</button>
+            <button id="btn-print" class="btn btn-warning" onclick="printContent('div1')">Print</button>
+        </td>
+    </table>
+
+    <br/>
+    <?php //getProdrecQty2();?>
+    <!--<script src="../web/plugins/jquery/jquery.min.js"></script>-->
+    <!--<script>-->
+    <!--    $(function(){-->
+    <!--       alert('');-->
+    <!--    });-->
+    <!--   window.print();-->
+    <!--</script>-->
+    <?php
+    //echo '<script src="../web/plugins/jquery/jquery.min.js"></script>';
+    //echo '<script type="text/javascript">alert();</script>';
+    ?>
+</div>
+</body>
+</html>
+<?php
+function getProdrecQty($t_date, $product_id)
+{
+    $total_qty = 0;
+
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date','shift'])->orderBy(['trans_date' => SORT_ASC])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $adjust_prodrec_qty = getAdjustQty($value->trans_date,$value->shift, $product_id);
+            if($adjust_prodrec_qty > 0 || $adjust_prodrec_qty != null){
+                $total_qty += $adjust_prodrec_qty;
+            }else{
+                $total_qty += $value->prodrec_qty;
+                //$total_qty+=1;
+            }
+           // $total_qty+=1;
+        }
+
+    }
+    return $total_qty;
+}
+
+function getProdrecQty2()
+{
+    $total_qty = 0;
+    $data = [];
+
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => 15, 'month(trans_date)' => 4, 'year(trans_date)' => 2025])->groupBy(['trans_date','shift'])->orderBy(['trans_date' => SORT_ASC])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $adjust_prodrec_qty = getAdjustQty($value->trans_date,$value->shift, 15);
+            if($adjust_prodrec_qty > 0 || $adjust_prodrec_qty != null){
+                $total_qty += $adjust_prodrec_qty;
+            }else{
+                $total_qty += $value->prodrec_qty;
+                //$total_qty+=1;
+            }
+            // $total_qty+=1;
+            array_push($data,['shif_id'=>$value->shift,'prodrec_qty'=>$total_qty,'origin_qty'=>$value->prodrec_qty,'adjust_qty'=>$adjust_prodrec_qty]);
+        }
+
+    }
+    echo "<pre>";
+    print_r($data);
+    echo "</pre>";
+}
+
+function getAdjustQty($trans_date,$shift_id, $product_id)
+{
+    $total_qty = 0;
+    if ($shift_id && $product_id) {
+        $model_adjust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id,'date(shift_date)' => date('Y-m-d', strtotime($trans_date)), 'shift' => $shift_id])->one();
+        if($model_adjust_qty){
+            if($model_adjust_qty->prodrec_qty !=null){
+                $total_qty = $model_adjust_qty->prodrec_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getReprocessQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'reprocess_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->reprocess_qty;
+            } else {
+                $total_qty += $value->reprocess_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getTransferInQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'transfer_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->transfer_qty;
+            } else {
+                $total_qty += $value->transfer_in_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getReturnQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'return_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->return_qty;
+            } else {
+                $total_qty += $value->return_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getCashQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'cash_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->cash_qty;
+            } else {
+                $total_qty += $value->cash_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getCreditQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'credit_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->credit_qty;
+            } else {
+                $total_qty += $value->credit_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getIssueCarQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'issue_car_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->issue_car_qty;
+            } else {
+                $total_qty += $value->issue_car_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getIssueTransferQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'issue_transfer_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->issue_transfer_qty;
+            } else {
+                $total_qty += $value->issue_transfer_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getFreeQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $total_qty += $value->free_qty;
+        }
+    }
+    return $total_qty;
+}
+
+function getSaleCarQty($t_date, $product_id)
+{
+    $qty = 0;
+    $sql = "SELECT sum(car_qty) as car_qty
+              FROM transaction_manager_daily as t1
+             WHERE  year(t1.trans_date) =" . "'" . date('Y', strtotime($t_date)) . "'" . " 
+             AND month(t1.trans_date) =" . "'" . date('m', strtotime($t_date)) . "'" . " 
+             AND t1.product_id=" . $product_id;
+    $sql .= " GROUP BY t1.product_id";
+    $query = \Yii::$app->db->createCommand($sql);
+    $model = $query->queryAll();
+    if ($model) {
+        for ($i = 0; $i <= count($model) - 1; $i++) {
+            $qty = $model[$i]['car_qty'];
+        }
+    }
+    return $qty;
+}
+
+function getBalanceInQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->orderBy(['id' => SORT_ASC])->one();
+    if ($model_shift) {
+        $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $model_shift->shift, 'date(shift_date)' => date('Y-m-d', strtotime($model_shift->trans_date))])->andFilterWhere(['is not', 'balance_in_qty', new \yii\db\Expression('null')])->one();
+        if ($model_adust_qty) {
+            $total_qty = $model_adust_qty->balance_in_qty;
+        } else {
+            $total_qty = $model_shift->balance_in_qty;
+        }
+    }
+    return $total_qty;
+}
+
+function getBalanceOutQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->orderBy(['id' => SORT_DESC])->one();
+    if ($model_shift) {
+        $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $model_shift->shift, 'date(shift_date)' => date('Y-m-d', strtotime($model_shift->trans_date))])->andFilterWhere(['is not', 'counting_qty', new \yii\db\Expression('null')])->one();
+        if ($model_adust_qty) {
+            $total_qty = $model_adust_qty->counting_qty;
+        } else {
+            $total_qty = $model_shift->counting_qty;
+        }
+    }
+    return $total_qty;
+}
+
+function getScrapQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'scrap_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->scrap_qty;
+            } else {
+                $total_qty += $value->scrap_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+function getIssueRefillQty($t_date, $product_id)
+{
+    $total_qty = 0;
+    $model_shift = \common\models\TransactionPosSaleSum::find()->where(['product_id' => $product_id, 'month(trans_date)' => date('m', strtotime($t_date)), 'year(trans_date)' => date('Y', strtotime($t_date))])->groupBy(['trans_date', 'shift'])->all();
+    if ($model_shift) {
+        foreach ($model_shift as $value) {
+            $model_adust_qty = \common\models\CloseDailyAdjust::find()->where(['product_id' => $product_id, 'shift' => $value->shift, 'date(shift_date)' => date('Y-m-d', strtotime($value->trans_date))])->andFilterWhere(['is not', 'refill_qty', new \yii\db\Expression('null')])->one();
+            if ($model_adust_qty) {
+                $total_qty += $model_adust_qty->refill_qty;
+            } else {
+                $total_qty += $value->issue_refill_qty;
+            }
+        }
+    }
+    return $total_qty;
+}
+
+
+?>
+<?php
+$this->registerJsFile(\Yii::$app->request->baseUrl . '/js/jquery.table2excel.js', ['depends' => [\yii\web\JqueryAsset::className()]]);
+$js = <<<JS
+ $(function(){
+      
+     $("#table-data tr.line-detail-sum").each(function(){
+         var header_product = $(this).attr('data-var');
+         var line_qty = 0;
+         var line_qty2 = 0;
+         var line_qty5 = 0;
+         var line_qty4 = 0;
+         var line_total_qty = 0;
+         var line_amount = 0;
+         var line_amount2 = 0;
+         var line_amount5 = 0;
+         var line_amount4 = 0;
+         var line_total_amount = 0;
+         $("#table-data tr.line-detail").each(function(){
+             var line_product = $(this).attr('data-var');
+             if(line_product == header_product){
+                // line_qty = parseFloat(line_qty) + parseFloat($(this).closest('tr').find('.line-qty').val());
+                 line_qty = parseFloat(line_qty) + parseFloat($(this).closest('tr').find('td:eq(3)').html().replace(',','').replace(',',''));
+                 line_qty2 = parseFloat(line_qty2) + parseFloat($(this).closest('tr').find('td:eq(4)').html().replace(',','').replace(',',''));
+                 line_qty5 = parseFloat(line_qty5) + parseFloat($(this).closest('tr').find('td:eq(5)').html().replace(',','').replace(',',''));
+                 line_qty4 = parseFloat(line_qty4) + parseFloat($(this).closest('tr').find('td:eq(6)').html().replace(',','').replace(',',''));
+                 line_total_qty = parseFloat(line_total_qty) + parseFloat($(this).closest('tr').find('td:eq(7)').html().replace(',','').replace(',',''));
+                 
+                 line_amount = parseFloat(line_amount) + parseFloat($(this).closest('tr').find('td:eq(8)').html().replace(',','').replace(',',''));
+                 line_amount2 = parseFloat(line_amount2) + parseFloat($(this).closest('tr').find('td:eq(9)').html().replace(',','').replace(',',''));
+                 line_amount5 = parseFloat(line_amount5) + parseFloat($(this).closest('tr').find('td:eq(10)').html().replace(',','').replace(',',''));
+                 line_amount4 = parseFloat(line_amount4) + parseFloat($(this).closest('tr').find('td:eq(11)').html().replace(',','').replace(',',''));
+                 line_total_amount = parseFloat(line_total_amount) + parseFloat($(this).closest('tr').find('td:eq(12)').html().replace(',','').replace(',',''));
+             }
+             
+         });
+        
+        $(this).closest('tr').find('td:eq(3)').html(addCommas(parseFloat(line_qty).toFixed(2)));
+        $(this).closest('tr').find('td:eq(4)').html(addCommas(parseFloat(line_qty2).toFixed(2)));
+        $(this).closest('tr').find('td:eq(5)').html(addCommas(parseFloat(line_qty5).toFixed(2)));
+        $(this).closest('tr').find('td:eq(6)').html(addCommas(parseFloat(line_qty4).toFixed(2)));
+        $(this).closest('tr').find('td:eq(7)').html(addCommas(parseFloat(line_total_qty).toFixed(2)));
+        
+        $(this).closest('tr').find('td:eq(8)').html(addCommas(parseFloat(line_amount).toFixed(2)));
+        $(this).closest('tr').find('td:eq(9)').html(addCommas(parseFloat(line_amount2).toFixed(2)));
+        $(this).closest('tr').find('td:eq(10)').html(addCommas(parseFloat(line_amount5).toFixed(2)));
+        $(this).closest('tr').find('td:eq(11)').html(addCommas(parseFloat(line_amount4).toFixed(2)));
+        $(this).closest('tr').find('td:eq(12)').html(addCommas(parseFloat(line_total_amount).toFixed(2)));
+     });
+ });
+ $("#btn-export-excel").click(function(){
+  $("#table-data").table2excel({
+    // exclude CSS class
+    exclude: ".noExl",
+    name: "Excel Document Name"
+  });
+});
+$(".btn-order-date").click(function(){
+    $(".btn-order-type").val(1);
+    if($(".btn-order-price").hasClass("btn-success")){
+        $(".btn-order-price").removeClass("btn-success");
+        $(".btn-order-price").addClass("btn-default");
+    }
+    if($(this).hasClass("btn-default")){
+        $(this).removeClass("btn-default")
+        $(this).addClass("btn-success");
+    }
+    
+});
+$(".btn-order-price").click(function(){
+    $(".btn-order-type").val(2);
+      if($(".btn-order-date").hasClass("btn-success")){
+        $(".btn-order-date").removeClass("btn-success");
+        $(".btn-order-date").addClass("btn-default");
+    }
+    if($(this).hasClass("btn-default")){
+        $(this).removeClass("btn-default")
+        $(this).addClass("btn-success");
+    }
+});
+function printContent(el)
+      {
+         var restorepage = document.body.innerHTML;
+         var printcontent = document.getElementById(el).innerHTML;
+         document.body.innerHTML = printcontent;
+         window.print();
+         document.body.innerHTML = restorepage;
+     }
+function addCommas(nStr) {
+        nStr += '';
+        var x = nStr.split('.');
+        var x1 = x[0];
+        var x2 = x.length > 1 ? '.' + x[1] : '';
+        var rgx = /(\d+)(\d{3})/;
+        while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+        }
+        return x1 + x2;
+ }
+JS;
+$this->registerJs($js, static::POS_END);
+?>

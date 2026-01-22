@@ -2910,7 +2910,33 @@ class PosController extends Controller
     }
 
 
-    function getProductpricelist($product_id, $f_date, $t_date, $company_id, $branch_id)
+    // function getProductpricelist($product_id, $f_date, $t_date, $company_id, $branch_id)
+    // {
+    //     $data = [];
+    //     $sql = "SELECT t1.price
+    //           FROM order_line as t1 INNER JOIN orders as t2 ON t1.order_id = t2.id
+    //          WHERE  date(t2.order_date) >=" . "'" . date('Y-m-d', strtotime($f_date)) . "'" . " 
+    //          AND date(t2.order_date) <=" . "'" . date('Y-m-d', strtotime($t_date)) . "'" . " 
+    //          AND t1.product_id=" . $product_id . " 
+    //          AND t2.status <> 3
+    //          AND t1.qty > 0
+    //          AND t2.is_init_remain <> -1
+    //          AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
+    //     $sql .= " GROUP BY t1.price";
+    //     $sql .= " ORDER BY t1.price asc";
+    //     $query = \Yii::$app->db->createCommand($sql);
+    //     $model = $query->queryAll();
+    //     if ($model) {
+    //         for ($i = 0; $i <= count($model) - 1; $i++) {
+    //             array_push($data, [
+    //                 'line_price' => $model[$i]['price'],
+    //             ]);
+    //         }
+    //     }
+    //     return $data;
+    // }
+
+     function getProductpricelist($product_id, $f_date, $t_date, $company_id, $branch_id)
     {
         $data = [];
         $sql = "SELECT t1.price
@@ -2920,7 +2946,6 @@ class PosController extends Controller
              AND t1.product_id=" . $product_id . " 
              AND t2.status <> 3
              AND t1.qty > 0
-             AND t2.is_init_remain <> -1
              AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
         $sql .= " GROUP BY t1.price";
         $sql .= " ORDER BY t1.price asc";
@@ -3067,13 +3092,15 @@ class PosController extends Controller
              AND t2.sale_channel_id = 2
              AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
 
-        if($price_check > 0){ // has decimal
+        if($line_price == 0){
+             $sql .=" AND t1.price=0";
+        }else if($price_check > 0){ // has decimal
             $sql .=" AND ROUND(t1.price,2)=" . round($line_price,2) ;
         }else{
             $sql .=" AND t1.price=" . $line_price ;
         }
 
-        $sql .= " AND t2.payment_method_id=1";
+        $sql .= " AND t2.payment_method_id in(1,3)";
 
 
         if ($find_user_id != null) {
@@ -3224,5 +3251,44 @@ class PosController extends Controller
         }
         return $data;
     }
+
+    // function getOrderCarOtherCredit($product_id, $f_date, $t_date, $find_sale_type, $find_user_id, $company_id, $branch_id, $is_invoice_req, $btn_order_type, $line_price)
+    // {
+    //     $data = [];
+    //     $sql = "SELECT sum(t1.qty) as qty, sum(t1.line_total) as line_total
+    //           FROM order_line as t1 INNER JOIN orders as t2 ON t1.order_id = t2.id LEFT  JOIN customer as t3 ON t2.customer_id=t3.id INNER JOIN delivery_route as t4 on t2.order_channel_id = t4.id
+    //          WHERE  date(t2.order_date) >=" . "'" . date('Y-m-d', strtotime($f_date)) . "'" . " 
+    //          AND date(t2.order_date) <=" . "'" . date('Y-m-d', strtotime($t_date)) . "'" . " 
+    //          AND t1.product_id=" . $product_id . " 
+    //          AND t2.status <> 3
+    //          AND t2.sale_channel_id = 2
+    //           AND t1.price=" . $line_price . "
+    //          AND t2.company_id=" . $company_id . " AND t2.branch_id=" . $branch_id;
+
+    //     $sql .= " AND t2.order_channel_id > 0";
+    //     $sql .= " AND t4.is_other_branch = 1";
+
+    //     if ($find_user_id != null) {
+    //         $sql .= " AND t2.created_by=" . $find_user_id;
+    //     }
+    //     if ($is_invoice_req != null) {
+    //         $sql .= " AND t3.is_invoice_req =" . $is_invoice_req;
+    //     }
+    //     $sql .= " GROUP BY t1.product_id";
+
+    //     $query = \Yii::$app->db->createCommand($sql);
+    //     $model = $query->queryAll();
+    //     if ($model) {
+    //         for ($i = 0; $i <= count($model) - 1; $i++) {
+
+
+    //             array_push($data, [
+    //                 'qty' => $model[$i]['qty'],
+    //                 'line_total' => $model[$i]['line_total'],
+    //             ]);
+    //         }
+    //     }
+    //     return $data;
+    // }
 
 }

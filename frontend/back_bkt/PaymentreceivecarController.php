@@ -496,6 +496,48 @@ class PaymentreceivecarController extends Controller
         ]);
     }
 
+    public function actionCustomerloanprintsummary()
+    {
+        $company_id = 0;
+        $branch_id = 0;
+        $is_start_find = 0;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        if ($to_date == null) {
+            $to_date = date('Y-m-d H:i');
+        }
+
+        $is_start_find = \Yii::$app->request->post('is_start_find');
+        if ($is_start_find == null) {
+            $is_start_find = 0;
+        }
+
+        $find_customer_id = \Yii::$app->request->post('find_customer_id');
+        $is_find_date = \Yii::$app->request->post('is_find_date');
+        $find_customer_id_select = \Yii::$app->request->post('find_customer_id_select');
+        $find_has_detail = \Yii::$app->request->post('find_has_detail');
+
+        return $this->render('_print_customer_car_loan_route_summary', [
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'is_find_date' => $is_find_date,
+            'find_customer_id' => $find_customer_id,
+            'find_customer_id_select' => $find_customer_id_select,
+            'company_id' => $company_id,
+            'branch_id' => $branch_id,
+            'is_start_find' => $is_start_find,
+            'find_has_detail' => $find_has_detail,
+        ]);
+    }
+
     public function actionCarsummaryupdate()
     {
         $company_id = 0;

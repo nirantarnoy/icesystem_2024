@@ -136,11 +136,11 @@ class SiteController extends Controller
         $db = Yii::$app->db;
 
         // ลบข้อมูลเก่าก่อน
-        $db->createCommand()->truncateTable('customer_monthly_sum')->execute();
+     //   $db->createCommand()->truncateTable('customer_monthly_sum')->execute();
 
         // วนทีละเดือน (1-12)
         for ($month = 1; $month <= 12; $month++) {
-            if($month >12)continue;
+            if($month >1)continue;
             $sql = "
                 INSERT INTO customer_monthly_sum (customer_id, year, month, total_amount)
                 SELECT 

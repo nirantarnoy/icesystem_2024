@@ -155,7 +155,9 @@ class AuthenController extends Controller
 //                //  if ($model->validatePassword($password)) {
                 $model_info = \backend\models\Employee::find()->where(['id' => $model->employee_ref_id])->one();
                 $model_info_2 = null;
+                $is_saleman = 0;
                 if ($model_info) {
+                    $is_saleman = $model_info->position;
                     //    $car_info = $this->getCar($model_info->id, $model->company_id, $model->branch_id);
                     $car_info = $this->getCarId($car, $model->company_id, $model->branch_id);
                     if ($car_info) {
@@ -225,6 +227,7 @@ class AuthenController extends Controller
                                         'route_code' => $car_info == null ? "" : \backend\models\Deliveryroute::findRoutecode($car_info[0]['route_id']),
                                         'emp_name2' => $model_info_2 != null ? $model_info_2->fname . ' ' . $model_info_2->lname : '',
                                         'login_shift' => $daily_login_count,
+                                        'is_saleman' => $is_saleman,
                                     ]
                                 );
                             } else {

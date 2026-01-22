@@ -888,6 +888,14 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                         <?php //if (\Yii::$app->user->can('saleroutesummary/index')): ?>
+                        <li class="nav-item">
+                            <a href="index.php?r=pos/sales-by-route" class="nav-link pos">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>สรุปแยกราคาสายส่ง</p>
+                            </a>
+                        </li>
+                        <?php //;?>
                         <?php if (\Yii::$app->user->can('adminreportcarissue/index2')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=adminreportcarissue/index2" class="nav-link adminreportcarissue">
@@ -971,6 +979,16 @@
                                     </a>
                                 </li>
                             <?php endif; ?>
+                        </ul>
+                        <ul class="nav nav-treeview">
+                            <?php //if (\Yii::$app->user->can('marketingsession/index')): ?>
+                                <li class="nav-item">
+                                    <a href="index.php?r=marketingsession" class="nav-link marketingsession">
+                                        <i class="far fa-circlez nav-icon"></i>
+                                        <p>รายงานตลาด</p>
+                                    </a>
+                                </li>
+                            <?php //endif; ?>
                         </ul>
                     </li>
                 <?php endif;?>

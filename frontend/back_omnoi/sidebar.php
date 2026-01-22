@@ -809,6 +809,14 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <?php //if (\Yii::$app->user->can('saleroutesummary/index')): ?>
+                        <li class="nav-item">
+                            <a href="index.php?r=pos/sales-by-route" class="nav-link pos">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>สรุปแยกราคาสายส่ง</p>
+                            </a>
+                        </li>
+                        <?php //;?>
                         <?php if (\Yii::$app->user->can('saleqtysumbyprice/index')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=saleqtysumbyprice/index" class="nav-link saleqtysumbyprice">

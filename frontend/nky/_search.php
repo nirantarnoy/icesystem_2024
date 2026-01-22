@@ -1,130 +1,136 @@
 <?php
 
+use kartik\daterange\DateRangePicker;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
-/* @var $this yii\web\View */
-/* @var $model backend\models\JournalissueSearch */
-/* @var $form yii\widgets\ActiveForm */
+$company_id = 0;
+$branch_id = 0;
+
+if (!empty(\Yii::$app->user->identity->company_id)) {
+    $company_id = \Yii::$app->user->identity->company_id;
+}
+if (!empty(\Yii::$app->user->identity->branch_id)) {
+    $branch_id= \Yii::$app->user->identity->branch_id;
+}
+
+$dash_date = date('d/m/Y H:i').'-'.date('d/m/Y H:i');
+if ($f_date != null && $t_date != null) {
+    $dash_date = date('d/m/Y H:i', strtotime($f_date)) . ' - ' . date('d/m/Y H:i', strtotime($t_date));
+}
+
 ?>
 
-<div class="journalissue-search">
+<div class="stocktrans-search">
 
     <?php $form = ActiveForm::begin([
-        'action' => ['indexnew'],
+        'action' => ['index'],
         'method' => 'get',
         'options' => [
             'data-pjax' => 1
         ],
     ]); ?>
-    <div class="row">
-        <div class="col-lg-3">
-            <div class="label">
-                เลือกดูตามวันที่
-            </div>
-            <div class="input-group">
-                <?php
-                echo \kartik\date\DatePicker::widget([
-                    'model' => $model,
-                    'attribute' => 'post_date',
-                    'options' => [
-                        'autocomplete' => 'off',
-                        'class'=> 'trans_date',
-                    ],
-                    'pluginOptions' => [
-                        'format' => 'dd/mm/yyyy',
-                        'todayHighlight' => true,
-                    ]
-                ]);
-                ?>
-            </div>
+     <div class="row">
+         <div class="col-lg-12">
+             <div class="input-group">
+                 <?= $form->field($model, 'updated_by')->widget(\kartik\select2\Select2::className(), [
+                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\User::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id])->all(), 'id', function ($data) {
+                         return $data->username;
+                     }),
+                     'options' => [
+                         'placeholder' => '--ผู้จ่าย--',
+                       //  'onchange' => 'this.form.submit();'
+                     ],
+                     'pluginOptions' => [
+                         'allowClear' => true,
+                         'width'=> '300px',
+                     ]
+                 ])->label(false) ?>
+                  <span style="margin-left: 2px;"></span>
+                 <?= $form->field($model, 'product_id')->widget(\kartik\select2\Select2::className(), [
+                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\Product::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'status'=>1])->all(), 'id', function ($data) {
+                         return $data->name;
+                     }),
+                     'options' => [
+                         'placeholder' => '--สินค้า--',
+                       //  'onchange' => 'this.form.submit();'
+                     ],
+                     'pluginOptions' => [
+                         'allowClear' => true,
+                         'width'=> '300px',
+                     ]
+                 ])->label(false) ?>
+                 <span style="margin-left: 2px;"></span>
+                 <?= $form->field($model, 'delivery_route_id')->widget(\kartik\select2\Select2::className(), [
+                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id])->all(), 'id', function ($data) {
+                         return $data->code . ' ' . $data->name;
+                     }),
+                     'options' => [
+                         'placeholder' => '--เลือกสายส่ง--',
+                       //  'onchange' => 'this.form.submit();'
+                     ],
+                     'pluginOptions' => [
+                         'allowClear' => true,
+                         'width'=> '300px',
+                         'multiple' => true,
+                     ]
+                 ])->label(false) ?>
+                 <span style="margin-left: 2px;"></span>
+                 <?php
+                 echo DateRangePicker::widget([
+                     'model' => $model,
+                     'attribute' => 'from_date',
+                     //'name'=>'date_range_5',
+                     'value'=>'2015-10-19 12:00 AM',
+                     //    'useWithAddon'=>true,
+                     'convertFormat'=>true,
+                     'options' => [
+                         'class' => 'form-control',
+                         'placeholder'=>'ตั้งแต่วันที่',
+                       //  'onchange' => 'this.form.submit();',
+                         'autocomplete' => 'off',
+                        ],
+                     'pluginOptions'=>[
+                         'timePicker'=>true,
+                         'timePickerIncrement'=>1,
+                         'locale'=>['format' => 'Y-m-d H:i'],
+                         'singleDatePicker'=>true,
+                         'showDropdowns'=>true,
+                         'timePicker24Hour'=>true
+                     ]
+                 ]) ;
+                 ?>
+                 <span style="margin-left: 2px;"></span>
+                 <?php
+                 echo DateRangePicker::widget([
+                     'model' => $model,
+                     'attribute' => 'to_date',
+                     //'name'=>'date_range_5',
+                     'value'=>'2015-10-19 12:00 AM',
+                     //    'useWithAddon'=>true,
+                     'convertFormat'=>true,
+                     'options' => [
+                         'class' => 'form-control',
+                         'placeholder'=>'ถึงวันที่',
+                        // 'onchange' => 'this.form.submit();',
+                         'autocomplete' => 'off',
+                     ],
+                     'pluginOptions'=>[
+                         'timePicker'=>true,
+                         'timePickerIncrement'=>1,
+                         'locale'=>['format' => 'Y-m-d H:i'],
+                         'singleDatePicker'=>true,
+                         'showDropdowns'=>true,
+                         'timePicker24Hour'=>true
+                     ]
+                 ]) ;
+                 ?>
+                 <button class="btn btn-primary">ค้นหา</button>
+             </div>
+         </div>
+     </div>
 
-        </div>
-        <div class="col-lg-3">
-            <div class="label">
-                สายส่ง
-            </div>
-            <div class="input-group">
-                <?php
-                echo \kartik\select2\Select2::widget([
-                    'model' => $model,
-                    'attribute' => 'route_id',
-                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id, 'status'=>1])->all(), 'id', 'name'),
-                    'options' => [
-                        'placeholder' => 'เลือกสายส่ง',
-                        'onchange' => 'getshiftemp($(this));'
-
-                    ]
-                ]);
-                ?>
-            </div>
-
-        </div>
-        <div class="col-lg-3">
-            <div class="label">พนักงาน</div>
-<!--            <select name="employee" id="" class="form-control selected-employee">-->
-<!--                <option value="0">--เลือกพนักงาน--</option>-->
-<!--            </select>-->
-            <?php
-            $emp_id = \backend\models\User::findEmpId($model->employee_id);
-            if($emp_id > 0){
-                $model->employee_id = $emp_id;
-            }
-
-            echo \kartik\select2\Select2::widget([
-                'model' => $model,
-                'attribute' => 'employee_id',
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Employee::find()->where(['company_id' => $company_id,'branch_id'=>$branch_id,'id'=>$emp_id])->all(), 'id', 'fname'),
-                'options' => [
-                    'placeholder' => 'เลือกพนักงาน',
-                    'class'=> 'selected-employee',
-                ]
-            ]);
-            ?>
-        </div>
-        <div class="col-lg-2">
-            <input type="hidden" name="isnew" value="1">
-            <div class="label"
-                 style="color: white">
-                ค้นหา
-            </div>
-            <input type="submit"
-                   class="btn btn-primary"
-                   value="ค้นหา"></input>
-        </div>
-
-    </div>
 
     <?php ActiveForm::end(); ?>
 
 </div>
-
-<?php
-$url_to_find_emp = \yii\helpers\Url::to(['dailysum/findshiftemp'],true);
-$js=<<<JS
-function getshiftemp(e){
-    var ids = e.val();
-    var trans_date = $(".trans_date").val();
-    if(ids!=null){
-         $.ajax({
-              'type':'post',
-              'dataType': 'html',
-              'async': false,
-              'url': "$url_to_find_emp",
-              'data': {'id': ids,'trans_date': trans_date},
-              'success': function(data) {
-                  // alert(data);
-                  if(data == ''){
-                    $(".selected-employee").html(data);
-                  }else{
-                      $(".selected-employee").html(data);
-                      //$(".text-car-emp").html(data[0]['html']);
-                  }
-              }
-         });
-    }
-}
-JS;
-$this->registerJs($js,static::POS_END);
-
-?>

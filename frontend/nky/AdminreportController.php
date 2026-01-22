@@ -524,8 +524,10 @@ class AdminreportController extends Controller
     public function actionPrintcarnotrans()
     {
         $route_id = \Yii::$app->request->post('route_id');
+        $day_count = \Yii::$app->request->post('day_count');
         return $this->render('_carnotrans',[
             'route_id' => $route_id,
+            'day_count' => $day_count,
         ]);
     }
     public function actionPrintcarcjbao()
@@ -555,10 +557,15 @@ class AdminreportController extends Controller
             $customer_group_id = [$customer_group_id];
         }
 
-        // สร้าง placeholder สำหรับ IN()
-        $routePlaceholders = [];
-        $groupPlaceholders = [];
-        $params = [':year' => $year];
+        $prev_year = (int)$year - 1;
+        $params = [
+            ':year' => $year,
+            ':prev_year' => $prev_year
+        ];
+
+        // กำหนดค่าเริ่มต้นถ้าไม่มีการเลือกเดือน
+        $f_m = $from_month > 0 ? (int)$from_month : 1;
+        $t_m = $to_month > 0 ? (int)$to_month : 12;
 
         foreach ($route_id as $i => $rid) {
             $key = ":r{$i}";
@@ -572,29 +579,43 @@ class AdminreportController extends Controller
             $params[$key] = $gid;
         }
 
+        $params[':f_m'] = $f_m;
+        $params[':t_m'] = $t_m;
+
         $sql = "
-        SELECT 
-            c.code AS customer_code,
-            c.name AS customer_name,
-            dr.name AS route_name,
-            SUM(CASE WHEN cms.month = 1  THEN cms.total_amount ELSE 0 END) AS Jan,
-            SUM(CASE WHEN cms.month = 2  THEN cms.total_amount ELSE 0 END) AS Feb,
-            SUM(CASE WHEN cms.month = 3  THEN cms.total_amount ELSE 0 END) AS Mar,
-            SUM(CASE WHEN cms.month = 4  THEN cms.total_amount ELSE 0 END) AS Apr,
-            SUM(CASE WHEN cms.month = 5  THEN cms.total_amount ELSE 0 END) AS May,
-            SUM(CASE WHEN cms.month = 6  THEN cms.total_amount ELSE 0 END) AS Jun,
-            SUM(CASE WHEN cms.month = 7  THEN cms.total_amount ELSE 0 END) AS Jul,
-            SUM(CASE WHEN cms.month = 8  THEN cms.total_amount ELSE 0 END) AS Aug,
-            SUM(CASE WHEN cms.month = 9  THEN cms.total_amount ELSE 0 END) AS Sep,
-            SUM(CASE WHEN cms.month = 10 THEN cms.total_amount ELSE 0 END) AS Oct,
-            SUM(CASE WHEN cms.month = 11 THEN cms.total_amount ELSE 0 END) AS Nov,
-            SUM(CASE WHEN cms.month = 12 THEN cms.total_amount ELSE 0 END) AS `Dec`,
-            SUM(cms.total_amount) AS Total
-        FROM customer_monthly_sum cms
-        INNER JOIN customer c ON cms.customer_id = c.id
-        INNER JOIN delivery_route dr ON c.delivery_route_id = dr.id
-        WHERE cms.year = :year
-    ";
+            SELECT 
+                c.code AS customer_code,
+                c.name AS customer_name,
+                dr.name AS route_name,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 1  THEN cms.total_amount ELSE 0 END) AS Jan,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 2  THEN cms.total_amount ELSE 0 END) AS Feb,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 3  THEN cms.total_amount ELSE 0 END) AS Mar,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 4  THEN cms.total_amount ELSE 0 END) AS Apr,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 5  THEN cms.total_amount ELSE 0 END) AS May,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 6  THEN cms.total_amount ELSE 0 END) AS Jun,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 7  THEN cms.total_amount ELSE 0 END) AS Jul,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 8  THEN cms.total_amount ELSE 0 END) AS Aug,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 9  THEN cms.total_amount ELSE 0 END) AS Sep,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 10 THEN cms.total_amount ELSE 0 END) AS Oct,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 11 THEN cms.total_amount ELSE 0 END) AS Nov,
+                SUM(CASE WHEN cms.year = :year AND cms.month = 12 THEN cms.total_amount ELSE 0 END) AS `Dec`,
+                SUM(CASE WHEN cms.year = :prev_year AND cms.month = 11 THEN cms.total_amount ELSE 0 END) AS prev_nov,
+                SUM(CASE WHEN cms.year = :prev_year AND cms.month = 12 THEN cms.total_amount ELSE 0 END) AS prev_dec,
+                SUM(CASE 
+                    WHEN (cms.year = :year AND cms.month BETWEEN :f_m AND :t_m)
+                    OR (:year = 2026 AND :f_m = 1 AND cms.year = :prev_year AND cms.month IN (11, 12))
+                    OR (:year = 2026 AND :f_m = 2 AND cms.year = :prev_year AND cms.month = 12)
+                    THEN cms.total_amount ELSE 0 END) AS Total
+            FROM customer_monthly_sum cms
+            INNER JOIN customer c ON cms.customer_id = c.id
+            INNER JOIN delivery_route dr ON c.delivery_route_id = dr.id
+            WHERE (
+                (cms.year = :year AND cms.month BETWEEN :f_m AND :t_m)
+                OR (:year = 2026 AND :f_m = 1 AND cms.year = :prev_year AND cms.month IN (11, 12))
+                OR (:year = 2026 AND :f_m = 2 AND cms.year = :prev_year AND cms.month = 12)
+                OR (cms.year = :prev_year AND cms.month IN (11, 12))
+            )
+        ";
 
         if (!empty($routePlaceholders)) {
             $sql .= " AND dr.id IN (" . implode(',', $routePlaceholders) . ")";
@@ -604,11 +625,8 @@ class AdminreportController extends Controller
             $sql .= " AND c.customer_group_id IN (" . implode(',', $groupPlaceholders) . ")";
         }
 
-        if($from_month > 0 && $to_month > 0){
-            $sql .= " AND cms.month BETWEEN ". $from_month . " AND " . $to_month;
-        }
-
         $sql .= "
+        AND c.status = 1
         GROUP BY c.id, c.name, dr.name, c.code
         ORDER BY c.id DESC
     ";

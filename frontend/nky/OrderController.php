@@ -2301,8 +2301,8 @@ class OrderController extends Controller
 
         /// telegram
         $telegram_api_url = "https://api.telegram.org/bot";
-        $telegram_token = "8000118028:AAGifFgaaNrT4kAwCtYQQbUa2SLqr4PXvQk";
-        $telegram_chat_id = "-4650408840";// "7653537115"; //-4787477639 group chat id
+        $telegram_token = "7612741922:AAH7VhcdKgVM8DFOh6tBKbn-PtjiiNFDbQY";
+        $telegram_chat_id = "-4683593040";// "7653537115"; //-4787477639 group chat id
         // $message = "This is test send request from icesystem ";
 
 

@@ -10,6 +10,7 @@ date_default_timezone_set('Asia/Bangkok');
 
 class Assetsitem extends \common\models\Assets
 {
+    public $route_num;
     public function behaviors()
     {
         return [
@@ -64,6 +65,7 @@ class Assetsitem extends \common\models\Assets
             ],
         ];
     }
+    
 
     public function findId($name)
     {

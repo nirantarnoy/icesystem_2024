@@ -777,6 +777,12 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <li class="nav-item">
+                            <a href="index.php?r=marketingsession/index" class="nav-link marketingsession">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>รายงานการตลาด</p>
+                            </a>
+                        </li>
                         <?php if (\Yii::$app->user->can('pos/printpossummary')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=pos/printpossummary" class="nav-link pos">

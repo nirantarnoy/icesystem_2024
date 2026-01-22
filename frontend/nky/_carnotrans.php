@@ -41,22 +41,31 @@ $mpdf->AddPageByArray([
 
 
 $model_cj_data = null;
-$sql = "SELECT * FROM query_customer_no_trans_over_60_day";
-if($route_id!=null){
-    // $sql .= " AND delivery_route_id = '" . $route_id . "'";
-    $where_item = "";
-    for($i=0;$i<count($route_id);$i++){
-        if($i==count($route_id)-1){
-            $where_item .= "'".$route_id[$i]."'";
-        }else{
-            $where_item .= "'".$route_id[$i]."',";
-        }
+$sql = '';
+$model_cj = null;
+if($day_count !=null){
+    if($day_count[0] == 60){
+        $sql = "SELECT * FROM query_customer_no_trans_over_60_day";
+    }else{
+        $sql = "SELECT * FROM query_customer_no_trans_over_30_day";
     }
-    $sql .= " WHERE delivery_route_id in (".$where_item.")";
-}
-$sql .= " ORDER BY code";
+    if($route_id!=null){
+        // $sql .= " AND delivery_route_id = '" . $route_id . "'";
+        $where_item = "";
+        for($i=0;$i<count($route_id);$i++){
+            if($i==count($route_id)-1){
+                $where_item .= "'".$route_id[$i]."'";
+            }else{
+                $where_item .= "'".$route_id[$i]."',";
+            }
+        }
+        $sql .= " WHERE delivery_route_id in (".$where_item.")";
+    }
+    $sql .= " ORDER BY code";
 
-$model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
+    $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
+}
+
 //print_r($model_cj_data);return;
 ?>
 <!DOCTYPE html>
@@ -163,22 +172,22 @@ $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
                         ?>
                     </td>
 
-                    <!--            <td>-->
-                    <!--                --><?php
-                    //                echo \kartik\select2\Select2::widget([
-                    //                    'name' => 'find_emp_id',
-                    //                    'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['company_id' => $company_id, 'branch_id' => $branch_id])->all(), 'id', 'name'),
-                    //                    'value' => $find_emp_id,
-                    //                    'options' => [
-                    //                        'placeholder' => '--สายส่ง--'
-                    //                    ],
-                    //                    'pluginOptions' => [
-                    //                        'allowClear' => true,
-                    //                        'multiple' => true,
-                    //                    ]
-                    //                ]);
-                    //                ?>
-                    <!--            </td>-->
+                    <td>
+                        <?php
+                        echo \kartik\select2\Select2::widget([
+                            'name' => 'day_count',
+                            'data' => ['30'=>'30 วัน','60'=>'60 วัน'],
+                            'value' => $day_count,
+                            'options' => [
+                                'placeholder' => '--เลือกจำนวนวัน--'
+                            ],
+                            'pluginOptions' => [
+                                'allowClear' => true,
+                                'multiple' => true,
+                            ]
+                        ])
+                        ?>
+                    </td>
                     <td>
                         <input type="submit" class="btn btn-primary" value="ค้นหา">
                     </td>
@@ -197,7 +206,7 @@ $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
 <div id="div1">
     <table class="table-header" width="100%">
         <tr>
-            <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานลูกค้าไม่เคลื่อนไหวเกิน 60 วัน</td>
+            <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานลูกค้าไม่เคลื่อนไหวเกิน <?php echo $day_count !=null ? $day_count[0]:' - '?> วัน</td>
         </tr>
     </table>
     <br>
@@ -210,12 +219,15 @@ $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">#</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">รหัส</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">ชื่อลูกค้า</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;">เลขที่สัญญา</td>
+          <td style="text-align: center;padding: 8px;border: 1px solid grey;">รายการถัง</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">สายส่ง</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">วันที่ขายล่าสุด</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">เลขที่ขายล่าสุด</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">จำนวนวัน</td>
 
         </tr>
+        <?php if($model_cj != null):?>
         <?php for ($x = 0; $x <= count($model_cj) - 1; $x++): ?>
             <?php
             $date1 = new DateTime($model_cj[$x]['order_date']);
@@ -226,13 +238,16 @@ $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
             <tr>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $x + 1 ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['code'] ?></td>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['name'] ?></td>
+                <td style="text-align: left;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['name'] ?></td>
+                <td style="text-align: left;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['contact_no'] ?></td>
+               <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= findCustomerAsset($model_cj[$x]['customer_id']) ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['route_code'] ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= date('d-m-Y H:i:s', strtotime($model_cj[$x]['order_date'])) ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['order_no'] ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;background-color: mediumseagreen"><?= $diff->days.' วัน' ?></td>
             </tr>
         <?php endfor; ?>
+        <?endif;?>
     </table>
 </div>
 
@@ -270,6 +285,19 @@ function getQty($model,$customer_code,$day){
         }
     }
     return $qty;
+}
+
+function findCustomerAsset($customer_id){
+    $name = '';
+    $model = \backend\models\Customerasset::find()->where(['customer_id'=>$customer_id])->all();
+    foreach($model as $x){
+        if(count($model) > 1){
+            $name .= \backend\models\Assetsitem::findOne($x['product_id'])->asset_no.', ';
+        }else{
+            $name .= \backend\models\Assetsitem::findOne($x['product_id'])->asset_no;
+        }
+    }
+    return $name;
 }
 ?>
 

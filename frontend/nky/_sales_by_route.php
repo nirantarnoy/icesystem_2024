@@ -84,12 +84,13 @@ $model_line = $dataProvider->getModels();
                     <td rowspan="2" style="text-align: center;border: 1px solid grey;vertical-align: middle"><b>รหัส</b></td>
                     <td rowspan="2" style="text-align: center;border: 1px solid grey;vertical-align: middle"><b>รายการสินค้า</b></td>
                     <td rowspan="2" style="text-align: center;border: 1px solid grey;vertical-align: middle"><b>ราคาขาย</b></td>
-                    <td colspan="3" style="text-align: center;border: 1px solid grey"><b>จำนวนขาย</b></td>
+                    <td colspan="4" style="text-align: center;border: 1px solid grey"><b>จำนวนขาย</b></td>
                     <td colspan="3" style="text-align: center;border: 1px solid grey"><b>รวมเงิน</b></td>
                 </tr>
                 <tr>
                     <td style="text-align: center;border: 1px solid grey"><b>สด</b></td>
                     <td style="text-align: center;border: 1px solid grey"><b>เชื่อ</b></td>
+                    <td style="text-align: center;border: 1px solid grey"><b>ฟรี</b></td>
                     <td style="text-align: center;border: 1px solid grey; background-color: #e8f8f5"><b>รวม</b></td>
                     <td style="text-align: center;border: 1px solid grey"><b>สด</b></td>
                     <td style="text-align: center;border: 1px solid grey"><b>เชื่อ</b></td>
@@ -101,6 +102,9 @@ $model_line = $dataProvider->getModels();
                 $total_all_cash = 0;
                 $total_all_credit = 0;
                 $total_all_qty_sum = 0;
+                $total_qty_cash = 0;
+                $total_qty_credit = 0;
+                $total_qty_free = 0;
                 $last_product = '';
                 ?>
                 <?php foreach ($model_line as $value): ?>
@@ -120,12 +124,26 @@ $model_line = $dataProvider->getModels();
                     }
                     $last_product = $value->code;
                     ?>
+                    <?php
+                    $qty_cash = $value->line_qty_cash;
+                    $qty_credit = $value->line_qty_credit;
+                    $qty_free = $value->line_qty_free;
+                    if ($value->price == 0) {
+                        $qty_free += $qty_cash + $qty_credit;
+                        $qty_cash = 0;
+                        $qty_credit = 0;
+                    }
+                    $total_qty_cash += $qty_cash;
+                    $total_qty_credit += $qty_credit;
+                    $total_qty_free += $qty_free;
+                    ?>
                     <tr>
                         <td style="text-align: center;border: 1px solid grey;"><?= $is_group == 1 ? '' : $value->code ?></td>
                         <td style="text-align: left;border: 1px solid grey"><?= $is_group == 1 ? '' : $value->name ?></td>
                         <td style="text-align: right;border: 1px solid grey"><?= number_format($value->price, 2) ?></td>
-                        <td style="text-align: right;border: 1px solid grey"><?= number_format($value->line_qty_cash, 2) ?></td>
-                        <td style="text-align: right;border: 1px solid grey"><?= number_format($value->line_qty_credit + $value->line_qty_free, 2) ?></td>
+                        <td style="text-align: right;border: 1px solid grey"><?= number_format($qty_cash, 2) ?></td>
+                        <td style="text-align: right;border: 1px solid grey"><?= number_format($qty_credit, 2) ?></td>
+                        <td style="text-align: right;border: 1px solid grey"><?= number_format($qty_free, 2) ?></td>
                         <td style="text-align: right;border: 1px solid grey; background-color: #e8f8f5"><?= number_format($line_qty_sum, 2) ?></td>
                         <td style="text-align: right;border: 1px solid grey"><?= number_format($value->line_total_cash, 2) ?></td>
                         <td style="text-align: right;border: 1px solid grey"><?= number_format($value->line_total_credit, 2) ?></td>
@@ -136,8 +154,9 @@ $model_line = $dataProvider->getModels();
                 <tfoot>
                 <tr style="background-color: #1abc9c">
                     <td colspan="3" style="text-align: right;border: 1px solid grey;text-align: center"><b>รวม</b></td>
-                    <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
-                    <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                    <td style="text-align: right;border: 1px solid grey;text-align: right"><b><?= number_format($total_qty_cash, 2) ?></b></td>
+                    <td style="text-align: right;border: 1px solid grey;text-align: right"><b><?= number_format($total_qty_credit, 2) ?></b></td>
+                    <td style="text-align: right;border: 1px solid grey;text-align: right"><b><?= number_format($total_qty_free, 2) ?></b></td>
                     <td style="text-align: right;border: 1px solid grey;text-align: right; background-color: #e8f8f5"><b><?= number_format($total_all_qty_sum, 2) ?></b></td>
                     <td style="text-align: right;border: 1px solid grey;text-align: right"><b><?= number_format($total_all_cash, 2) ?></b></td>
                     <td style="text-align: right;border: 1px solid grey;text-align: right"><b><?= number_format($total_all_credit, 2) ?></b></td>

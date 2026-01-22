@@ -498,6 +498,7 @@ if ($is_start_find == 1) {
             <a class="btn btn-info" href="<?= \yii\helpers\Url::to(['paymentreceivecar/carsummaryupdate'], true) ?>">อัพเดทใบส่งของ</a>
         </td>
         <td style="text-align: right">
+            <a href="<?= \yii\helpers\Url::to(['paymentreceivecar/customerloanprintsummary'], true) ?>" class="btn btn-success">ดูสรุปรายเดือน</a>
             <button id="btn-export-excel" class="btn btn-secondary">Export Excel</button>
             <button id="btn-print" class="btn btn-warning" onclick="printContent('div1')">Print</button>
         </td>

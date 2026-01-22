@@ -151,6 +151,9 @@ if ($from_date != null && $to_date != null) {
 
 }
 
+$show_marketing_session = Yii::$app->request->post('show_marketing_session');
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -329,20 +332,9 @@ if ($from_date != null && $to_date != null) {
                     ?>
                 </td>
                 <td>
-                    <?php
-                    echo \kartik\select2\Select2::widget([
-                        'name' => 'is_invoice_req',
-                        'data' => \yii\helpers\ArrayHelper::map(\backend\helpers\CustomerInvoiceReqType::asArrayObject(), 'id', 'name'),
-                        'value' => $is_invoice_req,
-                        'options' => [
-                            'placeholder' => '--ทั้งหมด--'
-                        ],
-                        'pluginOptions' => [
-                            'allowClear' => true,
-                            'multiple' => false,
-                        ]
-                    ]);
-                    ?>
+                    <label>
+                        <input type="checkbox" name="show_marketing_session" value="1" <?= $show_marketing_session == 1 ? 'checked' : '' ?>> แสดง Check-in/out
+                    </label>
                 </td>
                 <td>
                     <input type="submit" class="btn btn-primary" value="ค้นหา">
@@ -374,6 +366,12 @@ if ($from_date != null && $to_date != null) {
         <table class="table-title" id="table-data" style="width: 100%">
             <tr>
                 <td style="border: 1px solid grey;text-align: center;"><b>ลำดับ</b></td>
+                <?php if ($show_marketing_session == 1): ?>
+                    <td style="text-align: center;border: 1px solid grey">
+                        <b>Check-in</b></td>
+                    <td style="text-align: center;border: 1px solid grey">
+                        <b>Check-out</b></td>
+                <?php endif; ?>
                 <td style="text-align: center;border: 1px solid grey">
                     <b>เลขที่ขาย</b></td>
                 <td style="text-align: center;border: 1px solid grey">
@@ -454,7 +452,7 @@ if ($from_date != null && $to_date != null) {
 
                     <?php if ($current_route_id != $value->order_channel_id): ?>
                         <tr>
-                            <?php $col_count = 5 + count($product_header_2) + 3; ?>
+                            <?php $col_count = ($show_marketing_session == 1 ? 7 : 5) + count($product_header_2) + 3; ?>
                             <td style="border: 1px solid grey;background-color: lightseagreen;text-align: left;"
                                 colspan="<?= $col_count ?>">
                                 <b><?= \backend\models\Deliveryroute::findName($value->order_channel_id) ?></b>
@@ -463,6 +461,16 @@ if ($from_date != null && $to_date != null) {
                     <?php endif; ?>
                     <tr>
                         <td style="text-align: center;border: 1px solid grey"><?= $loop_num ?></td>
+                        <?php if ($show_marketing_session == 1): 
+                            $m_data = getMarketingSessionData($value->order_channel_id, $value->order_date, $customer_name);
+                        ?>
+                            <td style="text-align: center;border: 1px solid grey">
+                                <?= $m_data && $m_data['check_in_time'] ? date('H:i:s', strtotime($m_data['check_in_time'])) : ''; ?>
+                            </td>
+                            <td style="text-align: center;border: 1px solid grey">
+                                <?= $m_data && $m_data['check_out_time'] ? date('H:i:s', strtotime($m_data['check_out_time'])) : ''; ?>
+                            </td>
+                        <?php endif; ?>
                         <td style="text-align: center;border: 1px solid grey">
                             <?= $value->order_no; ?>
                         </td>
@@ -540,7 +548,7 @@ if ($from_date != null && $to_date != null) {
 
             <tfoot>
             <tr>
-                <td colspan="5" style="font-size: 16px;border: 1px solid grey"></td>
+                <td colspan="<?= $show_marketing_session == 1 ? 7 : 5 ?>" style="font-size: 16px;border: 1px solid grey"></td>
                 <td style="font-size: 16px;border: 1px solid grey;text-align: center;"><b>รวมทั้งสิ้น</b></td>
                 <?php for ($z = 0; $z <= count($total_all_line_qty_data) - 1; $z++): ?>
                     <td style="text-align: center;padding: 0px;padding-right: 5px;border: 1px solid grey">
@@ -733,6 +741,15 @@ function getOrderslip($order_id){
             $slip_doc = $model_slip;
     }
     return $slip_doc;
+}
+
+function getMarketingSessionData($route_id, $date, $customer_name) {
+    $sql = "SELECT check_in_time, check_out_time FROM query_marketing_session WHERE route_id = :route_id AND DATE(created_at) = :date AND customer_name = :customer_name LIMIT 1";
+    $query = \Yii::$app->db->createCommand($sql);
+    $query->bindValue(':route_id', $route_id);
+    $query->bindValue(':date', date('Y-m-d', strtotime($date)));
+    $query->bindValue(':customer_name', $customer_name);
+    return $query->queryOne();
 }
 
 ?>

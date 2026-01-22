@@ -71,193 +71,63 @@ class Orders extends \common\models\Orders
 
     public static function getLastNo($date, $company_id, $branch_id)
     {
-        $current_date = date('Y-m-d');
-        //   $model = Orders::find()->MAX('order_no');
-    //    $model = Orders::find()->where(['date(order_date)' => date('Y-m-d', strtotime($date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
-        $model = Orders::find()->where(['date(order_date)' => $current_date])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
+        $prefix = 'SO-' . date('y', strtotime($date)) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
+        $model = Orders::find()
+            ->where(['like', 'order_no', $prefix . '%', false])
+            ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])
+            ->orderBy(['id' => SORT_DESC])
+            ->one();
 
-//        $model_seq = \backend\models\Sequence::find()->where(['module_id'=>4])->one();
-//        //$pre = \backend\models\Sequence::find()->where(['module_id'=>15])->one();
-//        $pre = '';
-//        $prefix = '';
-//        if($model_seq){
-//            $pre =$model_seq->prefix;
-//            if($model){
-//                if($model_seq->use_year){
-//                    $prefix = $pre.substr(date("Y"),2,2);
-//                }
-//                if($model_seq->use_month){
-//                    $m = date('m');
-//                    //if($m < 10){$m="0".$m;}
-//                    $prefix = $prefix.$m;
-//                }
-//                if($model_seq->use_day){
-//                    $d = date('d');
-//                    //if($d < 10){$d="0".$d;}
-//                    $prefix = $prefix.$d;
-//                }
-//
-//                $seq_len = strlen($prefix);
-//                $cnum = substr((string)$model,$seq_len,strlen($model));
-//                $len = strlen($cnum);
-//                $clen = strlen($cnum + 1);
-//                $loop = $len - $clen;
-//                for($i=1;$i<=$loop;$i++){
-//                    $prefix.="0";
-//                }
-//                $prefix.=$cnum + 1;
-//                return $prefix;
-//            }else{
-//                if($model_seq->use_year){
-//                    $prefix = $pre.substr(date("Y"),2,2);
-//                }
-//                if($model_seq->use_month){
-//                    $m = date('m');
-//                   // if($m < 10){$m="0".$m;}
-//                    $prefix = $prefix.$m;
-//                }
-//                if($model_seq->use_day){
-//                    $d = date('d');
-//                  ///  if($d < 10){$d="0".$d;}
-//                    $prefix = $prefix.$d;
-//                }
-//                $seq_len = strlen($model_seq->maximum);
-//                for($l=1;$l<=$seq_len-1;$l++){
-//                    $prefix.="0";
-//                }
-//                return $prefix.'1';
-//            }
-//        }
-
-
-        $pre = "SO";
         if ($model != null) {
-//            $prefix = $pre.substr(date("Y"),2,2);
-//            $cnum = substr((string)$model,4,strlen($model));
-//            $len = strlen($cnum);
-//            $clen = strlen($cnum + 1);
-//            $loop = $len - $clen;
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            $cnum = substr((string)$model, 10, 4);
-            $len = strlen($cnum);
-            $clen = strlen($cnum + 1);
-            $loop = $len - $clen;
-            for ($i = 1; $i <= $loop; $i++) {
-                $prefix .= "0";
-            }
-            $prefix .= $cnum + 1;
-            return $prefix;
+            $last_no = $model->order_no;
+            $arr = explode('-', $last_no);
+            $cnum = end($arr);
+            $next_num = (int)$cnum + 1;
         } else {
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            return $prefix . '0001';
+            $next_num = 1;
         }
+
+        return $prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
     }
     public static function getLastNoPos($date, $company_id, $branch_id, $order_date)
     {
-        $current_date = date('Y-m-d',strtotime($order_date));
-        //   $model = Orders::find()->MAX('order_no');
-        //    $model = Orders::find()->where(['date(order_date)' => date('Y-m-d', strtotime($date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
-        $model = Orders::find()->where(['date(order_date)' => $current_date])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
-        //$model = Orders::find()->select(['order_no'])->where(['date(order_date)' => $current_date])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->orderBy(['id'=>SORT_DESC])->one();
+        $prefix = 'SO-' . date('y', strtotime($date)) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
+        $model = Orders::find()
+            ->where(['like', 'order_no', $prefix . '%', false])
+            ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])
+            ->orderBy(['id' => SORT_DESC])
+            ->one();
 
-        $pre = "SO";
         if ($model != null) {
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            $cnum = substr((string)$model, 10, 4);
-            $len = strlen($cnum);
-            $clen = strlen($cnum + 1);
-            $loop = $len - $clen;
-            for ($i = 1; $i <= $loop; $i++) {
-                $prefix .= "0";
-            }
-            $prefix .= $cnum + 1;
-            return $prefix;
+            $last_no = $model->order_no;
+            $arr = explode('-', $last_no);
+            $cnum = end($arr);
+            $next_num = (int)$cnum + 1;
         } else {
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            return $prefix . '0001';
+            $next_num = 1;
         }
+
+        return $prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
     }
     public static function getLastNoCarPos($date, $company_id, $branch_id)
     {
-        //   $model = Orders::find()->MAX('order_no');
-        //    $model = Orders::find()->where(['date(order_date)' => date('Y-m-d', strtotime($date))])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->MAX('order_no');
-        $model = Orders::find()->where(['date(order_date)' => date('Y-m-d')])->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])->andFilterWhere(['like','order_no','SO'])->MAX('order_no');
+        $prefix = 'SO-' . date('y', strtotime($date)) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
+        $model = Orders::find()
+            ->where(['like', 'order_no', $prefix . '%', false])
+            ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id])
+            ->orderBy(['id' => SORT_DESC])
+            ->one();
 
-//        $model_seq = \backend\models\Sequence::find()->where(['module_id'=>4])->one();
-//        //$pre = \backend\models\Sequence::find()->where(['module_id'=>15])->one();
-//        $pre = '';
-//        $prefix = '';
-//        if($model_seq){
-//            $pre =$model_seq->prefix;
-//            if($model){
-//                if($model_seq->use_year){
-//                    $prefix = $pre.substr(date("Y"),2,2);
-//                }
-//                if($model_seq->use_month){
-//                    $m = date('m');
-//                    //if($m < 10){$m="0".$m;}
-//                    $prefix = $prefix.$m;
-//                }
-//                if($model_seq->use_day){
-//                    $d = date('d');
-//                    //if($d < 10){$d="0".$d;}
-//                    $prefix = $prefix.$d;
-//                }
-//
-//                $seq_len = strlen($prefix);
-//                $cnum = substr((string)$model,$seq_len,strlen($model));
-//                $len = strlen($cnum);
-//                $clen = strlen($cnum + 1);
-//                $loop = $len - $clen;
-//                for($i=1;$i<=$loop;$i++){
-//                    $prefix.="0";
-//                }
-//                $prefix.=$cnum + 1;
-//                return $prefix;
-//            }else{
-//                if($model_seq->use_year){
-//                    $prefix = $pre.substr(date("Y"),2,2);
-//                }
-//                if($model_seq->use_month){
-//                    $m = date('m');
-//                   // if($m < 10){$m="0".$m;}
-//                    $prefix = $prefix.$m;
-//                }
-//                if($model_seq->use_day){
-//                    $d = date('d');
-//                  ///  if($d < 10){$d="0".$d;}
-//                    $prefix = $prefix.$d;
-//                }
-//                $seq_len = strlen($model_seq->maximum);
-//                for($l=1;$l<=$seq_len-1;$l++){
-//                    $prefix.="0";
-//                }
-//                return $prefix.'1';
-//            }
-//        }
-
-
-        $pre = "SO";
         if ($model != null) {
-//            $prefix = $pre.substr(date("Y"),2,2);
-//            $cnum = substr((string)$model,4,strlen($model));
-//            $len = strlen($cnum);
-//            $clen = strlen($cnum + 1);
-//            $loop = $len - $clen;
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            $cnum = substr((string)$model, 10, 4);
-            $len = strlen($cnum);
-            $clen = strlen($cnum + 1);
-            $loop = $len - $clen;
-            for ($i = 1; $i <= $loop; $i++) {
-                $prefix .= "0";
-            }
-            $prefix .= $cnum + 1;
-            return $prefix;
+            $last_no = $model->order_no;
+            $arr = explode('-', $last_no);
+            $cnum = end($arr);
+            $next_num = (int)$cnum + 1;
         } else {
-            $prefix = $pre . '-' . substr(date("Y"), 2, 2) . date('m', strtotime($date)) . date('d', strtotime($date)) . '-';
-            return $prefix . '0001';
+            $next_num = 1;
         }
+
+        return $prefix . str_pad($next_num, 4, '0', STR_PAD_LEFT);
     }
 
     public static function getLastNoPosCancel($company_id, $branch_id)

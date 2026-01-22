@@ -11,7 +11,7 @@ use backend\models\Assetsitem;
  */
 class AssetsitemSearch extends Assetsitem
 {
-    public $globalSearch,$route_id;
+    public $globalSearch,$route_id, $route_num;
 
     public function rules()
     {
@@ -19,6 +19,7 @@ class AssetsitemSearch extends Assetsitem
             [['id', 'status', 'company_id', 'branch_id', 'created_at', 'created_by', 'updated_at', 'updated_by','route_id'], 'integer'],
             [['asset_no', 'asset_name', 'description'], 'safe'],
             [['globalSearch'],'string'],
+            [['route_num'], 'safe'],
         ];
     }
 
@@ -46,9 +47,33 @@ class AssetsitemSearch extends Assetsitem
 
         $query->join('left join', 'customer_asset','assets.id = customer_asset.product_id');
         $query->join('left join','query_customer_info','customer_asset.customer_id = query_customer_info.customer_id');
+        $query->join('left join','customer','customer_asset.customer_id = customer.id');
+
+        $query->select(['assets.*', 'customer.route_num as route_num']);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => [
+                'attributes' => [
+                    'id',
+                    'asset_no' => [
+                        'asc' => ['assets.asset_no' => SORT_ASC],
+                        'desc' => ['assets.asset_no' => SORT_DESC],
+                    ],
+                    'asset_name' => [
+                        'asc' => ['assets.asset_name' => SORT_ASC],
+                        'desc' => ['assets.asset_name' => SORT_DESC],
+                    ],
+                    'description',
+                    'status',
+                    'route_num' => [
+                        'asc' => ['customer.route_num' => SORT_ASC],
+                        'desc' => ['customer.route_num' => SORT_DESC],
+                        'label' => 'ลำดับการส่ง'
+                    ],
+                ],
+                'defaultOrder' => ['id' => SORT_DESC]
+            ]
         ]);
 
         $this->load($params);

@@ -122,15 +122,21 @@ if (count($xxtodate) > 1) {
             <td style="text-align: left;border: none" colspan="2"><h3>สรุปรายการส่งน้ำแข็ง</h3></td>
         </tr>
         <tr>
-            <td style="text-align: left;border: none">ชื่อ
+            <td style="text-align: left;border: none;font-size: 20px;">ชื่อ
                 <b><?= \backend\models\Customer::findDescription($model->customer_id) ?></b></td>
 
         </tr>
 
         <tr>
-            <td colspan="2" style="text-align: left;border: none">วันที่เริ่ม
+            <td colspan="2" style="text-align: left;border: none;font-size: 20px;">วันที่เริ่ม
                 <span><b><?= date('d-m-Y', strtotime('+543 years', strtotime($from_date))) ?></b></span> ถึงวันที่
                 <span><b><?= $has_29_02 == 0 ? date('d-m-Y', strtotime('+543 years', strtotime($to_date))) : $to_date_new ?></b></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align: left;border: none;font-size: 20px;">
+               <span>ธ.ไทยพาณิชย์ สาขาถนนทรงพล นครปฐม บัญชีเดินสะพัด</span><br />
+                <span>ชื่อบัญชี นายสมภพ กิตติวรภัทร เลขที่บัญชี <b>7643001988</b></span>
+            </td>
         </tr>
     </table>
     <br/>

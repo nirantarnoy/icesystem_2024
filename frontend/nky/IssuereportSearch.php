@@ -143,8 +143,8 @@ class IssuereportSearch extends QueryIssue
             }
 
         }else{
-            $query->andFilterWhere(['>=', 'date(order_date)', date('Y-m-d')]);
-            $query->andFilterWhere(['<=', 'date(order_date)', date('Y-m-d')]);
+            $query->andFilterWhere(['>=', 'date(trans_date)', date('Y-m-d')]);
+            $query->andFilterWhere(['<=', 'date(trans_date)', date('Y-m-d')]);
         }
         if($this->delivery_route_id != null){
            // $ids = explode(',', $this->delivery_route_id);

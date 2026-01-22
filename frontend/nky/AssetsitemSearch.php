@@ -11,7 +11,7 @@ use backend\models\Assetsitem;
  */
 class AssetsitemSearch extends Assetsitem
 {
-    public $globalSearch,$route_id,$contact_no;
+    public $globalSearch,$route_id,$contact_no,$route_num;
 
     public function rules()
     {
@@ -19,6 +19,7 @@ class AssetsitemSearch extends Assetsitem
             [['id', 'status', 'company_id', 'branch_id', 'created_at', 'created_by', 'updated_at', 'updated_by','route_id'], 'integer'],
             [['asset_no', 'asset_name', 'description','contact_no'], 'safe'],
             [['globalSearch'],'string'],
+            [['route_num'], 'safe'],
         ];
     }
 
@@ -46,15 +47,34 @@ class AssetsitemSearch extends Assetsitem
 
         $query->join('left join', 'customer_asset','assets.id = customer_asset.product_id');
         $query->join('left join','query_customer_info','customer_asset.customer_id = query_customer_info.customer_id');
+        $query->join('left join','customer','customer_asset.customer_id = customer.id');
+
+        $query->select(['assets.*', 'customer.route_num as route_num']);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => [
+                'attributes' => [
+                    'id',
+                    'asset_no' => [
+                        'asc' => ['assets.asset_no' => SORT_ASC],
+                        'desc' => ['assets.asset_no' => SORT_DESC],
+                    ],
+                    'asset_name' => [
+                        'asc' => ['assets.asset_name' => SORT_ASC],
+                        'desc' => ['assets.asset_name' => SORT_DESC],
+                    ],
+                    'description',
+                    'status',
+                    'route_num' => [
+                        'asc' => ['customer.route_num' => SORT_ASC],
+                        'desc' => ['customer.route_num' => SORT_DESC],
+                        'label' => 'ลำดับการส่ง'
+                    ],
+                ],
+                'defaultOrder' => ['id' => SORT_DESC]
+            ]
         ]);
-
-        $dataProvider->sort->attributes['contact_no'] = [
-            'asc' => ['query_customer_info.contact_no' => SORT_ASC],
-            'desc' => ['query_customer_info.contact_no' => SORT_DESC],
-        ];
 
         $this->load($params);
 
@@ -81,9 +101,15 @@ class AssetsitemSearch extends Assetsitem
             $query->andFilterWhere(['query_customer_info.rt_id' => $this->route_id]);
         }
 
+        if($this->route_num !=null){
+            $query->andFilterWhere(['customer.route_num' => $this->route_num]);
+        }
+
         if($this->globalSearch !=null || $this->globalSearch != ''){
             $query->orFilterWhere(['like', 'asset_no', $this->globalSearch])
                 ->orFilterWhere(['like', 'asset_name', $this->globalSearch])
+                ->orFilterWhere(['like', 'customer.name', $this->globalSearch])
+                ->orFilterWhere(['like', 'customer.code', $this->globalSearch])
               //  ->orFilterWhere(['like', 'query_customer_info.route_code', $this->globalSearch])
                 ->orFilterWhere(['like', 'description', $this->globalSearch]);
         }

@@ -2286,10 +2286,16 @@ class OrderController extends Controller
 //        $res = json_decode($result);
 //        return $res;
 
-        /// telegram
+        // /// telegram
+        // $telegram_api_url = "https://api.telegram.org/bot";
+        // $telegram_token = "7182012715:AAH-m2X1l7q0cghwoDWnJf9jNndbDtc6Ej0";
+        // $telegram_chat_id = "-4787477639";// "7653537115"; //-4787477639 group chat id
+        // // $message = "This is test send request from icesystem "; // DD
+
+          /// telegram
         $telegram_api_url = "https://api.telegram.org/bot";
-        $telegram_token = "7182012715:AAH-m2X1l7q0cghwoDWnJf9jNndbDtc6Ej0";
-        $telegram_chat_id = "-4787477639";// "7653537115"; //-4787477639 group chat id
+        $telegram_token = "8122563927:AAGQfE8lTBJCO7q85J6VpSkl8O2Dp3hk4I4";
+        $telegram_chat_id = "-4793734810";// "7653537115"; //-4787477639 group chat id
         // $message = "This is test send request from icesystem ";
 
 
@@ -2361,10 +2367,16 @@ class OrderController extends Controller
 
 
 
+//        /// telegram
+//        $telegram_api_url = "https://api.telegram.org/bot";
+//        $telegram_token = "7182012715:AAH-m2X1l7q0cghwoDWnJf9jNndbDtc6Ej0";
+//        $telegram_chat_id = "-4787477639";// "7653537115"; //-4787477639 group chat id
+//        // $message = "This is test send request from icesystem ";
+
         /// telegram
         $telegram_api_url = "https://api.telegram.org/bot";
-        $telegram_token = "7182012715:AAH-m2X1l7q0cghwoDWnJf9jNndbDtc6Ej0";
-        $telegram_chat_id = "-4787477639";// "7653537115"; //-4787477639 group chat id
+        $telegram_token = "8122563927:AAGQfE8lTBJCO7q85J6VpSkl8O2Dp3hk4I4";
+        $telegram_chat_id = "-4793734810";// "7653537115"; //-4787477639 group chat id
         // $message = "This is test send request from icesystem ";
 
 

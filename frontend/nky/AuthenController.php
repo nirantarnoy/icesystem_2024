@@ -155,6 +155,20 @@ class AuthenController extends Controller
                 if ($model_info) {
                     //    $car_info = $this->getCar($model_info->id, $model->company_id, $model->branch_id);
                     $car_info = $this->getCarId($car, $model->company_id, $model->branch_id);
+
+                    // marketing log
+//                    if($model_info->position == 3){
+//                        $model_login_log = new \common\models\LoginRouteLog();
+//                        $model_login_log->login_date = date('Y-m-d H:i:s');
+//                        $model_login_log->car_id = $car_info[0]['car_id'];
+//                        $model_login_log->route_id = $car_info[0]['route_id'];
+//                        $model_login_log->emp_1 = $model->employee_ref_id;
+//                        $model_login_log->emp_2 = 0;
+//                        $model_login_log->status = 1;
+//                        $model_login_log->save(false);
+//
+//                    }
+
                     if ($car_info) {
                         $member_id = 0;
                         if ($member != null || $member != '') {

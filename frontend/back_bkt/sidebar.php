@@ -447,6 +447,13 @@
                                     <p>ค้างชำระสายส่ง</p>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a href="index.php?r=paymentreceivecar/customerloanprintsummary"
+                                   class="nav-link paymentreceivecar">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>สรุปค้างชำระสายส่ง(เดือน)</p>
+                                </a>
+                            </li>
                         <?php endif; ?>
                         <?php if (\Yii::$app->user->can('customerinvoice/index')): ?>
                             <li class="nav-item">
@@ -880,6 +887,15 @@
                                 </a>
                             </li>
                         <?php //endif;?>
+
+                        <?php //if (\Yii::$app->user->can('saleroutesummary/index')): ?>
+                        <li class="nav-item">
+                            <a href="index.php?r=pos/sales-by-route" class="nav-link pos">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>สรุปแยกราคาสายส่ง</p>
+                            </a>
+                        </li>
+                        <?php //;?>
                         <?php if (\Yii::$app->user->can('adminreportcarissue/index2')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=adminreportcarissue/index2" class="nav-link adminreportcarissue">
