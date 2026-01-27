@@ -123,7 +123,7 @@ class MarketingsessionController extends Controller
         $searchModel = new QueryMarketingSessionSearch();
         $params = Yii::$app->request->queryParams;
         $params['QueryMarketingSessionSearch']['user_id'] = $user_id;
-        $params['QueryMarketingSessionSearch']['route_name'] = $route_name;
+     //   $params['QueryMarketingSessionSearch']['route_name'] = $route_name;
         
         $dataProvider = $searchModel->search($params);
         if ($date) {

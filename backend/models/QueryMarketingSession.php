@@ -106,10 +106,35 @@ class QueryMarketingSession extends \yii\db\ActiveRecord
 
     public static function getActivities($user_id, $route_id, $date)
     {
-        return self::find()
-            ->where(['user_id' => $user_id, 'route_id' => $route_id])
+        $activities = self::find()
+            ->where(['user_id' => $user_id])
             ->andWhere(['DATE(created_at)' => $date])
             ->groupBy('activity_type')
             ->all();
+
+        $has_checkin = false;
+        if ($activities) {
+            foreach ($activities as $activity) {
+                if ($activity->activity_type == 'เช็คอิน') {
+                    $has_checkin = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$has_checkin) {
+            $check = Yii::$app->db->createCommand("SELECT COUNT(*) FROM query_route_customer_checkin WHERE route_id = :route_id AND trans_date = :trans_date")
+                ->bindValue(':route_id', $route_id)
+                ->bindValue(':trans_date', $date)
+                ->queryScalar();
+
+            if ($check > 0) {
+                $new_activity = new self();
+                $new_activity->activity_type = 'เช็คอิน';
+                $activities[] = $new_activity;
+            }
+        }
+
+        return $activities;
     }
 }
