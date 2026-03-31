@@ -718,11 +718,11 @@ class SalecomreportController extends Controller
                             $route_name = \backend\models\Deliveryroute::findName($value->order_channel_id);
 
                             $order_data = null;
-                            if (substr($route_name, 0, 2) == 'CJ') {
-                                $order_data = $this->getOrderlineCJ($value->id, $company_id, $branch_id);
-                            } else {
+                            // if (substr($route_name, 0, 2) == 'CJ') {
+                            //     $order_data = $this->getOrderlineCJ($value->id, $company_id, $branch_id);
+                            // } else {
                                 $order_data = $this->getOrderline($value->id, $company_id, $branch_id);
-                            }
+                          //  }
 
                             if ($order_data == null) continue 1;
                             // print_r($order_data);return;
@@ -737,22 +737,22 @@ class SalecomreportController extends Controller
                             $line_com_2 = 0;
 
                             if ($com_rate != null) {
-                                if (substr($route_name, 0, 2) == 'CJ') {
+//                                 if (substr($route_name, 0, 2) == 'CJ') { // start
 
-                                    $com_pack2_rate = $this->getComRateBktPrevPack2($route_emp_count, $company_id, $branch_id, $t_date);
-//                if ($route_emp_count == 1) {
-                                    if ($route_emp_count == 1) {
-                                        $line_com = (($order_data[0]['total_qty']  * $com_pack2_rate[0]['emp_1_rate']));
-                                    }
+//                                     $com_pack2_rate = $this->getComRateBktPrevPack2($route_emp_count, $company_id, $branch_id, $t_date);
+// //                if ($route_emp_count == 1) {
+//                                     if ($route_emp_count == 1) {
+//                                         $line_com = (($order_data[0]['total_qty']  * $com_pack2_rate[0]['emp_1_rate']));
+//                                     }
 
-//                } else {
-//                  $line_com = $order_data[0]['total_qty'] * $com_rate;
-                                    if ($route_emp_count == 2) {
-                                        $line_com = ($order_data[0]['total_qty'] * $com_pack2_rate[0]['emp_1_rate']);
-                                        $line_com_2 = ($order_data[0]['total_qty'] * $com_pack2_rate[0]['emp_2_rate']);
-                                    }
+// //                } else {
+// //                  $line_com = $order_data[0]['total_qty'] * $com_rate;
+//                                     if ($route_emp_count == 2) {
+//                                         $line_com = ($order_data[0]['total_qty'] * $com_pack2_rate[0]['emp_1_rate']);
+//                                         $line_com_2 = ($order_data[0]['total_qty'] * $com_pack2_rate[0]['emp_2_rate']);
+//                                     }
 
-                                } else {
+//                                 } else { // end
                                     // Other
 
                                     $order_data_p2 = $this->getOrderlineP2($value->id, $company_id, $branch_id);
@@ -793,7 +793,7 @@ class SalecomreportController extends Controller
 //                                }
 
                                     // $line_com = $order_data[0]['total_qty'] * $com_rate;
-                                }
+ //                               } // ehd 2
                             }
 
                             $total_amt = ($total_amt + $order_data[0]['total_amt']);

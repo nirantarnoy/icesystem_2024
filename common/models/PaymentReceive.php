@@ -35,7 +35,7 @@ class PaymentReceive extends \yii\db\ActiveRecord
         return [
             [['trans_date'], 'safe'],
             [['customer_id', 'created_at', 'crated_by', 'updated_at', 'updated_by', 'status'], 'integer'],
-            [['journal_no','slip_doc'], 'string', 'max' => 255],
+            [['journal_no','slip_doc', 'slip_doc2', 'slip_doc3'], 'string', 'max' => 255],
         ];
     }
 
@@ -53,6 +53,9 @@ class PaymentReceive extends \yii\db\ActiveRecord
             'crated_by' => 'Crated By',
             'updated_at' => 'Updated At',
             'updated_by' => 'Updated By',
+            'slip_doc' => 'รูปภาพ 1',
+            'slip_doc2' => 'รูปภาพ 2',
+            'slip_doc3' => 'รูปภาพ 3',
             'status' => 'Status',
         ];
     }

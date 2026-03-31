@@ -2071,6 +2071,7 @@ class OrderController extends Controller
         $customer_id = $req_data['customer_code'];
         $product_code = $req_data['product_code'];
         $reason = $req_data['reason'];
+        $order_date = date('Y-m-d');
 
         $data = [];
 
@@ -2080,18 +2081,20 @@ class OrderController extends Controller
 
                 //$model_order_stock = \common\models\OrderStock::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id])->one();
                 $find_route_id = 0;
-                $model_route_order = \backend\models\Orders::find()->select(['order_channel_id'])->where(['id' => $model->order_id])->one();
+                $model_route_order = \backend\models\Orders::find()->select(['order_channel_id', 'order_date'])->where(['id' => $model->order_id])->one();
                 if ($model_route_order) {
                     $find_route_id = $model_route_order->order_channel_id;
+                    $order_date = date('Y-m-d', strtotime($model_route_order->order_date));
                 }
                 try {
-                    $model_order_stock = \common\models\OrderStock::find()->where(['route_id' => $find_route_id, 'product_id' => $model->product_id, 'date(trans_date)' => date('Y-m-d')])->one();
+                    $model_order_stock = \common\models\OrderStock::find()->where(['route_id' => $find_route_id, 'product_id' => $model->product_id, 'date(trans_date)' => $order_date])->one();
                     if ($model_order_stock) {
                         $model_order_stock->avl_qty = ((float)$model_order_stock->avl_qty + (float)$model->qty);
+                        $model_order_stock->used_qty = ((float)$model_order_stock->used_qty - (float)$model->qty);
                         if ($model_order_stock->save(false)) {
                             $model->status = 500;
                             if ($model->save(false)) {
-                                $model_update_line = \backend\models\Orderline::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id, 'customer_id' => $customer_id])->one();
+                                $model_update_line = \backend\models\Orderline::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id, 'customer_id' => $model->customer_id])->one();
                                 if ($model_update_line) {
 //                                $new_line_total = ($model_update_line->price * $model->qty);
 //                                $model_update_line->qty = ($model_update_line->qty - $model->qty);
@@ -2108,14 +2111,15 @@ class OrderController extends Controller
                             }
                         }
                     } else {
-                        $pre_date = date('Y-m-d', strtotime(date('Y-m-d') . " -1 day"));
+                        $pre_date = date('Y-m-d', strtotime($order_date . " -1 day"));
                         $model_order_stock = \common\models\OrderStock::find()->where(['route_id' => $find_route_id, 'product_id' => $model->product_id, 'date(trans_date)' => $pre_date])->one();
                         if ($model_order_stock) {
                             $model_order_stock->avl_qty = ((float)$model_order_stock->avl_qty + (float)$model->qty);
+                            $model_order_stock->used_qty = ((float)$model_order_stock->used_qty - (float)$model->qty);
                             if ($model_order_stock->save(false)) {
                                 $model->status = 500;
                                 if ($model->save(false)) {
-                                    $model_update_line = \backend\models\Orderline::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id, 'customer_id' => $customer_id])->one();
+                                    $model_update_line = \backend\models\Orderline::find()->where(['order_id' => $model->order_id, 'product_id' => $model->product_id, 'customer_id' => $model->customer_id])->one();
                                     if ($model_update_line) {
 //                                    $new_line_total = ($model_update_line->price * $model->qty);
 //                                    $model_update_line->qty = ($model_update_line->qty - $model->qty);

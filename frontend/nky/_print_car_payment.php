@@ -334,27 +334,26 @@ $mpdf->AddPageByArray([
                                                     <td style="color: red"><?= $payline[$m]['status'] ?></td>
                                                     <td style="color: red"><?= $payline[$m]['user'] ?></td>
                                                     <td style="color: red">
-                                                        <?php if ($slip_idx==0): ?>
-                                                            <?php if ($find_order[$i]['slip_doc'] != null || $find_order[$i]['slip_doc'] != ''): ?>
-                                                                <?php
-                                                                $xe = explode(',',$find_order[$i]['slip_doc']);
-                                                                if($xe!=null){
-                                                                    for($j = 0; $j < count($xe); $j++){
-                                                                        if($xe[$j]==null || $xe[$j]=='')continue;
-                                                                        ?>
-                                                                        <?php if (file_exists('../web/uploads/files/receive/' . trim($xe[$j]))): ?>
-                                                                            <a href="<?= \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . trim($xe[$j]) ?>"
-                                                                               target="_blank" style="color: red">view</a>
-                                                                        <?php else: ?>
-                                                                            <a href="<?= \Yii::$app->urlManagerFrontend->getBaseUrl() . '/uploads/files/receive/' . trim($xe[$j]) ?>"
-                                                                               target="_blank" style="color: red">view</a>
-                                                                        <?php endif; ?>
-                                                                        <?php
+                                                        <?php if ($slip_idx == 0): ?>
+                                                            <?php
+                                                            $slip_docs = [
+                                                                $find_order[$i]['slip_doc'] ?? null,
+                                                                $find_order[$i]['slip_doc2'] ?? null,
+                                                                $find_order[$i]['slip_doc3'] ?? null,
+                                                            ];
+                                                            ?>
+                                                            <?php foreach ($slip_docs as $index => $doc): ?>
+                                                                <?php if ($doc != null && trim($doc) != ''): ?>
+                                                                    <?php
+                                                                    $doc_trimmed = trim($doc);
+                                                                    $url = \Yii::$app->urlManagerFrontend->getBaseUrl() . '/uploads/files/receive/' . $doc_trimmed;
+                                                                    if (file_exists('../web/uploads/files/receive/' . $doc_trimmed)) {
+                                                                        $url = \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . $doc_trimmed;
                                                                     }
-                                                                }
-                                                                ?>
-
-                                                            <?php endif; ?>
+                                                                    ?>
+                                                                    <a href="<?= $url ?>" target="_blank" style="color: red; margin-right: 5px;">view<?= $index + 1 > 1 ? ($index + 1) : '' ?></a>
+                                                                <?php endif; ?>
+                                                            <?php endforeach; ?>
                                                         <?php endif; ?>
                                                     </td>
                                                 </tr>
@@ -444,6 +443,8 @@ function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_i
         SELECT 
             t1.id as journal_id,
             t1.slip_doc,
+            t1.slip_doc2,
+            t1.slip_doc3,
             t1.journal_no,
             t1.customer_code as cus_code,
             t1.customer_name as cus_name,
@@ -482,7 +483,7 @@ function getPayment($f_date, $t_date, $find_sale_type, $find_user_id, $company_i
 
 
     $sql .= "
-        GROUP BY t1.id, t1.journal_no, t1.customer_code, t1.customer_name, t1.customer_id, t1.trans_date, t1.slip_doc
+        GROUP BY t1.id, t1.journal_no, t1.customer_code, t1.customer_name, t1.customer_id, t1.trans_date, t1.slip_doc, t1.slip_doc2, t1.slip_doc3
     ";
 
     $cmd = Yii::$app->db->createCommand($sql, $params);

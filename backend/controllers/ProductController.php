@@ -165,6 +165,18 @@ class ProductController extends Controller
             $model->unit_id = $unit;
             $model->stock_type = $stock_type;
             $model->status = $status;
+
+            if ($model->company_id == null || $model->company_id == 0) {
+                if (!empty(\Yii::$app->user->identity->company_id)) {
+                    $model->company_id = \Yii::$app->user->identity->company_id;
+                }
+            }
+            if ($model->branch_id == null || $model->branch_id == 0) {
+                if (!empty(\Yii::$app->user->identity->branch_id)) {
+                    $model->branch_id = \Yii::$app->user->identity->branch_id;
+                }
+            }
+
             if ($model->save()) {
                 $session = Yii::$app->session;
                 $session->setFlash('msg', 'บันทึกข้อมูลเรียบร้อย');
@@ -259,7 +271,15 @@ class ProductController extends Controller
 
             print "\xEF\xBB\xBF";
 
-            $model = Product::find()->all();
+            $query = Product::find();
+            if (!empty(\Yii::$app->user->identity->company_id)) {
+                $query->andWhere(['company_id' => \Yii::$app->user->identity->company_id]);
+            }
+            if (!empty(\Yii::$app->user->identity->branch_id)) {
+                $query->andWhere(['branch_id' => \Yii::$app->user->identity->branch_id]);
+            }
+            $model = $query->all();
+            
             // $model = \common\models\QueryProducts::find()->all();
             if ($model) {
                 echo "<table border='1'>
@@ -289,7 +309,14 @@ class ProductController extends Controller
 
     public function actionPrintdoc()
     {
-        $model = \backend\models\Product::find()->all();
+        $query = \backend\models\Product::find();
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $query->andWhere(['company_id' => \Yii::$app->user->identity->company_id]);
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $query->andWhere(['branch_id' => \Yii::$app->user->identity->branch_id]);
+        }
+        $model = $query->all();
 
         if ($model) {
             $pdf = new Pdf([
@@ -374,8 +401,8 @@ class ProductController extends Controller
                             continue;
                         }
 
-                        $modelprod = \backend\models\Product::find()->where(['name' => $rowData[1]])->one();
-                        if (count($modelprod) > 0) {
+                        $modelprod = \backend\models\Product::find()->where(['name' => $rowData[1], 'company_id' => \Yii::$app->user->identity->company_id, 'branch_id' => \Yii::$app->user->identity->branch_id])->one();
+                        if ($modelprod) {
                             continue;
                         }
 
@@ -384,6 +411,8 @@ class ProductController extends Controller
                         $modelx->name = $rowData[1];
                         $modelx->description = ltrim($rowData[2]);
                         $modelx->status = 1;
+                        $modelx->company_id = \Yii::$app->user->identity->company_id;
+                        $modelx->branch_id = \Yii::$app->user->identity->branch_id;
                         if ($modelx->save(false)) {
                             $res += 1;
                         }

@@ -1,27 +1,15 @@
 <?php
 
-use kartik\daterange\DateRangePicker;
+use kartik\select2\Select2;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
-$company_id = 0;
-$branch_id = 0;
-
-if (!empty(\Yii::$app->user->identity->company_id)) {
-    $company_id = \Yii::$app->user->identity->company_id;
-}
-if (!empty(\Yii::$app->user->identity->branch_id)) {
-    $branch_id= \Yii::$app->user->identity->branch_id;
-}
-
-$dash_date = date('d/m/Y H:i').'-'.date('d/m/Y H:i');
-if ($f_date != null && $t_date != null) {
-    $dash_date = date('d/m/Y H:i', strtotime($f_date)) . ' - ' . date('d/m/Y H:i', strtotime($t_date));
-}
-
+/* @var $this yii\web\View */
+/* @var $model backend\models\AssetsitemSearch */
+/* @var $form yii\widgets\ActiveForm */
 ?>
 
-<div class="stocktrans-search">
+<div class="assetsitem-search">
 
     <?php $form = ActiveForm::begin([
         'action' => ['index'],
@@ -30,106 +18,56 @@ if ($f_date != null && $t_date != null) {
             'data-pjax' => 1
         ],
     ]); ?>
-     <div class="row">
-         <div class="col-lg-12">
-             <div class="input-group">
-                 <?= $form->field($model, 'updated_by')->widget(\kartik\select2\Select2::className(), [
-                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\User::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id])->all(), 'id', function ($data) {
-                         return $data->username;
-                     }),
-                     'options' => [
-                         'placeholder' => '--ผู้จ่าย--',
-                       //  'onchange' => 'this.form.submit();'
-                     ],
-                     'pluginOptions' => [
-                         'allowClear' => true,
-                         'width'=> '300px',
-                     ]
-                 ])->label(false) ?>
-                  <span style="margin-left: 2px;"></span>
-                 <?= $form->field($model, 'product_id')->widget(\kartik\select2\Select2::className(), [
-                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\Product::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'status'=>1])->all(), 'id', function ($data) {
-                         return $data->name;
-                     }),
-                     'options' => [
-                         'placeholder' => '--สินค้า--',
-                       //  'onchange' => 'this.form.submit();'
-                     ],
-                     'pluginOptions' => [
-                         'allowClear' => true,
-                         'width'=> '300px',
-                     ]
-                 ])->label(false) ?>
-                 <span style="margin-left: 2px;"></span>
-                 <?= $form->field($model, 'delivery_route_id')->widget(\kartik\select2\Select2::className(), [
-                     'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id])->all(), 'id', function ($data) {
-                         return $data->code . ' ' . $data->name;
-                     }),
-                     'options' => [
-                         'placeholder' => '--เลือกสายส่ง--',
-                       //  'onchange' => 'this.form.submit();'
-                     ],
-                     'pluginOptions' => [
-                         'allowClear' => true,
-                         'width'=> '300px',
-                         'multiple' => true,
-                     ]
-                 ])->label(false) ?>
-                 <span style="margin-left: 2px;"></span>
-                 <?php
-                 echo DateRangePicker::widget([
-                     'model' => $model,
-                     'attribute' => 'from_date',
-                     //'name'=>'date_range_5',
-                     'value'=>'2015-10-19 12:00 AM',
-                     //    'useWithAddon'=>true,
-                     'convertFormat'=>true,
-                     'options' => [
-                         'class' => 'form-control',
-                         'placeholder'=>'ตั้งแต่วันที่',
-                       //  'onchange' => 'this.form.submit();',
-                         'autocomplete' => 'off',
-                        ],
-                     'pluginOptions'=>[
-                         'timePicker'=>true,
-                         'timePickerIncrement'=>1,
-                         'locale'=>['format' => 'Y-m-d H:i'],
-                         'singleDatePicker'=>true,
-                         'showDropdowns'=>true,
-                         'timePicker24Hour'=>true
-                     ]
-                 ]) ;
-                 ?>
-                 <span style="margin-left: 2px;"></span>
-                 <?php
-                 echo DateRangePicker::widget([
-                     'model' => $model,
-                     'attribute' => 'to_date',
-                     //'name'=>'date_range_5',
-                     'value'=>'2015-10-19 12:00 AM',
-                     //    'useWithAddon'=>true,
-                     'convertFormat'=>true,
-                     'options' => [
-                         'class' => 'form-control',
-                         'placeholder'=>'ถึงวันที่',
-                        // 'onchange' => 'this.form.submit();',
-                         'autocomplete' => 'off',
-                     ],
-                     'pluginOptions'=>[
-                         'timePicker'=>true,
-                         'timePickerIncrement'=>1,
-                         'locale'=>['format' => 'Y-m-d H:i'],
-                         'singleDatePicker'=>true,
-                         'showDropdowns'=>true,
-                         'timePicker24Hour'=>true
-                     ]
-                 ]) ;
-                 ?>
-                 <button class="btn btn-primary">ค้นหา</button>
-             </div>
-         </div>
-     </div>
 
+    <div class="row">
+        <div class="col-lg-3">
+            <!--         <span class="input-group-addon" id="basic-addon1"><i class="fa fa-search"></i></span>-->
+            <?= $form->field($model, 'globalSearch')->textInput(['placeholder' => 'ค้นหา', 'class' => 'form-control', 'aria-describedby' => 'basic-addon1'])->label(false) ?>
+
+        </div>
+        <div class="col-lg-3">
+            <?=$form->field($model, 'route_id')->widget(Select2::classname(), [
+                    'data'=>\yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1,'branch_id'=>1])->all(),'id','name'),
+                'options'=>[
+                        'placeholder'=>'--เลือกสายส่ง--',
+                        'onchange'=>'this.form.submit();',
+                ],
+            ])->label(false);
+            ?>
+        </div>
+        <div class="col-lg-3">
+            <?php
+            $check_role = \backend\models\User::checkhasrole(\Yii::$app->user->id, 'System Administrator');
+            if ($check_role) {
+                echo \kartik\select2\Select2::widget([
+                    'value' => $viewstatus,
+                    'name' => 'viewstatus',
+                    'data' => \yii\helpers\ArrayHelper::map(\backend\helpers\ViewstatusType::asArrayObject(), 'id', 'name'),
+                    'options' => [
+                        'onchange' => 'this.form.submit();',
+                    ],
+                ]);
+            }
+
+            ?>
+        </div>
+        <div class="col-lg-3">
+            <?php
+            $check_role = \backend\models\User::checkhasrole(\Yii::$app->user->id, 'System Administrator');
+            if ($check_role) {
+                echo \kartik\select2\Select2::widget([
+                    'value' => $viewstatus2,
+                    'name' => 'viewstatus2',
+                    'data' => \yii\helpers\ArrayHelper::map(\backend\helpers\ViewstatusType2::asArrayObject(), 'id', 'name'),
+                    'options' => [
+                        'onchange' => 'this.form.submit();',
+                    ],
+                ]);
+            }
+
+            ?>
+        </div>
+    </div>
 
     <?php ActiveForm::end(); ?>
 

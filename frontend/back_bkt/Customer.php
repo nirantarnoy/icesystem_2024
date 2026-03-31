@@ -45,7 +45,7 @@ class Customer extends \yii\db\ActiveRecord
     {
         return [
             [['code','name'],'unique'],
-            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos'], 'integer'],
+            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos','use_province_id','use_zone_id'], 'integer'],
             [['active_date','cancel_use_date','route_num','contact_file','contact_name','idcard_no','cus_description'], 'safe'],
             [['code', 'name', 'description', 'location_info', 'logo', 'shop_photo','address','address2','phone','branch_no','sort_name','contact_no'], 'string', 'max' => 255],
             [['branch_id'], 'exist', 'skipOnError' => true, 'targetClass' => Branch::className(), 'targetAttribute' => ['branch_id' => 'id']],
@@ -93,6 +93,8 @@ class Customer extends \yii\db\ActiveRecord
             'cancel_use_reason' => 'เหตุผลการยกเลิก',
             'idcard_no' => 'เลขบัตรประชาชน',
             'contact_no' => 'เลขที่สัญญา',
+            'use_province_id' => 'จังหวัดที่ใช้งาน',
+            'use_zone_id' => 'ภาค',
         ];
     }
 

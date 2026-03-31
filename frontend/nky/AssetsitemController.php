@@ -10,6 +10,7 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\web\UploadedFile;
+use yii\helpers\Html;
 
 /**
  * AssetsitemController implements the CRUD actions for Assetsitem model.
@@ -50,6 +51,7 @@ class AssetsitemController extends Controller
         $pageSize = \Yii::$app->request->post("perpage");
         $searchModel = new AssetsitemSearch();
         $dataProvider = $searchModel->search(\Yii::$app->request->queryParams);
+        
         if ($viewstatus == 1) {
             $dataProvider->query->andFilterWhere(['assets.status' => $viewstatus]);
         }
@@ -64,7 +66,21 @@ class AssetsitemController extends Controller
             $dataProvider->query->andFilterWhere(['is not','customer_asset.product_id', new \yii\db\Expression('NULL')]);
         }
 
-        $dataProvider->sort->defaultOrder = ['assets.id' => SORT_DESC];
+        // Calculate summaries based on current filtered query
+        $summaryQuery = clone $dataProvider->query;
+        $summaryData = $summaryQuery->select(['assets.asset_no'])->asArray()->all();
+        
+        $totalCount = count($summaryData);
+        $prefixGroups = [];
+        foreach ($summaryData as $item) {
+            $prefix = !empty($item['asset_no']) ? mb_substr($item['asset_no'], 0, 1) : '-';
+            if (!isset($prefixGroups[$prefix])) {
+                $prefixGroups[$prefix] = 0;
+            }
+            $prefixGroups[$prefix]++;
+        }
+        ksort($prefixGroups);
+
         $dataProvider->pagination->pageSize = $pageSize;
 
         return $this->render('index', [
@@ -72,7 +88,9 @@ class AssetsitemController extends Controller
             'dataProvider' => $dataProvider,
             'perpage' => $pageSize,
             'viewstatus' => $viewstatus,
-            'viewstatus2' => $viewstatus2
+            'viewstatus2' => $viewstatus2,
+            'totalCount' => $totalCount,
+            'prefixGroups' => $prefixGroups,
         ]);
     }
 
@@ -730,5 +748,88 @@ class AssetsitemController extends Controller
             'find_customer_id' => $find_customer_id,
             'find_customer'=>$find_customer,
         ]);
+    }
+
+    public function actionExportStockCheck($prefix = '')
+    {
+        @set_time_limit(0);
+        @ini_set('memory_limit', '512M');
+
+        $viewstatus = \Yii::$app->request->get('viewstatus', 1);
+        $viewstatus2 = \Yii::$app->request->get('viewstatus2', 0);
+
+        $searchModel = new AssetsitemSearch();
+        $dataProvider = $searchModel->search(\Yii::$app->request->queryParams);
+        $dataProvider->pagination = false;
+        
+        if ($viewstatus == 1) {
+            $dataProvider->query->andFilterWhere(['assets.status' => 1]);
+        } elseif ($viewstatus == 2) {
+            $dataProvider->query->andFilterWhere(['assets.status' => 0]);
+        }
+
+        if ($viewstatus2 == 1) {
+            $dataProvider->query->andFilterWhere(['is','customer_asset.product_id', new \yii\db\Expression('NULL')]);
+        } elseif ($viewstatus2 == 2) {
+            $dataProvider->query->andFilterWhere(['is not','customer_asset.product_id', new \yii\db\Expression('NULL')]);
+        }
+
+        if ($prefix !== '') {
+            $dataProvider->query->andFilterWhere(['like', 'assets.asset_no', $prefix . '%', false]);
+        }
+
+        $items = $dataProvider->query->all();
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        ob_start();
+
+        echo "\xEF\xBB\xBF"; // UTF-8 BOM
+
+        echo '<table border="1">
+                <thead>
+                    <tr>
+                        <th style="background-color: #cccccc;">ลำดับ</th>
+                        <th style="background-color: #cccccc;">รหัสอุปกรณ์</th>
+                        <th style="background-color: #cccccc;">ชื่ออุปกรณ์</th>
+                        <th style="background-color: #cccccc;">ลูกค้า</th>
+                        <th style="background-color: #cccccc;">สายส่ง</th>
+                        <th style="background-color: #cccccc;">สถานะ</th>
+                        <th style="background-color: #cccccc; width: 150px;">ผลการตรวจสต็อก</th>
+                        <th style="background-color: #cccccc; width: 200px;">หมายเหตุ</th>
+                    </tr>
+                </thead>
+                <tbody>';
+        
+        $i = 1;
+        foreach ($items as $item) {
+            $customer_name = \backend\models\Assetsitem::findCustomername($item->id);
+            $customer_id = \backend\models\Assetsitem::findCustomerid($item->id);
+            $route_name = \backend\models\Customer::findRoute($customer_id);
+
+            echo '<tr>
+                    <td style="text-align: center;">' . $i++ . '</td>
+                    <td>' . Html::encode($item->asset_no) . '</td>
+                    <td>' . Html::encode($item->asset_name) . '</td>
+                    <td>' . Html::encode($customer_name) . '</td>
+                    <td>' . Html::encode($route_name) . '</td>
+                    <td style="text-align: center;">' . ($item->status == 1 ? "ใช้งาน" : "ไม่ใช้งาน") . '</td>
+                    <td></td>
+                    <td></td>
+                  </tr>';
+        }
+        echo '</tbody></table>';
+
+        $content = ob_get_clean();
+
+        $fileName = "asset_stock_check_" . ($prefix ? $prefix . "_" : "") . date('YmdHis') . ".xls";
+        header("Content-Type: application/octet-stream; charset=utf-8");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+
+        echo $content;
+        exit();
     }
 }

@@ -25,6 +25,7 @@ $route_id = $selected_route_id;
 $model_line = $dataProvider->getModels();
 //echo count($model_line);
 
+
 //echo print_r($model_line);
 //print_r($model_line);
 ?>
@@ -122,10 +123,10 @@ $model_line = $dataProvider->getModels();
                         <td style="text-align: center;border: 1px solid grey"><b>รวมสินค้าออก</b></td>
 
                     </tr>
-                    <?php if ($isnew == 1): ?>
+                    <?php if (1 == 1): ?>
                         <?php
 
-                        $product_trans = getProductdaily2($company_id, $branch_id, $route_id, $show_pos_date);
+                        $product_trans = getProductdaily5($company_id, $branch_id, $route_id, $show_pos_date);
                         //  $product_trans = getProductdaily4($company_id, $branch_id, $route_id, $show_pos_date);
                         $nums = 0;
 
@@ -146,10 +147,12 @@ $model_line = $dataProvider->getModels();
                         $total_transfer_out_qty_sum = 0;
                         $prev_product = [];
                         ?>
+                       <?php echo "item length is ".count($product_trans);?>
                         <?php for ($i = 0; $i <= count($product_trans) - 1; $i++): ?>
+
                             <?php $nums += 1; ?>
                             <?php
-                            if (in_array($product_trans[$i]['product_id'], $prev_product)) continue;
+                          //  if (in_array($product_trans[$i]['product_id'], $prev_product)) continue;
                             //in
                             $line_route_old_stock = getRouteOldStock($route_id, $product_trans[$i]['product_id'], $show_pos_date);
                             $total_route_old_stock_sum += $line_route_old_stock;
@@ -175,7 +178,7 @@ $model_line = $dataProvider->getModels();
                             $total_transfer_in_qty_sum = $total_transfer_in_qty_sum + $total_transfer_in_qty;
 
 
-                            if ($issue_qty <= 0) continue;
+                            if ($issue_qty <= 0 && $total_transfer_in_qty <=0) continue;
 
                             ?>
 
@@ -198,7 +201,7 @@ $model_line = $dataProvider->getModels();
                                 <td style="text-align: right;border: 1px solid grey"><?= number_format($total_sale_qty_line_sum + $total_car_return_qty + $total_transfer_out_qty, 2) ?></td>
                                 <td style="text-align: right;border: 1px solid grey"><?= number_format(($total_issue_line + $total_transfer_in_qty) - ($total_sale_qty_line_sum + $total_car_return_qty + $total_transfer_out_qty), 2) ?></td>
                             </tr>
-                            <?php array_push($prev_product, $product_trans[$i]['product_id']); ?>
+                            <?php //array_push($prev_product, $product_trans[$i]['product_id']); ?>
                         <?php endfor; ?>
                         <tfoot>
                         <tr style="background-color: #1abc9c">
@@ -249,7 +252,7 @@ $model_line = $dataProvider->getModels();
         </td>
     </table>
     <br/>
-    <?php if ($isnew == 1): ?>
+    <?php if (1 == 1): ?>
         <div id="div2">
             <div class="row">
                 <div class="col-lg-12">
@@ -283,6 +286,7 @@ $model_line = $dataProvider->getModels();
                         $total_all_qty_credit = 0;
                         $last_product = '';
                         $total_all_qty_sum = 0;
+                        $total_all_cash_transfer = 0;
                         ?>
                         <?php foreach ($model_line as $value): ?>
                             <?php
@@ -295,6 +299,8 @@ $model_line = $dataProvider->getModels();
 
                             $total_all_cash = $total_all_cash + $value->line_total_cash;
                             $total_all_credit = $total_all_credit + $value->line_total_credit;
+
+                            $total_all_cash_transfer = $total_all_cash_transfer + $value->line_total_cash_transfer;
 
                             //     $total_all_qty_cash = $total_all_qty_cash + $value->line_qty_cash;
                             //    $total_all_qty_credit = $total_all_qty_credit + $value->line_qty_credit;
@@ -349,7 +355,7 @@ $model_line = $dataProvider->getModels();
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายสด</b></td>
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
-                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b>
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])) + $total_all_cash_transfer, 2) ?></b>
                             </td>
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายเชื่อ</b>
@@ -378,6 +384,36 @@ $model_line = $dataProvider->getModels();
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b><?= number_format(getPayment($route_id, $show_pos_date) + 0, 2) ?></b></td>
                         </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;border: 1px solid grey;text-align: center"><b></b>
+                            </td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b>ขายสดเงินสด</b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b></td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right"><b></b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right;border: 1px solid grey;text-align: center"><b></b>
+                            </td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b>ขายสดเงินโอน</b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                                <b><?= number_format($total_all_cash_transfer, 2) ?></b></td>
+                            <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right"><b></b>
+                            </td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
+                            <td style="text-align: right;border: 1px solid grey;text-align: right">
+                            </td>
+                        </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -390,7 +426,7 @@ $model_line = $dataProvider->getModels();
 
             <br>
             <div class="row">
-                <div class="col-lg-12">
+                <div class="col-lg-6">
                     <p>สรุปรายละเอียดการรับเงินทั้งหมดจากรายงานขายสดและชำระหนี้(รวมทุกกลุ่มสินค้า)</p>
                 </div>
             </div>
@@ -501,26 +537,74 @@ function getProductdaily2($company_id, $branch_id, $route_id, $order_date)
             ]);
 
         }
-        if ($data != null) {
-            // $data2 = $data;
-            for ($x = 0; $x <= count($data) - 1; $x++) {
-                $model_check = \backend\models\Stocktrans::find()->select('product_id')->where(['trans_ref_id' => $route_id, 'date(trans_date)' => date('Y-m-d', strtotime($order_date))])->andFilterWhere(['activity_type_id' => 7])->andFilterWhere(['!=', 'product_id', $data[$x]['product_id']])->groupBy(['product_id'])->one();
-                if ($model_check) {
-                    if (in_array($model_check->product_id, $data2)) {
-                        continue;
-                    }
-                    $product_code = \backend\models\Product::findCode($model_check->product_id);
-                    $product_name = \backend\models\Product::findName($model_check->product_id);
+//        if ($data != null) {
+//            // $data2 = $data;
+//            for ($x = 0; $x <= count($data) - 1; $x++) {
+//                $model_check = \backend\models\Stocktrans::find()->select('product_id')->where(['trans_ref_id' => $route_id, 'date(trans_date)' => date('Y-m-d', strtotime($order_date))])->andFilterWhere(['activity_type_id' => 7])->andFilterWhere(['!=', 'product_id', $data[$x]['product_id']])->groupBy(['product_id'])->one();
+//                if ($model_check) {
+//                    if (in_array($model_check->product_id, $data2)) {
+//                        continue;
+//                    }
+//                    $product_code = \backend\models\Product::findCode($model_check->product_id);
+//                    $product_name = \backend\models\Product::findName($model_check->product_id);
+//
+//                    array_push($data2, $model_check->product_id);
+//                    array_push($data, [
+//                        'product_id' => $model_check->product_id,
+//                        'product_code' => $product_code,
+//                        'product_name' => $product_name,
+//                    ]);
+//                }
+//            }
+//        }
+    }
+    return $data;
+}
 
-                    array_push($data2, $model_check->product_id);
-                    array_push($data, [
-                        'product_id' => $model_check->product_id,
-                        'product_code' => $product_code,
-                        'product_name' => $product_name,
-                    ]);
-                }
-            }
+function getProductdaily3($company_id, $branch_id, $route_id, $order_date)
+{
+    $data = [];
+    $data2 = [];
+    $sql = "SELECT t1.product_id
+              FROM order_stock as t1
+            WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'";
+    if ($route_id != null) {
+        $sql .= " AND t1.route_id = " . $route_id;
+    }
+    $sql .= " GROUP BY t1.product_id ORDER BY t1.product_id";
+    $query = \Yii::$app->db->createCommand($sql);
+    $model = $query->queryAll();
+    if ($model) {
+        for ($i = 0; $i <= count($model) - 1; $i++) {
+            $product_code = \backend\models\Product::findCode($model[$i]['product_id']);
+            $product_name = \backend\models\Product::findName($model[$i]['product_id']);
+            array_push($data, [
+                'product_id' => $model[$i]['product_id'],
+                'product_code' => $product_code,
+                'product_name' => $product_name,
+            ]);
+
         }
+//        if ($data != null) {
+//            // $data2 = $data;
+//            for ($x = 0; $x <= count($data) - 1; $x++) {
+//                $model_check = \backend\models\Stocktrans::find()->select('product_id')->where(['trans_ref_id' => $route_id, 'date(trans_date)' => date('Y-m-d', strtotime($order_date))])->andFilterWhere(['activity_type_id' => 7])->andFilterWhere(['!=', 'product_id', $data[$x]['product_id']])->groupBy(['product_id'])->one();
+//                if ($model_check) {
+//                    if (in_array($model_check->product_id, $data2)) {
+//                        continue;
+//                    }
+//                    $product_code = \backend\models\Product::findCode($model_check->product_id);
+//                    $product_name = \backend\models\Product::findName($model_check->product_id);
+//
+//                    array_push($data2, $model_check->product_id);
+//                    array_push($data, [
+//                        'product_id' => $model_check->product_id,
+//                        'product_code' => $product_code,
+//                        'product_name' => $product_name,
+//                    ]);
+//                }
+//            }
+//        }
     }
     return $data;
 }
@@ -551,15 +635,15 @@ function getProductdaily4($company_id, $branch_id, $route_id, $order_date)
     return $data;
 }
 
-function getProductdaily3($company_id, $branch_id, $route_id, $order_date)
+function getProductdaily5($company_id, $branch_id, $route_id, $order_date)
 {
     $data = [];
     $sql = "SELECT t1.product_id
               FROM order_stock as t1
-            WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " 
+            WHERE  date(t1.trans_date) >=" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " 
              AND t1.company_id=" . $company_id . " AND t1.branch_id=" . $branch_id;
     if ($route_id != null) {
-        $sql .= " AND t1.route_id = " . $route_id;
+        $sql .= " AND t1.route_id= " . $route_id;
     }
     $sql .= " GROUP BY t1.product_id ORDER BY t1.product_id";
     $query = \Yii::$app->db->createCommand($sql);
@@ -613,7 +697,7 @@ function getIssuecar($route_id, $product_id, $order_date, $user_id)
     $sql = "SELECT SUM(t2.origin_qty) as qty";
     $sql .= " FROM journal_issue as t1 INNER JOIN journal_issue_line as t2 ON t2.issue_id = t1.id";
     $sql .= " WHERE t2.product_id =" . $product_id;
-//    $sql .= " AND t1.status in (2,150)";
+    $sql .= " AND not isnull(t1.delivery_route_id)";
     $sql .= " AND t1.status in (2)";
     $sql .= " AND date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " ";
     if ($route_id != null) {
@@ -638,6 +722,7 @@ function getSalecar($route_id, $product_id, $order_date, $user_id)
     $sql = "SELECT id,product_id, SUM(qty) as qty";
     $sql .= " FROM query_sale_mobile_data_new";
     $sql .= " WHERE  product_id =" . $product_id;
+    //$sql .= " AND  order_line_status <> 500";
     $sql .= " AND date(order_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " ";
     if ($route_id != null) {
         $sql .= " AND route_id=" . $route_id;
@@ -695,7 +780,7 @@ function getReturnCar($route_id, $product_id, $order_date, $user_id)
     $sql = "SELECT SUM(t1.qty) as qty";
     $sql .= " FROM stock_trans as t1 ";
     $sql .= " WHERE  t1.product_id =" . $product_id;
-    $sql .= " AND t1.activity_type_id=7";
+    $sql .= " AND t1.activity_type_id in (7,26)";
     $sql .= " AND date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " ";
     if ($route_id != null) {
         $sql .= " AND t1.trans_ref_id=" . $route_id;
@@ -808,50 +893,6 @@ function getPaymentBank($route_id, $order_date)
     }
     return $pay_amount;
 }
-
-//function getPayment($route_id, $order_date)
-//{
-//    $pay_amount = 0;
-//
-//    $sql = "SELECT SUM(t1.payment_amount) as pay_amount";
-//    $sql .= " FROM query_payment_receive as t1 INNER JOIN customer as t2 ON t1.customer_id = t2.id";
-//    $sql .= " WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " ";
-//    $sql .= " AND t1.payment_method_id = 2";
-//    if ($route_id != null) {
-//        $sql .= " AND t2.delivery_route_id=" . $route_id;
-//    }
-//    $sql .= " GROUP BY t2.delivery_route_id";
-//    $query = \Yii::$app->db->createCommand($sql);
-//    $model = $query->queryAll();
-//    if ($model) {
-//        for ($i = 0; $i <= count($model) - 1; $i++) {
-//            $pay_amount = $model[$i]['pay_amount'];
-//        }
-//    }
-//    return $pay_amount;
-//}
-//
-//function getPaymentBank($route_id, $order_date)
-//{
-//    $pay_amount = 0;
-//
-//    $sql = "SELECT SUM(t1.payment_amount) as pay_amount";
-//    $sql .= " FROM query_payment_receive as t1 INNER JOIN customer as t2 ON t1.customer_id = t2.id";
-//    $sql .= " WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d', strtotime($order_date)) . "'" . " ";
-//    $sql .= " AND t1.payment_channel_id = 3";
-//    if ($route_id != null) {
-//        $sql .= " AND t2.delivery_route_id=" . $route_id;
-//    }
-//    $sql .= " GROUP BY t2.delivery_route_id";
-//    $query = \Yii::$app->db->createCommand($sql);
-//    $model = $query->queryAll();
-//    if ($model) {
-//        for ($i = 0; $i <= count($model) - 1; $i++) {
-//            $pay_amount = $model[$i]['pay_amount'];
-//        }
-//    }
-//    return $pay_amount;
-//}
 
 function orderdiscount($route_id)
 {

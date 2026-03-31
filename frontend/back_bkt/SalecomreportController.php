@@ -496,11 +496,11 @@ class SalecomreportController extends Controller
                     $route_name = \backend\models\Deliveryroute::findName($value->order_channel_id);
 
                     $order_data = null;
-                    if (substr($route_name, 0, 2) == 'CJ') {
-                        $order_data = $this->getOrderlineCJ($value->id, $company_id, $branch_id);
-                    } else {
+                    // if (substr($route_name, 0, 2) == 'CJ') {
+                    //     $order_data = $this->getOrderlineCJ($value->id, $company_id, $branch_id);
+                    // } else {
                         $order_data = $this->getOrderline($value->id, $company_id, $branch_id);
-                    }
+                 //   }
 
                     if ($order_data == null) continue;
                     // print_r($order_data);return;
@@ -526,15 +526,15 @@ class SalecomreportController extends Controller
 
                     $line_com = 0;
 
-                    if (substr($route_name, 0, 2) == 'CJ') {
-                        if ($route_emp_count == 1) {
-                            $line_com = (($order_data[0]['total_qty'] * $com_rate) * 1.75);
-                        } else {
-//                  $line_com = $order_data[0]['total_qty'] * $com_rate;
-                            $line_com = ($order_data[0]['total_qty'] * 0.50); // cj 2 คน
-                        }
+//                     if (substr($route_name, 0, 2) == 'CJ') {
+//                         if ($route_emp_count == 1) {
+//                             $line_com = (($order_data[0]['total_qty'] * $com_rate) * 1.75);
+//                         } else {
+// //                  $line_com = $order_data[0]['total_qty'] * $com_rate;
+//                             $line_com = ($order_data[0]['total_qty'] * 0.50); // cj 2 คน
+//                         }
 
-                    } else {
+//                     } else {
                         $order_data_p2 = $this->getOrderlineP2($value->id, $company_id, $branch_id);
                         $not_p2_qty = $order_data[0]['total_qty'];
                         if ($order_data_p2 != null) {
@@ -548,7 +548,7 @@ class SalecomreportController extends Controller
 
 
                         // $line_com = $order_data[0]['total_qty'] * $com_rate;
-                    }
+                  //  }
 
 
                     $total_amt = ($total_amt + $order_data[0]['total_amt']);

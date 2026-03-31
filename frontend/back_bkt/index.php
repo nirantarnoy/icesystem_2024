@@ -3,209 +3,212 @@
 use yii\helpers\Html;
 use kartik\grid\GridView;
 use yii\widgets\Pjax;
+use yii\widgets\LinkPager;
+use yii\helpers\Url;
 
 /* @var $this yii\web\View */
-/* @var $searchModel backend\models\StocktransSearch */
+/* @var $searchModel backend\models\AssetsitemSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'รายงานใบจ่ายสินค้า';
+$this->title = 'อุปกรณ์';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="stocktrans-index">
+<div class="assetsitem-index">
+
     <?php Pjax::begin(); ?>
-    <?php echo $this->render('_search', ['model' => $searchModel, 'f_date' => null, 't_date' => null]); ?>
-    <br/>
+    <div class="row">
+        <div class="col-lg-10">
+            <p>
+                <?= Html::a(Yii::t('app', '<i class="fa fa-plus"></i> สร้างใหม่'), ['create'], ['class' => 'btn btn-success']) ?>
+            </p>
+        </div>
+        <div class="col-lg-2" style="text-align: right">
+            <form id="form-perpage" class="form-inline" action="<?= Url::to(['assetsitem/index'], true) ?>"
+                  method="post">
+                <div class="form-group">
+                    <label>แสดง </label>
+                    <select class="form-control" name="perpage" id="perpage">
+                        <option value="20" <?= $perpage == '20' ? 'selected' : '' ?>>20</option>
+                        <option value="50" <?= $perpage == '50' ? 'selected' : '' ?> >50</option>
+                        <option value="100" <?= $perpage == '100' ? 'selected' : '' ?>>100</option>
+                    </select>
+                    <label> รายการ</label>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php echo $this->render('_search', ['model' => $searchModel, 'viewstatus' => $viewstatus,'viewstatus2' => $viewstatus2]); ?>
+
+    <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+        <div class="col-lg-12">
+            <div class="card card-body shadow-sm" style="background-color: #f4f6f9; border-left: 5px solid #17a2b8;">
+                <div class="row align-items-center">
+                    <div class="col-md-3 border-right text-center">
+                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.75rem; font-weight: bold;">จำนวนทั้งหมด</h6>
+                        <h3 class="font-weight-bold text-info mb-0"><?= number_format($totalCount) ?></h3>
+                        <small class="text-muted">รายการที่เลือก</small>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="d-flex flex-wrap justify-content-start align-items-center">
+                            <h6 class="w-100 text-muted text-uppercase mb-2" style="font-size: 0.75rem; font-weight: bold; padding-left: 10px;">แยกตามรหัสตัวแรก:</h6>
+                            <?php foreach ($prefixGroups as $prefix => $count): ?>
+                                <div class="px-3 py-1 m-1 bg-white border rounded shadow-sm text-center" style="min-width: 100px; position: relative;">
+                                    <span class="d-block text-muted" style="font-size: 0.7rem;">รหัส <strong>"<?= Html::encode($prefix) ?>"</strong></span>
+                                    <span class="d-block font-weight-bold" style="font-size: 1.1rem; color: #333;"><?= number_format($count) ?></span>
+                                    <a href="<?= Url::to(['assetsitem/export-stock-check', 'prefix' => $prefix, 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-xs btn-outline-success mt-1" title="Export เฉพาะกลุ่มนี้">
+                                        <i class="fas fa-file-excel"></i> Export
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div class="col-md-1 text-right">
+                         <a href="<?= Url::to(['assetsitem/export-stock-check', 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-sm btn-success shadow-sm" title="Export ทั้งหมด">
+                            <i class="fas fa-file-excel"></i> Export ทั้งหมด
+                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
-        //'filterModel' => $searchModel,
-        'showPageSummary' => true,
+        // 'filterModel' => $searchModel,
+        'emptyCell' => '-',
         'toolbar' => [
             '{toggleData}',
             '{export}',
         ],
-        'panel' => ['type' => 'info', 'heading' => 'รายงานใบจ่ายสินค้า'],
+        'panel' => ['type' => 'info', 'heading' => ''],
         'toggleDataContainer' => ['class' => 'btn-group mr-2'],
+        'layout' => "{items}\n{summary}\n<div class='text-center'>{pager}</div>",
+        'summary' => "แสดง {begin} - {end} ของทั้งหมด {totalCount} รายการ",
+        'showOnEmpty' => false,
+        //    'bordered' => true,
+        //     'striped' => false,
+        //    'hover' => true,
+        'id' => 'product-grid',
+        //'tableOptions' => ['class' => 'table table-hover'],
+        'emptyText' => '<div style="color: red;text-align: center;"> <b>ไม่พบรายการไดๆ</b> <span> เพิ่มรายการโดยการคลิกที่ปุ่ม </span><span class="text-success">"สร้างใหม่"</span></div>',
         'columns' => [
-//            ['class' => 'yii\grid\SerialColumn',
-//                'headerOptions' => ['style' => 'text-align: center'],
-//                'contentOptions' => ['style' => 'text-align: center'],],
-            //  'id',
-//            'company_id',
-//            'branch_id',
             [
-                'attribute' => 'delivery_route_id',
-                'width' => '310px',
-                'value' => function ($model, $key, $index, $widget) {
-                    if($model->delivery_route_id == null){
-                        return $model->order_no;
-                    }else{
-                        return \backend\models\Deliveryroute::findName($model->delivery_route_id);
+                'class' => 'yii\grid\SerialColumn',
+                'headerOptions' => ['style' => 'text-align:center;'],
+                'contentOptions' => ['style' => 'text-align: center'],
+            ],
+            'asset_no',
+            'asset_name',
+            'description',
+            [
+                'attribute' => 'status',
+                'format' => 'raw',
+                'headerOptions' => ['style' => 'text-align: center'],
+                'contentOptions' => ['style' => 'text-align: center'],
+                'value' => function ($data) {
+                    if ($data->status == 1) {
+                        return '<div class="badge badge-success">ใช้งาน</div>';
+                    } else {
+                        return '<div class="badge badge-secondary">ไม่ใช้งาน</div>';
                     }
-
-                },
-
-                'group' => true,  // enable grouping
-                'groupHeader' => function ($model, $key, $index, $widget) { // Closure method
-                     $cust_id = \backend\models\Orders::find()->where(['id'=>$model->order_ref_id])->one();
-                     $cust_name = \backend\models\Customer::findName($cust_id);
-                    return [
-                        'mergeColumns' => [[0, 3]], // columns to merge in summary
-                        'content' => [             // content to show in each summary cell
-                            1 => $model->delivery_route_id != null ? 'ยอดรวม (' . \backend\models\Deliveryroute::findName($model->delivery_route_id) . ')' : 'ยอดรวม '.$cust_name,
-                            4 => GridView::F_SUM,
-
-                        ],
-                        'contentFormats' => [      // content reformatting for each summary cell
-                            4 => ['format' => 'number', 'decimals' => 2],
-
-                        ],
-                        'contentOptions' => [      // content html attributes for each summary cell
-                            1 => ['style' => 'font-variant:small-caps'],
-                            4 => ['style' => 'text-align:right'],
-
-                        ],
-                        // html attributes for group summary row
-                        'options' => ['class' => 'info table-info', 'style' => 'font-weight:bold;']
-                    ];
                 }
             ],
             [
-                'attribute' => 'product_id',
-                'width' => '250px',
-                'value' => function ($model, $key, $index, $widget) {
-                    return \backend\models\Product::findName($model->product_id);
-                },
-//                'group' => true,  // enable grouping
-//                'subGroupOf' => 0, // supplier column index is the parent group,
-//                'groupFooter' => function ($model, $key, $index, $widget) { // Closure method
-//                    return [
-//                        'mergeColumns' => [[1, 3]], // columns to merge in summary
-//                        'content' => [              // content to show in each summary cell
-//                            2 => 'ยอดรวม (' . \backend\models\Product::findName($model->product_id) . ')',
-//                            4 => GridView::F_SUM,
-//                        ],
-//                        'contentFormats' => [      // content reformatting for each summary cell
-//                            4 => ['format' => 'number', 'decimals' => 2],
-//
-//                        ],
-//                        'contentOptions' => [      // content html attributes for each summary cell
-//                            4 => ['style' => 'text-align:right'],
-//
-//                        ],
-//                        // html attributes for group summary row
-//                        'options' => ['class' => 'success table-success', 'style' => 'font-weight:bold;']
-//                    ];
-//                },
-            ],
-
-            [
-                'attribute' => 'temp_update',
-                'label' => 'วันที่',
+                'attribute' => 'customer_id',
+                'label' => 'รหัสลูกค้า',
                 'value' => function ($data) {
-                    return date('d/m/Y H:i:s', strtotime($data->temp_update));
-                },
-                // 'group' => true,
-                //'subGroupOf' => 0
+                    return \backend\models\Assetsitem::findCustomerCode($data->id);
+                }
             ],
-            'journal_no',
             [
-                'attribute' => 'prod_rec_no',
-                'label' => 'เลขที่ใบรับเข้า',
+                'attribute' => 'customer_id',
+                'label' => 'ลูกค้า',
                 'value' => function ($data) {
-                    return $data->prod_rec_no;
-                },
-                // 'group' => true,
-                //'subGroupOf' => 0
+                    return \backend\models\Assetsitem::findCustomername($data->id);
+                }
             ],
             [
-                'attribute' => 'qty',
-                'headerOptions' => ['style' => 'text-align: right'],
-                'contentOptions' => ['style' => 'text-align: right'],
-                'value' => function ($data, $key, $index) {
-                    return $data->qty == null ? 0 : $data->qty;
-                },
-                'format' => ['decimal', 2],
-                'hAlign' => 'right',
-                'pageSummary' => true,
-                'pageSummaryFunc' => GridView::F_SUM
+                'attribute' => 'customer_id',
+                'label' => 'ลำดับการส่ง',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomerRouteNum($data->id);
+                }
             ],
+            [
+                'label' => 'สายส่ง',
+                'value' => function ($data) {
+                    $customer_id = \backend\models\Assetsitem::findCustomerid($data->id);
+                    return \backend\models\Customer::findRoute($customer_id);
+                }
+            ],
+            [
 
+                'header' => 'ตัวเลือก',
+                'headerOptions' => ['style' => 'text-align:center;', 'class' => 'activity-view-link',],
+                'class' => 'yii\grid\ActionColumn',
+                'contentOptions' => ['style' => 'text-align: center'],
+                'template' => '{view} {update}{delete}',
+                'buttons' => [
+                    'view' => function ($url, $data, $index) {
+                        $options = [
+                            'title' => Yii::t('yii', 'View'),
+                            'aria-label' => Yii::t('yii', 'View'),
+                            'data-pjax' => '0',
+                        ];
+                        return Html::a(
+                            '<span class="fas fa-eye btn btn-xs btn-default"></span>', $url, $options);
+                    },
+                    'update' => function ($url, $data, $index) {
+                        $options = array_merge([
+                            'title' => Yii::t('yii', 'Update'),
+                            'aria-label' => Yii::t('yii', 'Update'),
+                            'data-pjax' => '0',
+                            'id' => 'modaledit',
+                        ]);
+                        return Html::a(
+                            '<span class="fas fa-edit btn btn-xs btn-default"></span>', $url, [
+                            'id' => 'activity-view-link',
+                            //'data-toggle' => 'modal',
+                            // 'data-target' => '#modal',
+                            'data-id' => $index,
+                            'data-pjax' => '0',
+                            // 'style'=>['float'=>'rigth'],
+                        ]);
+                    },
+                    'delete' => function ($url, $data, $index) {
+                        $options = array_merge([
+                            'title' => Yii::t('yii', 'Delete'),
+                            'aria-label' => Yii::t('yii', 'Delete'),
+                            //'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
+                            //'data-method' => 'post',
+                            //'data-pjax' => '0',
+                            'data-url' => $url,
+                            'data-var' => $data->id,
+                            'onclick' => 'recDelete($(this));'
+                        ]);
+                        return Html::a('<span class="fas fa-trash-alt btn btn-xs btn-default"></span>', 'javascript:void(0)', $options);
+                    }
+                ]
+            ],
         ],
+        'pager' => ['class' => LinkPager::className()],
     ]); ?>
 
     <?php Pjax::end(); ?>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <?php
-
-            $data = [];
-            foreach ($model_bottom as $value) {
-                if (in_array($value->product_id, $data)) {
-                    continue;
-                } else {
-                    array_push($data, $value->product_id);
-                }
-
-//                if(array_search($value->product_id, array_keys($data))){
-//                  array_push($data,['product_id'=>$value->product_id,'qty'=>$value->qty]);
-//                }
-            }
-            //  print_r($data);
-
-            ?>
-        </div>
-    </div>
-    <br/>
-    <h4>
-        สรุปจำนวน</h4>
-    <div class="row">
-        <div class="col-lg-12">
-            <table class="table table-bordered"
-                   width="100%">
-                <thead>
-                <tr>
-                    <?php for ($i = 0; $i <= count($data) - 1; $i++): ?>
-                        <th style="width: 10%; text-align: center"><?= \backend\models\Product::findCode($data[$i]) ?></th>
-                    <?php endfor; ?>
-                    <th style="width: 10%; text-align: center">
-                        รวมทั้งหมด
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <?php $total = 0; ?>
-                    <?php for ($i = 0; $i <= count($data) - 1; $i++): ?>
-                        <?php $total += getQty($model_bottom, $data[$i]); ?>
-                        <td style="width: 10%; text-align: center"><?= number_format(getQty($model_bottom, $data[$i]),2) ?></td>
-                    <?php endfor; ?>
-                    <td style="width: 10%; text-align: center"><?= number_format($total,2) ?></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12" style="text-align: right;">
-            FM-WAT-03 แก้ไขครั้งที่: 01 <br />
-            วันที่ประกาศใช้: 01/01/2565
-        </div>
-    </div>
 </div>
+<form action="<?= Url::to(['assetsitem/import-asset']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset">
+    <button class="btn btn-info">import</button>
+</form>
+<br/>
+<form action="<?= Url::to(['assetsitem/import-asset-by-customer']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset_customer">
+    <button class="btn btn-info">import asset customer</button>
+</form>
 
-<?php
-function getQty($model, $product_id)
-{
-    $qty = 0;
-    if ($model) {
-        foreach ($model as $val) {
-            if ($val->product_id == $product_id) {
-                $qty += $val->qty;
-            }
-        }
-    }
-    return $qty;
-}
-
-?>
+<br/>
+<form action="<?= Url::to(['assetsitem/import-asset-updateprice']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset_update">
+    <button class="btn btn-info">import update rent price</button>
+</form>

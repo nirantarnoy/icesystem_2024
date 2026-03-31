@@ -3,134 +3,220 @@
 use yii\helpers\Html;
 use kartik\grid\GridView;
 use yii\widgets\Pjax;
+use yii\widgets\LinkPager;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
-/* @var $searchModel backend\models\QueryMarketingSessionSearch */
+/* @var $searchModel backend\models\AssetsitemSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'รายงานการตลาด';
+$this->title = 'อุปกรณ์';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="query-marketing-session-index">
+<div class="assetsitem-index">
 
-    <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col-lg-6">
-                    <h3 class="card-title"><?= Html::encode($this->title) ?></h3>
-                </div>
-                <div class="col-lg-6" style="text-align: right;">
-                    <div class="btn-group">
-                        <?= Html::a('<i class="fa fa-file-excel"></i> Export Excel', ['export'] + Yii::$app->request->queryParams, ['class' => 'btn btn-success']) ?>
-                        <button class="btn btn-primary" onclick="window.print()"><i class="fa fa-print"></i> พิมพ์</button>
-                    </div>
-                </div>
-            </div>
+    <?php Pjax::begin(); ?>
+    <div class="row">
+        <div class="col-lg-10">
+            <p>
+                <?= Html::a(Yii::t('app', '<i class="fa fa-plus"></i> สร้างใหม่'), ['create'], ['class' => 'btn btn-success']) ?>
+            </p>
         </div>
-        <div class="card-body">
-            <?php Pjax::begin(); ?>
-            <div class="search-form">
-                <?php $form = \yii\widgets\ActiveForm::begin([
-                    'action' => ['index'],
-                    'method' => 'get',
-                    'options' => ['data-pjax' => 1]
-                ]); ?>
-                <div class="row">
-                    <div class="col-lg-3">
-                        <?= $form->field($searchModel, 'from_date')->widget(\kartik\date\DatePicker::classname(), [
-                            'options' => ['placeholder' => 'จากวันที่'],
-                            'pluginOptions' => [
-                                'autoclose' => true,
-                                'format' => 'yyyy-mm-dd'
-                            ]
-                        ])->label(false) ?>
+        <div class="col-lg-2" style="text-align: right">
+            <form id="form-perpage" class="form-inline" action="<?= Url::to(['assetsitem/index'], true) ?>"
+                  method="post">
+                <div class="form-group">
+                    <label>แสดง </label>
+                    <select class="form-control" name="perpage" id="perpage">
+                        <option value="20" <?= $perpage == '20' ? 'selected' : '' ?>>20</option>
+                        <option value="50" <?= $perpage == '50' ? 'selected' : '' ?> >50</option>
+                        <option value="100" <?= $perpage == '100' ? 'selected' : '' ?>>100</option>
+                    </select>
+                    <label> รายการ</label>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php echo $this->render('_search', ['model' => $searchModel, 'viewstatus' => $viewstatus,'viewstatus2' => $viewstatus2]); ?>
+
+    <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
+        <div class="col-lg-12">
+            <div class="card card-body shadow-sm" style="background-color: #f4f6f9; border-left: 5px solid #17a2b8;">
+                <div class="row align-items-center">
+                    <div class="col-md-3 border-right text-center">
+                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.75rem; font-weight: bold;">จำนวนทั้งหมด</h6>
+                        <h3 class="font-weight-bold text-info mb-0"><?= number_format($totalCount) ?></h3>
+                        <small class="text-muted">รายการที่เลือก</small>
                     </div>
-                    <div class="col-lg-3">
-                        <?= $form->field($searchModel, 'to_date')->widget(\kartik\date\DatePicker::classname(), [
-                            'options' => ['placeholder' => 'ถึงวันที่'],
-                            'pluginOptions' => [
-                                'autoclose' => true,
-                                'format' => 'yyyy-mm-dd'
-                            ]
-                        ])->label(false) ?>
+                    <div class="col-md-9">
+                        <div class="d-flex flex-wrap justify-content-start align-items-center">
+                            <h6 class="w-100 text-muted text-uppercase mb-2" style="font-size: 0.75rem; font-weight: bold; padding-left: 10px;">แยกตามรหัสตัวแรก:</h6>
+                            <?php foreach ($prefixGroups as $prefix => $count): ?>
+                                <div class="px-3 py-1 m-1 bg-white border rounded shadow-sm text-center" style="min-width: 100px; position: relative;">
+                                    <span class="d-block text-muted" style="font-size: 0.7rem;">รหัส <strong>"<?= Html::encode($prefix) ?>"</strong></span>
+                                    <span class="d-block font-weight-bold" style="font-size: 1.1rem; color: #333;"><?= number_format($count) ?></span>
+                                    <a href="<?= Url::to(['assetsitem/export-stock-check', 'prefix' => $prefix, 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-xs btn-outline-success mt-1" title="Export เฉพาะกลุ่มนี้">
+                                        <i class="fas fa-file-excel"></i> Export
+                                    </a>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                    <div class="col-lg-3">
-                        <?= Html::submitButton('<i class="fa fa-search"></i> ค้นหา', ['class' => 'btn btn-primary']) ?>
-                        <?= Html::a('<i class="fa fa-redo"></i> รีเซ็ต', ['index'], ['class' => 'btn btn-default']) ?>
+                    <div class="col-md-1 text-right">
+                         <a href="<?= Url::to(['assetsitem/export-stock-check', 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-sm btn-success shadow-sm" title="Export ทั้งหมด">
+                            <i class="fas fa-file-excel"></i> Export ทั้งหมด
+                         </a>
                     </div>
                 </div>
-                <?php \yii\widgets\ActiveForm::end(); ?>
             </div>
-            <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
-
-            <?= GridView::widget([
-                'dataProvider' => $dataProvider,
-                'filterModel' => $searchModel,
-                'columns' => [
-                    ['class' => 'yii\grid\SerialColumn'],
-                    [
-                        'attribute' => 'login_date',
-                        'label' => 'วันที่',
-                        'value' => function($model){
-                            return $model->login_date ? date('d/m/Y H:i:s', strtotime($model->login_date)) : '-';
-                        }
-                    ],
-                    [
-                        'attribute' => 'fname',
-                        'label' => 'เจ้าหน้าที่ตลาด',
-                        'value' => function($model){
-                            return $model->fname . ' ' . $model->lname;
-                        }
-                    ],
-
-                    [
-                        'attribute' => 'route_name',
-                        'label' => 'สาย',
-                    ],
-                    [
-                        'label' => 'กิจกรรม',
-                        'format' => 'raw',
-                        'value' => function($model){
-                            $date = date('Y-m-d', strtotime($model->login_date));
-                            $activities = \backend\models\QueryMarketingSession::getActivities($model->user_id, $model->route_id, $date);
-                            $html = '';
-                            if($activities){
-                                foreach($activities as $activity){
-                                    $html .= '<span class="badge badge-success" style="margin-right: 5px;">' . $activity->activity_type . '</span>';
-                                }
-                            }
-                            return $html;
-                        }
-                    ],
-                    [
-                        'class' => 'yii\grid\ActionColumn',
-                        'template' => '{details}',
-                        'buttons' => [
-                            'details' => function($url, $model, $key){
-                                $date = date('Y-m-d', strtotime($model->login_date));
-                                return Html::a('<i class="fa fa-eye"></i> ดูรายละเอียด', ['details', 'user_id' => $model->user_id, 'route_name' => $model->route_name, 'date' => $date], ['class' => 'btn btn-info btn-sm']);
-                            }
-                        ]
-                    ],
-                ],
-            ]); ?>
-            <?php Pjax::end(); ?>
         </div>
     </div>
 
-</div>
+    <?= GridView::widget([
+        'dataProvider' => $dataProvider,
+        // 'filterModel' => $searchModel,
+        'emptyCell' => '-',
+        'toolbar' => [
+            '{toggleData}',
+            '{export}',
+        ],
+        'panel' => ['type' => 'info', 'heading' => ''],
+        'toggleDataContainer' => ['class' => 'btn-group mr-2'],
+        'layout' => "{items}\n{summary}\n<div class='text-center'>{pager}</div>",
+        'summary' => "แสดง {begin} - {end} ของทั้งหมด {totalCount} รายการ",
+        'showOnEmpty' => false,
+        //    'bordered' => true,
+        //     'striped' => false,
+        //    'hover' => true,
+        'id' => 'product-grid',
+        //'tableOptions' => ['class' => 'table table-hover'],
+        'emptyText' => '<div style="color: red;text-align: center;"> <b>ไม่พบรายการไดๆ</b> <span> เพิ่มรายการโดยการคลิกที่ปุ่ม </span><span class="text-success">"สร้างใหม่"</span></div>',
+        'columns' => [
+            [
+                'class' => 'yii\grid\SerialColumn',
+                'headerOptions' => ['style' => 'text-align:center;'],
+                'contentOptions' => ['style' => 'text-align: center'],
+            ],
+            'asset_no',
+            'asset_name',
+            'description',
+            [
+                'attribute' => 'status',
+                'format' => 'raw',
+                'headerOptions' => ['style' => 'text-align: center'],
+                'contentOptions' => ['style' => 'text-align: center'],
+                'value' => function ($data) {
+                    if ($data->status == 1) {
+                        return '<div class="badge badge-success">ใช้งาน</div>';
+                    } else {
+                        return '<div class="badge badge-secondary">ไม่ใช้งาน</div>';
+                    }
+                }
+            ],
+            [
+                //'attribute' => 'contact_no',
+                'label' => 'เลขที่สัญญา',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomerContract($data->id);
+                  //  return $data->contact_no;
+                }
+            ],
+            [
+                'attribute' => 'customer_id',
+                'label' => 'รหัสลูกค้า',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomerCode($data->id);
+                }
+            ],
+            [
+                'attribute' => 'customer_id',
+                'label' => 'ลูกค้า',
+                'value' => function ($data) {
+                    return \backend\models\Assetsitem::findCustomername($data->id);
+                }
+            ],
+            [
+                'attribute' => 'route_num',
+                'label' => 'ลำดับการส่ง',
+                'value' => function ($data) {
+                    return $data->route_num;
+                }
+            ],
+            [
+                'label' => 'สายส่ง',
+                'value' => function ($data) {
+                    $customer_id = \backend\models\Assetsitem::findCustomerid($data->id);
+                    return \backend\models\Customer::findRoute($customer_id);
+                }
+            ],
+            [
 
-<style>
-    @media print {
-        .main-sidebar, .main-header, .card-header .btn-group, .filters {
-            display: none !important;
-        }
-        .content-wrapper {
-            margin-left: 0 !important;
-        }
-        .card {
-            border: none !important;
-        }
-    }
-</style>
+                'header' => 'ตัวเลือก',
+                'headerOptions' => ['style' => 'text-align:center;', 'class' => 'activity-view-link',],
+                'class' => 'yii\grid\ActionColumn',
+                'contentOptions' => ['style' => 'text-align: center'],
+                'template' => '{view} {update}{delete}',
+                'buttons' => [
+                    'view' => function ($url, $data, $index) {
+                        $options = [
+                            'title' => Yii::t('yii', 'View'),
+                            'aria-label' => Yii::t('yii', 'View'),
+                            'data-pjax' => '0',
+                        ];
+                        return Html::a(
+                            '<span class="fas fa-eye btn btn-xs btn-default"></span>', $url, $options);
+                    },
+                    'update' => function ($url, $data, $index) {
+                        $options = array_merge([
+                            'title' => Yii::t('yii', 'Update'),
+                            'aria-label' => Yii::t('yii', 'Update'),
+                            'data-pjax' => '0',
+                            'id' => 'modaledit',
+                        ]);
+                        return Html::a(
+                            '<span class="fas fa-edit btn btn-xs btn-default"></span>', $url, [
+                            'id' => 'activity-view-link',
+                            //'data-toggle' => 'modal',
+                            // 'data-target' => '#modal',
+                            'data-id' => $index,
+                            'data-pjax' => '0',
+                            // 'style'=>['float'=>'rigth'],
+                        ]);
+                    },
+                    'delete' => function ($url, $data, $index) {
+                        $options = array_merge([
+                            'title' => Yii::t('yii', 'Delete'),
+                            'aria-label' => Yii::t('yii', 'Delete'),
+                            //'data-confirm' => Yii::t('yii', 'Are you sure you want to delete this item?'),
+                            //'data-method' => 'post',
+                            //'data-pjax' => '0',
+                            'data-url' => $url,
+                            'data-var' => $data->id,
+                            'onclick' => 'recDelete($(this));'
+                        ]);
+                        return Html::a('<span class="fas fa-trash-alt btn btn-xs btn-default"></span>', 'javascript:void(0)', $options);
+                    }
+                ]
+            ],
+        ],
+        'pager' => ['class' => LinkPager::className()],
+    ]); ?>
+
+    <?php Pjax::end(); ?>
+
+</div>
+<form action="<?= Url::to(['assetsitem/import-asset']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset">
+    <button class="btn btn-info">import</button>
+</form>
+<br/>
+<form action="<?= Url::to(['assetsitem/import-asset-by-customer']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset_customer">
+    <button class="btn btn-info">import asset customer</button>
+</form>
+
+<br/>
+<form action="<?= Url::to(['assetsitem/import-asset-updateprice']) ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file_asset_update">
+    <button class="btn btn-info">import update rent price</button>
+</form>

@@ -82,8 +82,8 @@ class AdminreportController extends Controller
         if (!empty(\Yii::$app->user->identity->branch_id)) {
             $branch_id = \Yii::$app->user->identity->branch_id;
         }
-        $from_date = \Yii::$app->request->post('from_date');
-        $to_date = \Yii::$app->request->post('to_date');
+        $from_date = \Yii::$app->request->post('from_date') ? \Yii::$app->request->post('from_date') : date('Y-m-d 00:00:00');
+        $to_date = \Yii::$app->request->post('to_date') ? \Yii::$app->request->post('to_date') : date('Y-m-d 23:59:59');
         $find_emp_id = \Yii::$app->request->post('find_emp_id');
         return $this->render('_cardailyamount', [
             'from_date' => $from_date,
@@ -521,6 +521,36 @@ class AdminreportController extends Controller
             'customer_group_id' => $customer_group_id
         ]);
     }
+    public function actionPrintcarct()
+    {
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $route_id = \Yii::$app->request->post('route_id');
+        $product_id = \Yii::$app->request->post('product_id');
+        $customer_group_id = \Yii::$app->request->post('customer_group_id');
+        return $this->render('_cardaily_ct',[
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'route_id' => $route_id,
+            'product_id' => $product_id,
+            'customer_group_id' => $customer_group_id
+        ]);
+    }
+    public function actionPrintcarbigc()
+    {
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $route_id = \Yii::$app->request->post('route_id');
+        $product_id = \Yii::$app->request->post('product_id');
+        $customer_group_id = \Yii::$app->request->post('customer_group_id');
+        return $this->render('_cardaily_bigc',[
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'route_id' => $route_id,
+            'product_id' => $product_id,
+            'customer_group_id' => $customer_group_id
+        ]);
+    }
     public function actionPrintcarnotrans()
     {
         $route_id = \Yii::$app->request->post('route_id');
@@ -536,6 +566,17 @@ class AdminreportController extends Controller
         $to_date = \Yii::$app->request->post('to_date');
         $route_id = \Yii::$app->request->post('route_id');
         return $this->render('_cardaily_cjbao',[
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'route_id' => $route_id
+        ]);
+    }
+ public function actionPrintcaramazon()
+    {
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $route_id = \Yii::$app->request->post('route_id');
+        return $this->render('_cardaily_amazon',[
             'from_date' => $from_date,
             'to_date' => $to_date,
             'route_id' => $route_id
@@ -639,9 +680,11 @@ class AdminreportController extends Controller
             'route_id' => $route_id,
             'customer_group_id' => $customer_group_id,
             'from_month' => $from_month,
-            'to_month'=>$to_month,
-            'year'=> $year,
+            'to_month' => $to_month,
+            'year' => $year,
         ]);
     }
+
+    
 
 }

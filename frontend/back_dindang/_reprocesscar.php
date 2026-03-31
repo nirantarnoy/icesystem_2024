@@ -39,44 +39,9 @@ $mpdf->AddPageByArray([
     'margin-bottom' => 1,
 ]);
 
+$model_line = \common\models\StockTrans::find()->select(['trans_ref_id'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+    ->andFilterWhere(['company_id' => $company_id, 'branch_id' => $branch_id, 'activity_type_id' => 7])->orderBy(['trans_ref_id' => SORT_ASC])->groupBy('trans_ref_id')->all();
 
-$model_cj = null;
-$sql = "SELECT customer_code,customer_name,route_code,branch_no FROM query_order_cjbao_summary";
-$sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
-if($route_id!=null){
-    $where_item = "";
-    for($i=0;$i<count($route_id);$i++){
-        if($i==count($route_id)-1){
-            $where_item .= "'".$route_id[$i]."'";
-        }else{
-            $where_item .= "'".$route_id[$i]."',";
-        }
-    }
-    $sql .= " AND delivery_route_id in (".$where_item.")";
-}
-$sql .= " GROUP BY customer_code,customer_name,route_code,branch_no";
-$sql .= " ORDER BY delivery_route_id ASC";
-
-$model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
-//print_r($model_cj);return;
-
-$model_cj_data = null;
-$sql = "SELECT * FROM query_order_lotus_summary";
-$sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
-if($route_id!=null){
-    // $sql .= " AND delivery_route_id = '" . $route_id . "'";
-    $where_item = "";
-    for($i=0;$i<count($route_id);$i++){
-        if($i==count($route_id)-1){
-            $where_item .= "'".$route_id[$i]."'";
-        }else{
-            $where_item .= "'".$route_id[$i]."',";
-        }
-    }
-    $sql .= " AND delivery_route_id in (".$where_item.")";
-}
-$model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
-//print_r($model_cj_data);return;
 ?>
 <!DOCTYPE html>
 <html>
@@ -161,7 +126,7 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
 <body>
 <div class="row">
     <div class="col-lg-9">
-        <form action="<?= \yii\helpers\Url::to(['adminreport/printcarcjbao'], true) ?>" method="post" id="form-search">
+        <form action="<?= \yii\helpers\Url::to(['adminreportreturn/index'], true) ?>" method="post" id="form-search">
             <table class="table-header" style="width: 100%;font-size: 18px;" border="0">
                 <tr>
                     <td style="width: 20%">
@@ -174,7 +139,7 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
                             'convertFormat' => true,
                             'options' => [
                                 'class' => 'form-control',
-                                'placeholder' => 'วันที่',
+                                'placeholder' => 'ถึงวันที่',
                                 //  'onchange' => 'this.form.submit();',
                                 'autocomplete' => 'off',
                             ],
@@ -213,22 +178,6 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
                         ]);
                         ?>
                     </td>
-                    <td>
-                        <?php
-                        echo \kartik\select2\Select2::widget([
-                            'name' => 'route_id',
-                            'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1,'branch_id'=>1])->all(), 'id', 'name'),
-                            'value' => $route_id,
-                            'options' => [
-                                'placeholder' => '--สายส่ง--'
-                            ],
-                            'pluginOptions' => [
-                                'allowClear' => true,
-                                'multiple' => true,
-                            ]
-                        ])
-                        ?>
-                    </td>
 
                     <!--            <td>-->
                     <!--                --><?php
@@ -256,38 +205,17 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
             </table>
         </form>
     </div>
+    <div class="col-lg-3" style="text-align: right;">
 
 
+    </div>
 </div>
-<?php
-$grand_total = 0;
-$day_arr = [];
-$column_total = [];
-if ($from_date != null && $to_date != null) {
-    $days = round(abs(strtotime($from_date) - strtotime($to_date)) / 86400) + 1;
-    if ($days > 0) {
-        $st_day = date('d', strtotime($from_date));
-        for ($i = 0; $i < $days; $i++) {
-            if ($i == 0) {
-                array_push($day_arr, (int)$st_day);
-            } else {
-                array_push($day_arr, $st_day + $i);
-            }
-        }
-    }
-    // echo '<br>จํานวนวันที่ค้นหา : ' . $days . ' วัน';
-}
-if($day_arr != null){
-    for($i = 0; $i <= count($day_arr)-1; $i++){
-        array_push($column_total, ['day' => (int)$day_arr[$i], 'value' => 0]);
-    }
-}
-?>
+
 <br/>
 <div id="div1">
     <table class="table-header" width="100%">
         <tr>
-            <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานจำนวนขายสายส่ง PT</td>
+            <td style="text-align: center; font-size: 20px; font-weight: bold">รายงานสรุปสินค้าคืนสายส่ง</td>
         </tr>
     </table>
     <br>
@@ -300,64 +228,137 @@ if($day_arr != null){
     </table>
     <br>
     <?php
+    $total_all = 0;
+    $count_item = 0;
+    $num = 0;
+    $total_line = 0;
+    $line_qty = 0;
+    $total_line_qty = 0;
+    $total_all_line_qty = 0;
+
+
+    $all_return_qty = 0;
+    $all_reprocess_qty = 0;
+
+    $total_all_line_qty_data = [];
+
+
+    $product_header = [];
+
+
+    $total_product[0] = 0;
+    $total_product[1] = 0;
+    $total_product[2] = 0;
+    $total_product[3] = 0;
+    $total_product[4] = 0;
+    $total_product[5] = 0;
+    $total_product[6] = 0;
+    $total_product[7] = 0;
+    $total_product[8] = 0;
+    $total_product[9] = 0;
+    $total_product[10] = 0;
+    $total_product[11] = 0;
+    $total_product[12] = 0;
+    $total_product[13] = 0;
+    $total_product[14] = 0;
+
+
+//    $modelx = \common\models\StockTrans::find()->select(['product_id'])->join('inner join', 'product', 'stock_trans.product_id=product.id')->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+//        ->andFilterWhere(['product.company_id' => $company_id, 'product.branch_id' => $branch_id, 'activity_type_id' => 7])->groupBy('product_id')->orderBy(['item_pos_seq' => SORT_ASC])->all();
+    $modelx = \common\models\StockTrans::find()->select(['product_id'])->join('inner join', 'product', 'stock_trans.product_id=product.id')->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+        ->andFilterWhere(['product.company_id' => $company_id, 'product.branch_id' => $branch_id, 'activity_type_id'=>[7,26]])->groupBy('product_id')->orderBy(['item_pos_seq' => SORT_ASC])->all();
+
+    if ($modelx) {
+        foreach ($modelx as $valuexx) {
+            if (!in_array($valuexx->product_id, $product_header)) {
+                array_push($product_header, $valuexx->product_id);
+            }
+        }
+    }
+
+    // print_r($product_header);
+
 
     ?>
     <table id="table-data">
-
         <tr style="font-weight: bold;">
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">#</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">สาขา</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">ชื่อลูกค้า</td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">สายส่ง</td>
-            <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $day_arr[$i] ?></td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;">ทะเบียน</td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;">พนักงานขับรถ</td>
+            <!--            <td style="text-align: center;padding: 0px;border: 1px solid grey">จำนวน</td>-->
+            <?php for ($y = 0; $y <= count($product_header) - 1; $y++): ?>
+                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= \backend\models\Product::findCode($product_header[$y]) ?></td>
             <?php endfor; ?>
-            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">รวม</td>
+            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: skyblue;">รวม</td>
+
         </tr>
-        <?php for ($x = 0; $x <= count($model_cj) - 1; $x++): ?>
+
+        <?php foreach ($model_line as $value): ?>
             <?php
-            $line_total = 0;
+            if ($value->trans_ref_id == null || $value->trans_ref_id <= 0) continue;
+            $num += 1;
+            $line_qty_total = 0;
+            $line_credit_amount_total = 0;
+            $line_cash_amount_total = 0;
+            $return_line_qty = 0;
+
+
+//            $total_line = $value->remain_amount; // \backend\models\Orders::getlineremainsum($value->order_id, $model->customer_id);
+//            $total_all = $total_all + $total_line;
+//
+//            $line_qty = getOrderQty($value->order_id);
+//            $total_all_line_qty = $total_all_line_qty + $line_qty;
+//              $order_product = getOrderQty2($value->order_id);
+//              $total_all_line_qty = 0;
+            $car_data = getCardata($value->trans_ref_id, $from_date);
             ?>
             <tr>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $x + 1 ?></td>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['branch_no'] ?></td>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['customer_name'] ?></td>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['route_code'] ?></td>
-                <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
+                <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= \backend\models\Deliveryroute::findName($value->trans_ref_id) ?></td>
+                <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data != null ? $car_data[0]['car_name'] : '' ?></td>
+                <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data != null ? $car_data[0]['emp_name'] : '' ?></td>
+                <?php for ($x = 0; $x <= count($product_header) - 1; $x++): ?>
                     <?php
-                    $qty = getQty($model_cj_data, $model_cj[$x]['customer_code'], $day_arr[$i]);
-                    $line_total += $qty;
-                    $grand_total += $qty;
+                    $return_line_qty = getReturnCarQty($value->trans_ref_id, $product_header[$x], $from_date, $to_date);
 
-                    foreach ($column_total as &$value) {
-                        if ($value['day'] == $day_arr[$i]) {
-                            $value['value'] += $qty;
-                        }
-                    }
+                    $total_product[$x] = ($total_product[$x] + $return_line_qty);
+
+                    $line_qty_total = ($line_qty_total + $return_line_qty);
+                    $all_return_qty = ($all_return_qty + ($return_line_qty));
 
                     ?>
-                    <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $qty==0 ? '-' : number_format($qty, 0) ?></td>
+                    <td style="text-align: center;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $return_line_qty == 0 ? '-' : number_format($return_line_qty, 1) ?></td>
                 <?php endfor; ?>
-                <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">
-                    <b><?= $line_total==0 ? '-' : number_format($line_total, 0) ?></b></td>
+                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: skyblue;font-weight: bold;"><?= $line_qty_total == 0 ? '-' : number_format($line_qty_total, 1) ?></td>
+
             </tr>
-        <?php endfor; ?>
+        <?php endforeach; ?>
+        <tfoot>
         <tr>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b>รวม</b></td>
-            <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
-                <?php $col_total = 0;?>
-                <?php foreach ($column_total as &$value) {
-                    if ($value['day'] == $day_arr[$i]) {
-                        $col_total = $value['value'];
-                    }
-                }?>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b><?= $col_total==0 ? '-' : number_format($col_total,0)?></b></td>
+
+            <td colspan="3" style="text-align: right;border: 1px solid gray;"><b>รวม</b></td>
+            <?php for ($x = 0; $x <= count($product_header) - 1; $x++): ?>
+                <td style="text-align: center;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: skyblue">
+                    <?= $total_product[$x] == 0 ? '-' : number_format($total_product[$x], 1) ?>
+                </td>
             <?php endfor; ?>
-            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format($grand_total, 0) ?></b></td>
+            <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: skyblue;font-weight: bold;"><?= number_format($all_return_qty, 1) ?></td>
         </tr>
+        <tr>
+            <td colspan="3" style="text-align: right;border: 1px solid grey"><b>รับเข้าสินค้าดี</b></td>
+            <?php for ($x = 0; $x <= count($product_header) - 1; $x++): ?>
+                <?php
+                $reprocess_qty = getReturncarReprocessQty($product_header[$x], $from_date, $to_date);
+                $all_reprocess_qty = ($all_reprocess_qty + $reprocess_qty);
+                ?>
+                <td style="text-align: center;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: yellow">
+                    <?= $reprocess_qty == 0 ? '-' : number_format($reprocess_qty, 1) ?>
+                </td>
+            <?php endfor; ?>
+            <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: yellow">
+                <b><?= $all_reprocess_qty == 0 ? '-' : number_format($all_reprocess_qty, 1) ?></b>
+            </td>
+        </tr>
+        </tfoot>
     </table>
 </div>
 
@@ -383,19 +384,74 @@ if($day_arr != null){
 </html>
 
 <?php
-function getQty($model,$customer_code,$day){
-    $qty = 0;
-    if($model != null){
-        for($i = 0; $i <= count($model) - 1; $i++){
-            if($model[$i]['customer_code'] == $customer_code){
-                if((int)date('d',strtotime($model[$i]['order_date'])) == (int)$day){
-                    $qty = ($qty+$model[$i]['qty']);
-                }
-            }
+function getOrderQty2($route_id, $product_id, $from_date, $to_date)
+{
+    $data = 0;
+    if ($route_id && $product_id) {
+        $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_qty) as credit_qty', 'SUM(cash_qty) as cash_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+        if ($model_qty != null) {
+            $data = ($model_qty->credit_qty + $model_qty->cash_qty);
         }
     }
-    return $qty;
+    return $data;
 }
+
+function getFree($route_id, $from_date, $to_date)
+{
+    $data = 0;
+    if ($route_id) {
+        $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(free_qty) as free_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id])->groupBy(['route_id'])->one();
+        if ($model_qty != null) {
+            $data = ($model_qty->free_qty);
+        }
+    }
+    return $data;
+}
+
+function getReturncarQty($route_id, $product_id, $from_date, $to_date)
+{
+    $data = 0;
+    if ($route_id && $product_id) {
+        $model_qty = \common\models\StockTrans::find()->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['trans_ref_id' => $route_id, 'product_id' => $product_id, 'activity_type_id' => 7])->SUM('qty');
+        if ($model_qty != null) {
+            $data = ($model_qty);
+        }
+    }
+    return $data;
+}
+
+function getReturncarReprocessQty($product_id, $from_date, $to_date)
+{
+    $data = 0;
+    if ($product_id) {
+        $model_qty = \common\models\StockTrans::find()->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['product_id' => $product_id, 'activity_type_id' => 26])->SUM('qty');
+        if ($model_qty != null) {
+            $data = ($model_qty);
+        }
+    }
+    return $data;
+}
+
+function getCardata($route_id, $t_date)
+{
+    $data = [];
+    if ($route_id) {
+        $model = \common\models\QueryCarEmpData::find()->where(['date(trans_date)' => date('Y-m-d', strtotime($t_date)), 'id' => $route_id])->one();
+        if ($model) {
+            array_push($data, [
+                'car_name' => $model->car_name_,
+                'emp_name' => $model->fname,
+            ]);
+        }
+    }
+    return $data;
+}
+
+
 ?>
 
 <?php

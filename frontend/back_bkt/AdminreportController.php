@@ -482,6 +482,18 @@ class AdminreportController extends Controller
         ]);
     }
 
+    public function actionPrintcaramazon()
+    {
+        $from_date = \Yii::$app->request->post('from_date');
+        $to_date = \Yii::$app->request->post('to_date');
+        $route_id = \Yii::$app->request->post('route_id');
+        return $this->render('_cardaily_amazon',[
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            'route_id' => $route_id
+        ]);
+    }
+
     public function actionCustomerMonthlyReport()
     {
         $route_id = \Yii::$app->request->post('route_id', []);

@@ -56,6 +56,28 @@ $total_amount = 0;
                 <?= $form->field($model, 'status')->widget(\toxor88\switchery\Switchery::className())->label('') ?>
             </div>
         </div>
+        <div class="row">
+            <div class="col-lg-3">
+                <label for="">รับชำระเงิน</label>
+                <?= $form->field($model, 'is_paid')->widget(\toxor88\switchery\Switchery::className(), [
+                        'options' => ['id' => 'is-paid-switch']
+                ])->label('') ?>
+            </div>
+            <div class="col-lg-3 payment-info" style="display: <?= $model->is_paid ? 'block' : 'none' ?>;">
+                <?php $model->payment_date = $model->isNewRecord ? date('d-m-Y') : ($model->payment_date ? date('d-m-Y', strtotime($model->payment_date)) : date('d-m-Y')); ?>
+                <?= $form->field($model, 'payment_date')->widget(\kartik\date\DatePicker::className(),
+                    [
+                        'pluginOptions' => [
+                                'format' => 'dd-mm-yyyy',
+                                'autoclose' => true,
+                        ]
+                    ]
+                ) ?>
+            </div>
+            <div class="col-lg-3 payment-info" style="display: <?= $model->is_paid ? 'block' : 'none' ?>;">
+                <?= $form->field($model, 'payment_amount')->textInput() ?>
+            </div>
+        </div>
 
 
         <div class="row">
@@ -474,6 +496,15 @@ $(function(){
         });
     
    });
+
+   $("#is-paid-switch").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(".payment-info").show();
+        } else {
+            $(".payment-info").hide();
+        }
+    });
+
 });
 function check_dup(asset_id){
     var res = 0;

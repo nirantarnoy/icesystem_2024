@@ -16,6 +16,7 @@ if (!empty(\Yii::$app->user->identity->branch_id)) {
 <div class="plan-form">
 
     <?php $form = ActiveForm::begin(); ?>
+    <input type="hidden" class="remove-list" name="removelist" value="">
 
     <div class="row">
         <div class="col-lg-3">

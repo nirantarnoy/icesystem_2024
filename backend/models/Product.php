@@ -61,6 +61,13 @@ class Product extends \common\models\Product
         ];
     }
 
+    public function rules()
+    {
+        return array_merge(parent::rules(), [
+            [['company_id', 'branch_id'], 'required'],
+        ]);
+    }
+
     public static function findProductId($code, $company_id, $branch_id){
         $model = Product::find()->select('id')->where(['code'=>trim($code),'company_id'=>$company_id,'branch_id'=>$branch_id])->one();
         return $model != null?$model->id:0;

@@ -10,6 +10,9 @@ use Yii;
  * @property int $id
  * @property string|null $journal_no
  * @property string|null $trans_date
+ * @property int|null $is_paid
+ * @property string|null $payment_date
+ * @property float|null $payment_amount
  * @property int|null $status
  * @property int|null $created_at
  * @property int|null $created_by
@@ -32,8 +35,9 @@ class AssetRental extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['trans_date','use_from','use_to'], 'safe'],
-            [['status', 'created_at', 'created_by', 'updated_at', 'updated_by'], 'integer'],
+            [['trans_date','use_from','use_to', 'payment_date'], 'safe'],
+            [['status', 'created_at', 'created_by', 'updated_at', 'updated_by', 'is_paid'], 'integer'],
+            [['payment_amount'], 'number'],
             [['journal_no','work_name'], 'string', 'max' => 255],
         ];
     }
@@ -50,6 +54,9 @@ class AssetRental extends \yii\db\ActiveRecord
             'use_from' => 'เริ่มใช้งาน',
             'use_to' => 'ถึง',
             'work_name' => 'ชื่องาน',
+            'is_paid' => 'รับชำระเงิน',
+            'payment_date' => 'วันที่รับเงิน',
+            'payment_amount' => 'จำนวนเงิน',
             'status' => 'Status',
             'created_at' => 'Created At',
             'created_by' => 'Created By',

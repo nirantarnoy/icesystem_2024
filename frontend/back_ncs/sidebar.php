@@ -890,7 +890,15 @@
                                 </a>
                             </li>
                         <?php endif;?>
-                        <?php if (\Yii::$app->user->can('saleqtysumbyprice/index')): ?>
+                        <?php //if (\Yii::$app->user->can('saleqtysumbyprice/index')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=pos/printsummaryposncs" class="nav-link pos">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>สรุปทะเบียนรถ</p>
+                                </a>
+                            </li>
+                        <?php //endif;?>
+                  <?php if (\Yii::$app->user->can('saleqtysumbyprice/index')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=saleqtysumbyprice/index" class="nav-link saleqtysumbyprice">
                                     <i class="far fa-circlez nav-icon"></i>

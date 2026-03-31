@@ -39,6 +39,31 @@ $this->params['breadcrumbs'][] = $this->title;
     </div>
     <?php echo $this->render('_search', ['model' => $searchModel, 'viewstatus' => $viewstatus,'viewstatus2' => $viewstatus2]); ?>
 
+    <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
+        <div class="col-lg-12">
+            <div class="card card-body shadow-sm" style="background-color: #f4f6f9; border-left: 5px solid #17a2b8;">
+                <div class="row align-items-center">
+                    <div class="col-md-3 border-right text-center">
+                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.75rem; font-weight: bold;">จำนวนทั้งหมด</h6>
+                        <h3 class="font-weight-bold text-info mb-0"><?= number_format($totalCount) ?></h3>
+                        <small class="text-muted">รายการที่เลือก</small>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="d-flex flex-wrap justify-content-start align-items-center">
+                            <h6 class="w-100 text-muted text-uppercase mb-2" style="font-size: 0.75rem; font-weight: bold; padding-left: 10px;">แยกตามรหัสตัวแรก:</h6>
+                            <?php foreach ($prefixGroups as $prefix => $count): ?>
+                                <div class="px-3 py-1 m-1 bg-white border rounded shadow-sm text-center" style="min-width: 80px;">
+                                    <span class="d-block text-muted" style="font-size: 0.7rem;">รหัส <strong>"<?= Html::encode($prefix) ?>"</strong></span>
+                                    <span class="d-block font-weight-bold" style="font-size: 1.1rem; color: #333;"><?= number_format($count) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         // 'filterModel' => $searchModel,

@@ -138,6 +138,8 @@ $this->params['breadcrumbs'][] = $this->title;
                     [
                         'label' => 'พิกัดเช็คอิน',
                         'format' => 'raw',
+                        'headerOptions' => ['class' => 'no-print'],
+                        'contentOptions' => ['class' => 'no-print'],
                         'value' => function($model){
                             if($model->check_in_lat && $model->check_in_long){
                                 return Html::a($model->check_in_lat . ',' . $model->check_in_long, 'https://www.google.com/maps/search/?api=1&query=' . $model->check_in_lat . ',' . $model->check_in_long, ['target' => '_blank']);
@@ -148,6 +150,8 @@ $this->params['breadcrumbs'][] = $this->title;
                     [
                         'label' => 'พิกัดเช็คเอาท์',
                         'format' => 'raw',
+                        'headerOptions' => ['class' => 'no-print'],
+                        'contentOptions' => ['class' => 'no-print'],
                         'value' => function($model){
                             if($model->check_out_lat && $model->check_out_long){
                                 return Html::a($model->check_out_lat . ',' . $model->check_out_long, 'https://www.google.com/maps/search/?api=1&query=' . $model->check_out_lat . ',' . $model->check_out_long, ['target' => '_blank']);
@@ -165,7 +169,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <style>
     @media print {
-        .main-sidebar, .main-header, .card-header .btn-group, .filters, .breadcrumb {
+        .main-sidebar, .main-header, .card-header .btn-group, .filters, .breadcrumb, .no-print {
             display: none !important;
         }
         .content-wrapper {

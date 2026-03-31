@@ -55,7 +55,7 @@ class AssetsitemSearch extends Assetsitem
             'query' => $query,
             'sort' => [
                 'attributes' => [
-                    'id',
+                     'id',
                     'asset_no' => [
                         'asc' => ['assets.asset_no' => SORT_ASC],
                         'desc' => ['assets.asset_no' => SORT_DESC],
@@ -72,7 +72,7 @@ class AssetsitemSearch extends Assetsitem
                         'label' => 'ลำดับการส่ง'
                     ],
                 ],
-                'defaultOrder' => ['id' => SORT_DESC]
+              //  'defaultOrder' => ['assets.asset_no' => SORT_ASC]
             ]
         ]);
 
@@ -111,7 +111,7 @@ class AssetsitemSearch extends Assetsitem
                 ->orFilterWhere(['like', 'customer.name', $this->globalSearch])
                 ->orFilterWhere(['like', 'customer.code', $this->globalSearch])
               //  ->orFilterWhere(['like', 'query_customer_info.route_code', $this->globalSearch])
-                ->orFilterWhere(['like', 'description', $this->globalSearch]);
+                ->orFilterWhere(['like', 'assets.description', $this->globalSearch]);
         }
 
 

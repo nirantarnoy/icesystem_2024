@@ -33,7 +33,7 @@ class SiteController extends Controller
                             'transactionsalecar', 'transactionsalecar2', 'transactionsalecar3', 'createscreenshort', 'transactionsalepos',
                             'updateroute', 'calmachine', 'clearorder', 'testclosesum', 'updateorderpayment', 'caltransactionsaledistributor',
                             'caltransactionsaledistributorauto', 'startcaldailymanagerauto', 'summarybystdgroup', 'transferorder','transferorderline',
-                            'transferpayment','transferpaymentline','transferissue','transferissueline','checkupdateorderpayment','checkupdateorderpaymentbycustomer','generate-customer-monthly-sum'],
+                            'transferpayment','transferpaymentline','transferissue','transferissueline','checkupdateorderpayment','checkupdateorderpaymentbycustomer','generate-customer-monthly-sum','uploadfromgo'],
                         'allow' => true,
                     ],
                     [
@@ -2496,7 +2496,7 @@ class SiteController extends Controller
 
         // วนทีละเดือน (1-12)
         for ($month = 1; $month <= 12; $month++) {
-            if($month >1)continue;
+            if($month !=3)continue;
             $sql = "
                 INSERT INTO customer_monthly_sum (customer_id, year, month, total_amount)
                 SELECT 
@@ -2522,6 +2522,22 @@ class SiteController extends Controller
 
         Yii::$app->session->setFlash('success', 'คำนวณยอดขายรายเดือน (1–12) เสร็จเรียบร้อยแล้ว');
         return $this->redirect(['report/index']);
+    }
+
+    function actionUploadfromgo()
+    {
+        if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
+            $uploadFile = basename($_FILES['image']['name']);
+
+            // if (move_uploaded_file($_FILES['image']['tmp_name'], \Yii::$app->getUrlManager()->baseUrl . '/uploads/files/receive/' . $uploadFile)) {
+            if (move_uploaded_file($_FILES['image']['tmp_name'], '../web/uploads/files/receive/' . $uploadFile)) {
+                echo "File is valid, and was successfully uploaded.\n";
+            } else {
+                echo "Possible file upload attack!\n";
+            }
+        } else {
+            echo \Yii::$app->getUrlManager()->baseUrl;
+        }
     }
 }
 

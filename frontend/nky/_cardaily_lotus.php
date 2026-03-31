@@ -41,7 +41,7 @@ $mpdf->AddPageByArray([
 
 
 $model_cj = null;
-$sql = "SELECT customer_code,customer_name,route_code,branch_no FROM query_order_lotus_summary";
+$sql = "SELECT customer_code,customer_name,route_code,branch_no,product_id,product.name as prd_name FROM query_order_lotus_summary left join product on query_order_lotus_summary.product_id = product.id";
 $sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
 if($route_id!=null){
     $where_item = "";
@@ -58,10 +58,10 @@ if($product_id!=null || $product_id!=0){
     $sql .= " AND product_id = '" . $product_id . "'";
 }
 if($customer_group_id!=null || $customer_group_id!=0){
-    $sql .= " AND customer_group_id = '" . $customer_group_id . "'";
+    $sql .= " AND query_order_lotus_summary.customer_group_id = '" . $customer_group_id . "'";
 }
-$sql .= " GROUP BY customer_code,customer_name,route_code,branch_no";
-$sql .= " ORDER BY customer_code, branch_no ASC";
+$sql .= " GROUP BY customer_code,customer_name,route_code,branch_no,product_id,prd_name";
+$sql .= " ORDER BY prd_name ASC, customer_code ASC";
 
 $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
 //print_r($model_cj);return;
@@ -164,6 +164,14 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
             border: 1px solid #dddddd;
             text-align: left;
             padding: 2px;
+        }
+
+        .sortable {
+            cursor: pointer;
+            color: blue;
+        }
+        .sortable:hover {
+            text-decoration: underline;
         }
 
     </style>
@@ -345,17 +353,20 @@ if($day_arr != null){
 
     ?>
     <table id="table-data">
-
+        <thead>
         <tr style="font-weight: bold;">
             <td style="text-align: center;padding: 8px;border: 1px solid grey;">#</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">สาขา</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">ชื่อลูกค้า</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">สายส่ง</td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(1)">สาขา</td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(2)">ชื่อลูกค้า</td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(3)">สินค้า</td>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(4)">สายส่ง</td>
             <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $day_arr[$i] ?></td>
             <?php endfor; ?>
-            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">รวม</td>
+            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen" class="sortable" onclick="sortTable(<?=count($day_arr)+ 5?>)">รวม</td>
         </tr>
+        </thead>
+        <tbody>
         <?php for ($x = 0; $x <= count($model_cj) - 1; $x++): ?>
             <?php
             $line_total = 0;
@@ -364,10 +375,11 @@ if($day_arr != null){
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $x + 1 ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['branch_no'] ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['customer_name'] ?></td>
+                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= \backend\models\Product::findName($model_cj[$x]['product_id']) ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['route_code'] ?></td>
                 <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
                     <?php
-                    $qty = getQty($model_cj_data, $model_cj[$x]['customer_code'], $day_arr[$i]);
+                    $qty = getQty($model_cj_data, $model_cj[$x]['customer_code'], $day_arr[$i], $model_cj[$x]['product_id']);
                     $line_total += $qty;
                     $grand_total += $qty;
 
@@ -384,7 +396,10 @@ if($day_arr != null){
                     <b><?= $line_total==0 ? '-' : number_format($line_total, 0) ?></b></td>
             </tr>
         <?php endfor; ?>
+        </tbody>
+        <tfoot>
         <tr>
+            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
@@ -400,6 +415,7 @@ if($day_arr != null){
             <?php endfor; ?>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format($grand_total, 0) ?></b></td>
         </tr>
+        </tfoot>
     </table>
 </div>
 
@@ -425,11 +441,11 @@ if($day_arr != null){
 </html>
 
 <?php
-function getQty($model,$customer_code,$day){
+function getQty($model,$customer_code,$day,$product_id){
     $qty = 0;
     if($model != null){
         for($i = 0; $i <= count($model) - 1; $i++){
-            if($model[$i]['customer_code'] == $customer_code){
+            if($model[$i]['customer_code'] == $customer_code && $model[$i]['product_id'] == $product_id){
                 if((int)date('d',strtotime($model[$i]['order_date'])) == (int)$day){
                     $qty = ($qty+$model[$i]['qty']);
                 }
@@ -460,6 +476,61 @@ function printContent(el)
          window.print();
          document.body.innerHTML = restorepage;
      }
+
+function sortTable(n) {
+  let table = document.getElementById("table-data");
+  let rows = table.tBodies[0].rows;
+  let switching = true;
+  let dir = "asc"; 
+  let switchcount = 0;
+
+  while (switching) {
+    switching = false;
+    for (let i = 0; i < (rows.length - 1); i++) {
+      let shouldSwitch = false;
+      let x = rows[i].getElementsByTagName("TD")[n];
+      let y = rows[i + 1].getElementsByTagName("TD")[n];
+
+      if (!x || !y) continue;
+
+      let xVal = x.innerText.trim();
+      let yVal = y.innerText.trim();
+
+      // Clean commas for numeric comparison
+      let xNum = xVal.replace(/,/g, '');
+      let yNum = yVal.replace(/,/g, '');
+
+      if (xNum !== '' && !isNaN(xNum) && yNum !== '' && !isNaN(yNum)) {
+        xVal = Number(xNum);
+        yVal = Number(yNum);
+      } else {
+        xVal = xVal.toLowerCase();
+        yVal = yVal.toLowerCase();
+      }
+
+      if (dir == "asc" && xVal > yVal) {
+        shouldSwitch = true;
+      } else if (dir == "desc" && xVal < yVal) {
+        shouldSwitch = true;
+      }
+
+      if (shouldSwitch) {
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+        switchcount++;
+        break;
+      }
+    }
+    if (!switching && switchcount == 0 && dir == "asc") {
+      dir = "desc";
+      switching = true;
+    }
+  }
+  // Re-number the # column after sorting
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].getElementsByTagName("TD")[0].innerText = i + 1;
+  }
+}
 JS;
 $this->registerJs($js, static::POS_END);
 ?>

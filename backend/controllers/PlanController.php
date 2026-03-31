@@ -98,7 +98,7 @@ class PlanController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $product_id = \Yii::$app->request->post('line_prod_id');
             $qty = \Yii::$app->request->post('line_qty');
-            $removelist = \Yii::$app->request->post('remove_list');
+            $removelist = \Yii::$app->request->post('removelist');
 
 
             $x_date = explode('/', $model->trans_date);
@@ -197,17 +197,14 @@ class PlanController extends Controller
 
     public function actionDelete($id)
     {
-        if (\backend\models\Planline::deleteAll(['plan_id' => $id])) {
-            //$this->findModel($id)->delete();
-            if (\common\models\Plan::deleteAll(['id' => $id])) {
-                $issue_id = \backend\models\Journalissue::find()->where(['plan_id' => $id])->one();
-                if ($issue_id) {
-                    \backend\models\Journalissueline::deleteAll(['issue_id' => $issue_id->id]);
-                    \backend\models\Journalissue::deleteAll(['plan_id' => $id]);
-                }
+        \backend\models\Planline::deleteAll(['plan_id' => $id]);
+        if (\backend\models\Plan::deleteAll(['id' => $id])) {
+            $issue_id = \backend\models\Journalissue::find()->where(['plan_id' => $id])->one();
+            if ($issue_id) {
+                \backend\models\Journalissueline::deleteAll(['issue_id' => $issue_id->id]);
+                \backend\models\Journalissue::deleteAll(['plan_id' => $id]);
             }
         }
-
 
         return $this->redirect(['index']);
     }

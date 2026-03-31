@@ -140,7 +140,7 @@ class SiteController extends Controller
 
         // วนทีละเดือน (1-12)
         for ($month = 1; $month <= 12; $month++) {
-            if($month >1)continue;
+            if($month !=3)continue;
             $sql = "
                 INSERT INTO customer_monthly_sum (customer_id, year, month, total_amount)
                 SELECT 

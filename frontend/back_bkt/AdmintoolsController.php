@@ -80,54 +80,94 @@ class AdmintoolsController extends Controller
         echo $login_date;
     }
 
-    public function actionRollbacksale(){
+    public function actionRollbacksale()
+    {
         $route_id = \Yii::$app->request->post('route_id');
         $company_id = 1;
         $branch_id = 2;
 
-//        if (!empty(\Yii::$app->user->identity->company_id)) {
-//            $company_id = \Yii::$app->user->identity->company_id;
-//        }
-//        if (!empty(\Yii::$app->user->identity->branch_id)) {
-//            $branch_id = \Yii::$app->user->identity->branch_id;
-//        }
+        // if (!empty(\Yii::$app->user->identity->company_id)) {
+        //     $company_id = \Yii::$app->user->identity->company_id;
+        // }
+        // if (!empty(\Yii::$app->user->identity->branch_id)) {
+        //     $branch_id = \Yii::$app->user->identity->branch_id;
+        // }
 
         $res = 0;
-        //   $route_id = 894;
-        if($route_id > 0){
+        if ($route_id > 0) {
+            $transaction = \Yii::$app->db->beginTransaction();
+            try {
+                $reprocess_wh = $this->findReprocesswh($company_id, $branch_id);
 
-            $reprocess_wh = $this->findReprocesswh($company_id, $branch_id);
-            // echo $reprocess_wh;return;
-            if (\backend\models\Orders::updateAll(['status' => 1], ['order_channel_id' => $route_id, 'date(order_date)' => date('Y-m-d'), 'sale_from_mobile' => 1])) {
-                $model = \backend\models\Stocktrans::find()->select(['qty','product_id'])->where(['trans_ref_id' => $route_id, 'date(trans_date)' => date('Y-m-d'), 'activity_type_id' => 7,'company_id'=>$company_id,'branch_id'=>$branch_id])->all();
-                if ($model) {
-                    foreach ($model as $value) {
-                        $model_update = \backend\models\Stocksum::find()->where(['product_id' => $value->product_id, 'warehouse_id' => $reprocess_wh,'company_id'=>$company_id,'branch_id'=>$branch_id])->one();
-                        if ($model_update) {
-                            $model_update->qty = ($model_update->qty - $value->qty);
-                            if ($model_update->save(false)) {
-                                $res += 1;
-                                // return qty to order stock
+                if (\backend\models\Orders::updateAll(['status' => 1], [
+                    'order_channel_id' => $route_id,
+                    'date(order_date)' => date('Y-m-d'),
+                    'sale_from_mobile' => 1,
+                    'company_id' => $company_id,
+                    'branch_id' => $branch_id
+                ])) {
 
-                                // $model_return = \common\models\OrderStock::find()->where(['product_id'=>$value->product_id,'route_id'=>$route_id,'date(trans_date)'=>date('Y-m-d')])->max('id');
-                                $model_return = \common\models\OrderStock::find()->where(['product_id'=>$value->product_id,'route_id'=>$route_id,'date(trans_date)'=>date('Y-m-d')])->one();
-                                if($model_return){
-                                    $model_return->avl_qty = $value->qty;
-                                    $model_return->save(false);
-                                    // \common\models\OrderStock::updateAll(['avl_qty'=>$value->qty],['id'=>$model_return->id]);
+                    $model = \backend\models\Stocktrans::find()
+                        ->select(['qty', 'product_id'])
+                        ->where([
+                            'trans_ref_id' => $route_id,
+                            'date(trans_date)' => date('Y-m-d'),
+                            'activity_type_id' => 7,
+                            'company_id' => $company_id,
+                            'branch_id' => $branch_id
+                        ])->all();
+
+                    if ($model) {
+                        foreach ($model as $value) {
+                            $model_update = \backend\models\Stocksum::find()->where([
+                                'product_id' => $value->product_id,
+                                'warehouse_id' => $reprocess_wh,
+                                'company_id' => $company_id,
+                                'branch_id' => $branch_id
+                            ])->one();
+
+                            if ($model_update) {
+                                $model_update->qty = ($model_update->qty - $value->qty);
+                                if ($model_update->save(false)) {
+                                    $res += 1;
+                                    // return qty to order stock
+                                    $model_return = \common\models\OrderStock::find()->where([
+                                        'product_id' => $value->product_id,
+                                        'route_id' => $route_id,
+                                        'date(trans_date)' => date('Y-m-d'),
+                                        'company_id' => $company_id,
+                                        'branch_id' => $branch_id
+                                    ])->one();
+
+                                    if ($model_return) {
+                                        $model_return->avl_qty = $value->qty;
+                                        $model_return->save(false);
+                                    }
                                 }
                             }
                         }
-                    }
-                    if($res > 0){
-                        \backend\models\Stocktrans::deleteAll(['trans_ref_id' => $route_id, 'date(trans_date)' => date('Y-m-d'), 'activity_type_id' => 7,'company_id'=>$company_id,'branch_id'=>$branch_id]);
+                        if ($res > 0) {
+                            \backend\models\Stocktrans::deleteAll([
+                                'trans_ref_id' => $route_id,
+                                'date(trans_date)' => date('Y-m-d'),
+                                'activity_type_id' => 7,
+                                'company_id' => $company_id,
+                                'branch_id' => $branch_id
+                            ]);
+                        }
                     }
                 }
-            }
-            if($res > 0){
-                echo "success";
-            }else{
-                echo "fail";
+
+                if ($res > 0) {
+                    $transaction->commit();
+                    echo "success";
+                } else {
+                    $transaction->rollBack();
+                    echo "fail";
+                }
+            } catch (\Exception $e) {
+                $transaction->rollBack();
+                echo "error: " . $e->getMessage();
             }
         }
         return $this->redirect(['admintools/index']);

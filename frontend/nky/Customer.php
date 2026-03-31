@@ -45,7 +45,7 @@ class Customer extends \yii\db\ActiveRecord
     {
         return [
             [['code','name'],'unique'],
-            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos','sale_id','route_num','sale_2_id'], 'integer'],
+            [['customer_group_id', 'delivery_route_id', 'status', 'company_id', 'branch_id', 'created_at', 'updated_at', 'created_by', 'updated_by','is_show_pos','sale_id','route_num','sale_2_id','use_province_id','use_zone_id','is_pay'], 'integer'],
             [['active_date','cancel_use_date'], 'safe'],
             [['code', 'name', 'description', 'location_info', 'logo', 'shop_photo','address','address2','phone','branch_no','sort_name'], 'string', 'max' => 255],
             [['branch_id'], 'exist', 'skipOnError' => true, 'targetClass' => Branch::className(), 'targetAttribute' => ['branch_id' => 'id']],
@@ -95,6 +95,9 @@ class Customer extends \yii\db\ActiveRecord
             'updated_at' => Yii::t('app', 'Updated At'),
             'created_by' => Yii::t('app', 'Created By'),
             'updated_by' => Yii::t('app', 'Updated By'),
+            'use_province_id' => 'จังหวัดที่ใช้งาน',
+            'use_zone_id' => 'ภาค',
+            'is_pay' => 'จ่ายแล้ว',
         ];
     }
 

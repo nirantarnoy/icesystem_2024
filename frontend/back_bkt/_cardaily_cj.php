@@ -41,7 +41,8 @@ $mpdf->AddPageByArray([
 
 
 $model_cj = null;
-$sql = "SELECT customer_code,customer_name,route_code,customer.branch_no,customer.delivery_route_id as route_id,customer.id as customer_id FROM query_order_cj_summary left join customer on query_order_cj_summary.customer_code = customer.code";
+$sql = "SELECT customer_code,customer_name,route_code,province.PROVINCE_NAME as use_province_name,customer.use_zone_id,customer.branch_no,customer.delivery_route_id as route_id,customer.id as customer_id FROM query_order_cj_summary left join customer on query_order_cj_summary.customer_id = customer.id";
+$sql .= " LEFT JOIN province ON customer.use_province_id = province.PROVINCE_ID";
 $sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
 if($route_id!=null){
     $where_item = "";
@@ -57,7 +58,7 @@ if($route_id!=null){
 if($product_id!=null){
     $sql .= " AND product_id = '" . $product_id . "'";
 }
-$sql .= " GROUP BY customer_code,customer_name,route_code,customer.branch_no";
+$sql .= " GROUP BY customer_code,customer_name,route_code,customer.branch_no, province.PROVINCE_NAME";
 $sql .= " ORDER BY customer.branch_no ASC";
 
 $model_cj = \Yii::$app->db->createCommand($sql)->queryAll();
@@ -67,7 +68,7 @@ $model_cj_data = null;
 $sql = "SELECT * FROM query_order_cj_summary";
 $sql .= " WHERE (date(order_date) BETWEEN '" . $from_date . "' AND '" . $to_date . "')";
 if($route_id!=null){
-   // $sql .= " AND delivery_route_id = '" . $route_id . "'";
+    // $sql .= " AND delivery_route_id = '" . $route_id . "'";
     $where_item = "";
     for($i=0;$i<count($route_id);$i++){
         if($i==count($route_id)-1){
@@ -160,6 +161,14 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
             padding: 2px;
         }
 
+        .sortable {
+            cursor: pointer;
+            color: blue;
+        }
+        .sortable:hover {
+            text-decoration: underline;
+        }
+
     </style>
     <!--    <script src="vendor/jquery/jquery.min.js"></script>-->
     <!--    <script type="text/javascript" src="js/ThaiBath-master/thaibath.js"></script>-->
@@ -221,18 +230,18 @@ $model_cj_data = \Yii::$app->db->createCommand($sql)->queryAll();
                     </td>
                     <td>
                         <?php
-                          echo \kartik\select2\Select2::widget([
-                              'name' => 'route_id',
-                              'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1])->all(), 'id', 'name'),
-                              'value' => $route_id,
-                              'options' => [
-                                  'placeholder' => '--สายส่ง--'
-                              ],
-                              'pluginOptions' => [
-                                  'allowClear' => true,
-                                  'multiple' => true,
-                              ]
-                          ])
+                        echo \kartik\select2\Select2::widget([
+                            'name' => 'route_id',
+                            'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status'=>1])->all(), 'id', 'name'),
+                            'value' => $route_id,
+                            'options' => [
+                                'placeholder' => '--สายส่ง--'
+                            ],
+                            'pluginOptions' => [
+                                'allowClear' => true,
+                                'multiple' => true,
+                            ]
+                        ])
                         ?>
                     </td>
                     <td>
@@ -322,19 +331,19 @@ if($day_arr != null){
     <br>
     <div class="row">
         <div class="col-lg-12">
-              <table style="width: 100%;border: none;">
-                  <tr>
-                      <td style="width: 5%;border: none;">
-                          <div style="background-color: green; width: 15px; height: 15px; border-radius: 50%; margin: auto;"></div>
-                      </td>
-                      <td style="width: 5%;border: none;"><span> ตู้เต็ม</span></td>
-                      <td style="width: 5%;border: none;">
-                          <div style="background-color: red; width: 15px; height: 15px; border-radius: 50%; margin: auto;"></div>
-                      </td>
-                      <td style="width: 5%;border: none;"><span> ตู้เสีย</span></td>
-                      <td style="width:80%;border: none;"></td>
-                  </tr>
-              </table>
+            <table style="width: 100%;border: none;">
+                <tr>
+                    <td style="width: 5%;border: none;">
+                        <div style="background-color: green; width: 15px; height: 15px; border-radius: 50%; margin: auto;"></div>
+                    </td>
+                    <td style="width: 5%;border: none;"><span> ตู้เต็ม</span></td>
+                    <td style="width: 5%;border: none;">
+                        <div style="background-color: red; width: 15px; height: 15px; border-radius: 50%; margin: auto;"></div>
+                    </td>
+                    <td style="width: 5%;border: none;"><span> ตู้เสีย</span></td>
+                    <td style="width:80%;border: none;"></td>
+                </tr>
+            </table>
         </div>
     </div>
     <br />
@@ -342,26 +351,32 @@ if($day_arr != null){
 
     ?>
     <table id="table-data">
-
-        <tr style="font-weight: bold;">
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">#</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">สาขา</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">ชื่อลูกค้า</td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;">สายส่ง</td>
-            <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $day_arr[$i] ?></td>
-            <?php endfor; ?>
-            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">รวม</td>
-        </tr>
+       <thead>
+       <tr style="font-weight: bold;">
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;">#</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(1)">สาขา</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(2)">ชื่อลูกค้า</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(3)">สายส่ง</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(4)">จังหวัด</td>
+           <td style="text-align: center;padding: 8px;border: 1px solid grey;" class="sortable" onclick="sortTable(5)">ภาค</td>
+           <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
+               <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $day_arr[$i] ?></td>
+           <?php endfor; ?>
+           <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen" class="sortable" onclick="sortTable(<?=count($day_arr)+ 6?>)">รวม</td>
+       </tr>
+       </thead>
+        <tbody>
         <?php for ($x = 0; $x <= count($model_cj) - 1; $x++): ?>
             <?php
-                 $line_total = 0;
+            $line_total = 0;
             ?>
             <tr>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $x + 1 ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['branch_no'] ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['customer_name'] ?></td>
                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['route_code'] ?></td>
+                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= $model_cj[$x]['use_province_name'] ?></td>
+                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><?= \backend\helpers\Zone::getTypeById($model_cj[$x]['use_zone_id']) ?></td>
                 <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
                     <?php
                     $qty = getQty($model_cj_data, $model_cj[$x]['customer_code'], $day_arr[$i]);
@@ -397,22 +412,29 @@ if($day_arr != null){
                     <b><?= $line_total==0 ? '-' : number_format($line_total, 0) ?></b></td>
             </tr>
         <?php endfor; ?>
-        <tr>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
-            <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b>รวม</b></td>
-            <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
-            <?php $col_total = 0;?>
-              <?php foreach ($column_total as &$value) {
-                  if ($value['day'] == $day_arr[$i]) {
-                      $col_total = $value['value'];
-                  }
-              }?>
-                <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b><?= $col_total==0 ? '-' : number_format($col_total,0)?></b></td>
-            <?php endfor; ?>
-            <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format($grand_total, 0) ?></b></td>
-        </tr>
+
+        </tbody>
+         <tfoot>
+         <tr>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"></td>
+             <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b>รวม</b></td>
+             <?php for ($i = 0; $i <= count($day_arr) - 1; $i++): ?>
+                 <?php $col_total = 0;?>
+                 <?php foreach ($column_total as &$value) {
+                     if ($value['day'] == $day_arr[$i]) {
+                         $col_total = $value['value'];
+                     }
+                 }?>
+                 <td style="text-align: center;padding: 8px;border: 1px solid grey;"><b><?= $col_total==0 ? '-' : number_format($col_total,0)?></b></td>
+             <?php endfor; ?>
+             <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format($grand_total, 0) ?></b></td>
+         </tr>
+         </tfoot>
+
     </table>
 </div>
 
@@ -486,6 +508,60 @@ function printContent(el)
          window.print();
          document.body.innerHTML = restorepage;
      }
+function sortTable(n) {
+  let table = document.getElementById("table-data");
+  let rows = table.tBodies[0].rows;
+  let switching = true;
+  let dir = "asc"; 
+  let switchcount = 0;
+
+  while (switching) {
+    switching = false;
+    for (let i = 0; i < (rows.length - 1); i++) {
+      let shouldSwitch = false;
+      let x = rows[i].getElementsByTagName("TD")[n];
+      let y = rows[i + 1].getElementsByTagName("TD")[n];
+
+      if (!x || !y) continue;
+
+      let xVal = x.innerText.trim();
+      let yVal = y.innerText.trim();
+
+      // Clean commas for numeric comparison
+      let xNum = xVal.replace(/,/g, '');
+      let yNum = yVal.replace(/,/g, '');
+
+      if (xNum !== '' && !isNaN(xNum) && yNum !== '' && !isNaN(yNum)) {
+        xVal = Number(xNum);
+        yVal = Number(yNum);
+      } else {
+        xVal = xVal.toLowerCase();
+        yVal = yVal.toLowerCase();
+      }
+
+      if (dir == "asc" && xVal > yVal) {
+        shouldSwitch = true;
+      } else if (dir == "desc" && xVal < yVal) {
+        shouldSwitch = true;
+      }
+
+      if (shouldSwitch) {
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+        switchcount++;
+        break;
+      }
+    }
+    if (!switching && switchcount == 0 && dir == "asc") {
+      dir = "desc";
+      switching = true;
+    }
+  }
+  // Re-number the # column after sorting
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].getElementsByTagName("TD")[0].innerText = i + 1;
+  }
+}
 JS;
 $this->registerJs($js, static::POS_END);
 ?>

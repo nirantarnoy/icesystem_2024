@@ -314,7 +314,7 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
     $all_cash_transfer_amount = 0;
 
 
-    $modelx = \common\models\TransactionCarSale::find()->select(['product_id'])->join('inner join','product','transaction_car_sale.product_id=product.id')->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+    $modelx = \common\models\TransactionCarSale::find()->select(['product_id'])->join('inner join','product','transaction_car_sale.product_id=product.id')->where(['BETWEEN', 'trans_date', date('Y-m-d H:i:s', strtotime($from_date)), date('Y-m-d H:i:s', strtotime($to_date))])
         ->andFilterWhere(['product.company_id' => $company_id, 'product.branch_id' => $branch_id])->groupBy('product_id')->orderBy(['item_pos_seq' => SORT_ASC])->all();
 
     //    $sql = "SELECT t.product_id FROM query_sale_mobile_data_new INNER JOIN product ON query_sale_mobile_data_new.product_id = product.id";
@@ -387,34 +387,34 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data!=null?$car_data[0]['car_name']:'' ?></td>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data!=null?$car_data[0]['emp_name']:''?></td>
                 <?php
-                $product_line_free_qty = getFree($value->route_id, $from_date, $to_date);
+                $product_line_free_qty = getFree($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_free = ($all_free + ($product_line_free_qty) );
 
                 //                $product_line_receive_cash = getPayment($from_date,$to_date,$value->route_id,$company_id,$branch_id);
-                $product_line_receive_cash = getReceiveCash($value->route_id, $from_date, $to_date);
+                $product_line_receive_cash = getReceiveCash($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_receive_cash = ($all_receive_cash + ($product_line_receive_cash) );
 
-                $product_line_receive_transfer = getReceiveTransfer($value->route_id, $from_date, $to_date);
+                $product_line_receive_transfer = getReceiveTransfer($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_receive_transfer = ($all_receive_transfer + ($product_line_receive_transfer) );
 
                 ?>
                 <?php for ($x = 0; $x <= count($product_header) - 1; $x++): ?>
                     <?php
-                    $product_line_qty = getOrderQty2($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_qty = getOrderQty2($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_qty_total = ($line_qty_total + $product_line_qty);
 
                     $all_qty = ($all_qty + $product_line_qty);
 
 
-                    $product_line_cash_amount = getCashAmount($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_cash_amount = getCashAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_cash_amount_total = ($line_cash_amount_total + $product_line_cash_amount);
                     $all_cash = ($all_cash + $product_line_cash_amount);
 
-                    $product_line_cash_transfer_amount = getCashTransferAmount($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_cash_transfer_amount = getCashTransferAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_cash_transfer_amount_total = ($line_cash_transfer_amount_total + $product_line_cash_transfer_amount);
                     $all_cash_transfer = ($all_cash_transfer + $product_line_cash_transfer_amount);
 
-                    $product_line_credit_amount = getCreditAmount($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_credit_amount = getCreditAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_credit_amount_total = ($line_credit_amount_total + $product_line_credit_amount);
                     $all_credit = ($all_credit + $product_line_credit_amount);
                     ?>
@@ -596,23 +596,23 @@ function getNotfullpay($route_id,$trans_date){
     }
     return $data;
 }
-function getOrderQty2($route_id, $product_id, $from_date, $to_date)
+function getOrderQty2($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id && $product_id) {
-        $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_qty) as credit_qty', 'SUM(cash_qty) as cash_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_qty) as credit_qty', 'SUM(cash_qty) as cash_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->credit_qty + $model_qty->cash_qty);
         }
     }
     return $data;
 }
-function getFree($route_id, $from_date, $to_date){
+function getFree($route_id, $from_date, $to_date, $company_id, $branch_id){
     $data = 0;
     if ($route_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(free_qty) as free_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id])->groupBy(['route_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['route_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->free_qty);
         }
@@ -662,51 +662,45 @@ function getPayment($f_date, $t_date, $find_user_id, $company_id, $branch_id)
 //    return $data;
 //}
 
-function getCashAmount($route_id, $product_id, $from_date, $to_date){
+function getCashAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id){
     $data = 0;
     if ($route_id && $product_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(cash_amount) as cash_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->cash_amount);
         }
     }
     return $data;
 }
-function getCashTransferAmount($route_id, $product_id, $from_date, $to_date){
+function getCashTransferAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id){
     $data = 0;
     if ($route_id && $product_id) {
-        $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(cash_transfer_amount) as cash_transfer_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
-        if ($model_qty != null) {
-            $data = ($model_qty->cash_transfer_amount);
-        }
+        $data = \common\models\QuerySaleMobileDataNew::find()
+            ->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])
+            ->sum('line_total_cash_transfer');
     }
     return $data;
 }
-function getCreditAmount($route_id, $product_id, $from_date, $to_date){
+function getCreditAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id){
     $data = 0;
     if ($route_id && $product_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_amount) as credit_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->credit_amount);
         }
     }
     return $data;
 }
-function getReceiveCash($route_id, $from_date, $to_date)
+function getReceiveCash($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id) {
-//        $model_qty = \common\models\TransactionCarSale::find()->select(['receive_cashx'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-//            ->andFilterWhere(['route_id' => $route_id])->andFilterWhere(['>','receive_cash',0])->groupBy(['route_id'])->one();
-//        if ($model_qty != null) {
-//            $data = ($model_qty->receive_cash);
-//        }
         $model_qty = \common\models\TransactionCarSaleRoutePay::find()
             ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id])->sum('cash_amount');
+            ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->sum('cash_amount');
         if ($model_qty != null) {
             $data = ($model_qty);
         }
@@ -714,33 +708,18 @@ function getReceiveCash($route_id, $from_date, $to_date)
     return $data;
 }
 
-function getReceiveTransfer($route_id, $from_date, $to_date)
+function getReceiveTransfer($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
-//    if ($route_id) {
-//        $model_qty = \common\models\TransactionCarSale::find()->select(['receive_transter'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-//            ->andFilterWhere(['route_id' => $route_id])->groupBy(['route_id'])->one();
-//        if ($model_qty != null) {
-//            $data = ($model_qty->receive_transter);
-//        }
-//    }
-    $model_qty = \common\models\TransactionCarSaleRoutePay::find()
-        ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-        ->andFilterWhere(['route_id' => $route_id])->sum('transfer_amount');
-    if ($model_qty != null) {
-        $data = ($model_qty);
+    if ($route_id) {
+        $model_qty = \common\models\TransactionCarSaleRoutePay::find()
+            ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->sum('transfer_amount');
+        if ($model_qty != null) {
+            $data = ($model_qty);
+        }
     }
     return $data;
-//    $data = 0;
-//    if ($route_id) {
-//        $model_qty = \common\models\QueryPaymentReceive::find()->select(['SUM(payment_amount) as payment_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-//            ->andFilterWhere(['payment_channel_id'=>2])
-//            ->andFilterWhere(['route_id' => $route_id])->groupBy(['route_id'])->one();
-//        if ($model_qty != null) {
-//            $data = ($model_qty->payment_amount);
-//        }
-//    }
-//    return $data;
 }
 function getCardata($route_id,$t_date){
     $data = [];

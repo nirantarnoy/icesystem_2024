@@ -816,6 +816,14 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <?php //if (\Yii::$app->user->can('adminreport/productionplan')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=plan/productionplan" class="nav-link plan">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>รายงานแผนผลิตแยกสายส่ง</p>
+                                </a>
+                            </li>
+                        <?php //endif;?>
                         <?php if (\Yii::$app->user->can('adminrecal/index')): ?>
                             <li class="nav-item">
                                 <a href="index.php?r=adminrecal/index" class="nav-link adminrecal">
@@ -872,6 +880,18 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <li class="nav-item">
+                            <a href="index.php?r=adminreport/printcarct" class="nav-link adminreport">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>ยอดขาย CT</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="index.php?r=adminreport/printcarbigc" class="nav-link adminreport">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>ยอดขาย BigC</p>
+                            </a>
+                        </li>
                         <?php //if (\Yii::$app->user->can('adminreport/printcarcj')): ?>
                         <li class="nav-item">
                             <a href="index.php?r=adminreport/customer-monthly-report" class="nav-link adminreport">
@@ -888,6 +908,14 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <?php //if (\Yii::$app->user->can('adminreport/printcarcjbao')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=adminreport/printcaramazon" class="nav-link adminreport">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>ยอดขาย Amazon</p>
+                                </a>
+                            </li>
+                        <?php //endif;?>
                          <?php //if (\Yii::$app->user->can('saleroutesummary/index')): ?>
                         <li class="nav-item">
                             <a href="index.php?r=pos/sales-by-route" class="nav-link pos">

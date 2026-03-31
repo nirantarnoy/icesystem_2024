@@ -4,698 +4,391 @@ use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 
 /* @var $this yii\web\View */
-/* @var $model backend\models\Customerrequest */
+/* @var $model backend\models\Assetrental */
 /* @var $form yii\widgets\ActiveForm */
-$not_product = [15, 16, 98, 7, 8, 23];
-$product_data = \common\models\Product::find()->where(['status' => 1])->andFilterWhere(['not in', 'id', $not_product])->orderBy(['item_pos_seq' => SORT_ASC])->all();
-$attatch_doc_data = \common\models\CustomerRequestAttatchDoc::find()->where(['status' => 1])->all();
-//$district_data = \backend\models\District::find()->all();
-//$city_data = \backend\models\Amphur::find()->all();
-//$province_data = \backend\models\Province::find()->all();
 
-// Query ข้อมูล cus_req_standard ด้วย SQL Command
-$cus_req_standard_sql = "SELECT * FROM cus_req_doc_standard ORDER BY id ASC";
-$cus_req_standard_data = \Yii::$app->db->createCommand($cus_req_standard_sql)->queryAll();
-
-// Query ข้อมูล cus_req_standard_item พร้อม join
-$cus_req_standard_item_sql = "
-    SELECT 
-        csi.*,
-        cs.name as standard_name 
-    FROM cus_req_doc_standard_item csi 
-    LEFT JOIN cus_req_doc_standard_item cs ON csi.cus_req_standard_id = cs.id 
-    ORDER BY csi.cus_req_standard_id ASC, csi.id ASC
-";
-$cus_req_standard_item_data = \Yii::$app->db->createCommand($cus_req_standard_item_sql)->queryAll();
-
-// Group items by standard_id
-$grouped_items = [];
-foreach ($cus_req_standard_item_data as $item) {
-    $grouped_items[$item['cus_req_standard_id']][] = $item;
-}
-
-
-// Query ข้อมูลที่เคยเลือกไว้ (สำหรับ update mode)
-$selected_items = [];
-if (!$model->isNewRecord) {
-    $selected_sql = "
-        SELECT 
-            cus_req_standard_id,
-            cus_req_standard_item_id
-        FROM cus_req_doc_standard_assign 
-        WHERE cus_req_id = :cus_req_id
-    ";
-    $selected_data = \Yii::$app->db->createCommand($selected_sql)
-        ->bindValue(':cus_req_id', $model->id)
-        ->queryAll();
-
-    // จัดเก็บเป็น array สำหรับเช็คง่ายๆ
-    foreach ($selected_data as $selected) {
-        $selected_items[$selected['cus_req_standard_id']][] = $selected['cus_req_standard_item_id'];
-    }
-}
-
+$use_total_count = 0;
+$not_use_total_count = 0;
+$total_amount = 0;
 ?>
 
-<?php
-$this->registerCss('
-#table-doc-checklist td {
-    padding: 15px;
-    border: 1px solid #dee2e6;
-}
+    <div class="assetrental-form">
 
-#table-doc-checklist .checkbox-inline {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-#table-doc-checklist .checkbox-inline:hover {
-    background-color: #f8f9fa;
-}
-
-#table-doc-checklist .checkbox-inline input[type="checkbox"] {
-    margin-right: 8px;
-    margin-top: 0;
-}
-
-#table-doc-checklist .standard-item-checkbox:checked + label {
-    font-weight: 500;
-    color: #007bff;
-}
-');
-?>
-
-<div class="customerrequest-form">
-    <!-- Flash Messages -->
-    <?php if (\Yii::$app->session->hasFlash('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('success') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('error') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('warning')): ?>
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <?= \Yii::$app->session->getFlash('warning') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (\Yii::$app->session->hasFlash('info')): ?>
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <?= \Yii::$app->session->getFlash('info') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-    <?php $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]); ?>
-
-    <!--    <div class="row">-->
-    <!--        <div class="col-lg-12">-->
-    <!--            <table class="table table-bordered" style="width: 100%;">-->
-    <!--                <tr>-->
-    <!--                    <td rowspan="2" style=";text-align: center;vertical-align: middle;">-->
-    <!--                        <b>บันทึกการขาย (เปิดร้าน)</b>-->
-    <!--                    </td>-->
-    <!--                    <td style="width: 20%;">-->
-    <!--                        เลขที่ :-->
-    <!--                    </td>-->
-    <!--                    <td style="width: 30%;">-->
-    <!--                        -->
-    <!--                    </td>-->
-    <!--                </tr>-->
-    <!--                <tr>-->
-    <!--                    <td style="width: 20%;">-->
-    <!--                        รหัสลูกค้า :-->
-    <!--                    </td>-->
-    <!--                    <td>-->
-    <!--                        -->
-    <!--                    </td>-->
-    <!--                </tr>-->
-    <!--            </table>-->
-    <!--        </div>-->
-    <!--    </div>-->
-
-    <div class="row">
-        <div class="col-lg-12">
-            <h4><b>รายละเอียดลูกค้า</b></h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-3"><?= $form->field($model, 'journal_no')->textInput(['maxlength' => true, 'readonly' => 'readonly'])->label() ?></div>
-        <div class="col-lg-3">
-            <label for=""><?= $model->attributeLabels()['customer_ref_id'] ?></label>
-            <input type="text" class="form-control"
-                   value="<?= $model->isNewRecord ? '' : \backend\models\Customer::findCode($model->customer_ref_id) ?>"
-                   readonly="readonly">
-        </div>
-
-    </div>
-    <div class="row">
-        <div class="col-lg-3">
-            <?= $form->field($model, 'customer_name')->textInput(['maxlength' => true]) ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'age')->textInput() ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'idcard_no')->textInput(['maxlength' => true]) ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'address')->textInput(['maxlength' => true]) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-3">
-            <?= $form->field($model, 'moo')->textInput() ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'district_id')->widget(\kartik\select2\Select2::className(), [
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\District::find()->all(), 'DISTRICT_ID', 'DISTRICT_NAME'),
-                'options' => ['placeholder' => 'เลือก', 'id' => 'selected-district'],
-                'pluginOptions' => ['allowClear' => true],
-            ]) ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'city_id')->widget(\kartik\select2\Select2::className(), [
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Amphur::find()->all(), 'AMPHUR_ID', 'AMPHUR_NAME'),
-                'options' => ['placeholder' => 'เลือก', 'id' => 'selected-city', 'onchange' => 'getDistrict($(this))'],
-                'pluginOptions' => ['allowClear' => true],
-            ]) ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'province_id')->widget(\kartik\select2\Select2::className(), [
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Province::find()->all(), 'PROVINCE_ID', 'PROVINCE_NAME'),
-                'options' => ['placeholder' => 'เลือก', 'onchange' => 'getCity($(this))'],
-                'pluginOptions' => ['allowClear' => true],
-            ]) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-3">
-            <?= $form->field($model, 'phone')->textInput(['maxlength' => true]) ?>
-        </div>
-
-        <div class="col-lg-3">
-            <?= $form->field($model, 'company_name')->textInput(['maxlength' => true]) ?>
-        </div>
-<!--        <div class="col-lg-3">-->
-<!--            <label for="">แนบเอกสาร</label>-->
-<!--            <input type="file" id="add-doc-file" class="form-control" name="docfile[]" --><?php //=\backend\models\User::findName(\Yii::$app->user->id)=='iceadmin'?'': 'required' ?><!-- multiple accept="image/*">-->
-<!--        </div>-->
-<!--        <div class="col-lg-3">-->
-<!--            <label for="">รูปหน้าร้าน</label>-->
-<!--            <input type="file" id="add-shop-file" class="form-control" name="shopfile[]" --><?php //=\backend\models\User::findName(\Yii::$app->user->id)=='iceadmin'?'': 'required' ?><!-- multiple accept="image/*">-->
-<!--        </div>-->
-
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h4><b>รายละเอียดการขาย</b></h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-3">
-            <?= $form->field($model, 'route_id')->widget(\kartik\select2\Select2::className(), [
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status' => 1, 'branch_id' => 1])->all(), 'id', 'name'),
-                'options' => [
-                    'placeholder' => '--เลือกรายการ--',
-                ],
-                'pluginOptions' => ['allowClear' => true],
-            ]) ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'route_num')->textInput() ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'start_date')->widget(\kartik\date\DatePicker::className(), ['options' => ['placeholder' => 'วันที่เริ่มต้น'], 'pluginOptions' => ['autoclose' => true, 'format' => 'dd/mm/yyyy']])->label('วันที่เริ่มต้น') ?>
-        </div>
-        <div class="col-lg-3">
-            <?= $form->field($model, 'sale_price')->textInput(['maxlength' => true]) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-4">
-            <?= $form->field($model, 'remark')->textInput(['maxlength' => true]) ?>
-        </div>
-        <div class="col-lg-8">
-            <?php if ($model_doc != null): ?>
-                <label for="">ตัวอย่างเอกสารแนบ</label>
-                <div style="height: 10px;"></div>
-                <?php foreach ($model_doc as $value): ?>
-                    <a class="badge badge-primary"
-                       href="<?= \Yii::$app->getUrlManager()->getBaseUrl() . '/uploads/files/customerrequest/' . $value->doc_name ?>"
-                       target="_blank"><?= $value->doc_name ?></a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h4><b>รายละเอียดการขาย</b></h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <table>
-                <tr>
-                    <?php $product_qty = null; ?>
-                    <?php foreach ($product_data as $value): ?>
-                        <?php if (!$model->isNewRecord) {
-                            $product_qty = getRequestProductQty($model->id, $value->id);
-                        }
-                        ?>
-                        <td>
-                            <input type="hidden" name="product_id[]" value="<?= $value->id ?>">
-                            <?= $value->name; ?> <input class="form-control" type="number" min="0" step="any"
-                                                        name="product_qty[]" value="<?php echo $product_qty; ?>">
-                        </td>
-                    <?php endforeach; ?>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <br/>
-    <div class="row">
-        <div class="col-lg-2">
-            <b>ปรเภทการขาย</b>
-        </div>
-        <div class="col-lg-10">
-            <div class="row">
-                <div class="col-lg-12">
-                    <input type="checkbox"
-                           class="payment-checkbox" <?php echo $model->payment_method_id == 1 ? 'checked' : ''; ?>
-                           onclick="getPaymentType($(this))" value="1"> ขายสด เงินสด
-                </div>
+        <?php $form = ActiveForm::begin(); ?>
+        <input type="hidden" class="remove-list" name="removelist" value="">
+        <div class="row">
+            <div class="col-lg-3">
+                <?= $form->field($model, 'journal_no')->textInput(['maxlength' => true, 'readonly' => 'readonly']) ?>
             </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <input type="checkbox"
-                           class="payment-checkbox" <?php echo $model->payment_method_id == 3 ? 'checked' : ''; ?>
-                           onclick="getPaymentType($(this))" value="3"> ขายสด โอน บ/ช บจ.วรภัทร เลขที่
-                    <u>764-3010880</u>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-1">
-                    <input type="checkbox"
-                           class="payment-checkbox" <?php echo $model->payment_method_id == 2 ? 'checked' : ''; ?>
-                           onclick="getPaymentType($(this))" value="2"> เครดิต
-                </div>
-                <div class="col-lg-1"><?= $form->field($model, 'credit_term')->textInput()->label(false) ?></div>
-                <div class="col-lg-6">วัน โอน บ/ช บจ.วรภัทร เลขที่ <u>764-3002984</u></div>
-                <div class="col-lg-2">หลังรับวางบิล</div>
-                <div class="col-lg-1"><?= $form->field($model, 'after_invoice_day')->textInput()->label(false) ?></div>
-                <div class="col-lg-1">วัน</div>
+            <div class="col-lg-3">
+                <?= $form->field($model, 'trans_date')->widget(\kartik\date\DatePicker::className(),
+                    [
+                        'pluginOptions' => ['format' => 'dd-mm-yyyy']]
+                ) ?>
             </div>
         </div>
-    </div>
+        <div class="row">
+            <div class="col-lg-3">
+                <?= $form->field($model, 'work_name')->textInput(['maxlength' => true,]) ?>
+            </div>
+            <div class="col-lg-3">
+                <?php $model->use_from = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->use_from)); ?>
+                <?= $form->field($model, 'use_from')->widget(\kartik\date\DatePicker::className(),
+                    [
+                            'options' => [
+                                    'format' => 'dd-mm-yyyy',
+                            ]
+                    ]
+                ) ?>
+            </div>
+            <div class="col-lg-3">
+                <?php $model->use_to = $model->isNewRecord ? date('Y-m-d') : date('Y-m-d',strtotime($model->use_to)); ?>
+                <?= $form->field($model, 'use_to')->widget(\kartik\date\DatePicker::className(),
+                    [
+                        'options' => [
+                            'format' => 'dd-mm-yyyy',
+                        ]
+                    ]
+                ) ?>
+            </div>
+            <div class="col-lg-3">
+                <label for="">จบงาน</label>
+                <?= $form->field($model, 'status')->widget(\toxor88\switchery\Switchery::className())->label('') ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3">
+                <label for="">รับชำระเงิน</label>
+                <?= $form->field($model, 'is_paid')->widget(\toxor88\switchery\Switchery::className(), [
+                        'options' => ['id' => 'is-paid-switch']
+                ])->label('') ?>
+            </div>
+            <div class="col-lg-3 payment-info" style="display: <?= $model->is_paid ? 'block' : 'none' ?>;">
+                <?php $model->payment_date = $model->isNewRecord ? date('d-m-Y') : ($model->payment_date ? date('d-m-Y', strtotime($model->payment_date)) : date('d-m-Y')); ?>
+                <?= $form->field($model, 'payment_date')->widget(\kartik\date\DatePicker::className(),
+                    [
+                        'pluginOptions' => [
+                                'format' => 'dd-mm-yyyy',
+                                'autoclose' => true,
+                        ]
+                    ]
+                ) ?>
+            </div>
+            <div class="col-lg-3 payment-info" style="display: <?= $model->is_paid ? 'block' : 'none' ?>;">
+                <?= $form->field($model, 'payment_amount')->textInput() ?>
+            </div>
+        </div>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <table class="table table-bordered" style="width: 100%" id="table-doc-checklist">
-                <?php if (!empty($cus_req_standard_data)): ?>
-                    <?php foreach ($cus_req_standard_data as $standard): ?>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <h3>รายการถัง</h3>
+            </div>
+        </div>
+        <br/>
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="btn btn-outline-primary" onclick="selectallcash();">เลือกใช้งานทั้งหมด</div>
+                <div class="btn btn-outline-primary" onclick="selectallbank();">เลือกคืนทั้งหมด</div>
+            </div>
+            <div class="col-lg-3" style="text-align: right">
+
+            </div>
+        </div>
+        <br/>
+        <div class="row">
+            <div class="col-lg-12">
+                <table class="table table-bordered table-striped" id="table-list">
+                    <thead>
+                    <tr>
+                        <th style="text-align: center;width: 5%">#</th>
+                        <th>ขนาดถัง</th>
+                        <th>รหัสถัง</th>
+                        <th>ราคา</th>
+                        <th style="text-align: center">สถานะใช้งาน</th>
+                        <th style="text-align: center">สถานะคืนถัง</th>
+                        <th>-</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($model->isNewRecord): ?>
                         <tr>
-                            <!-- Column แรก: ชื่อหัวข้อจาก cus_req_standard -->
-                            <td style="width: 200px; vertical-align: middle; font-weight: bold; background-color: #f8f9fa;">
-                                <?= Html::encode($standard['name']) ?>
-                            </td>
-
-                            <!-- Columns ถัดไป: รายการ items พร้อม checkbox -->
+                            <td style="text-align: center;"></td>
                             <td>
-                                <?php if (isset($grouped_items[$standard['id']])): ?>
-                                    <div class="row">
-                                    <?php foreach ($grouped_items[$standard['id']] as $index => $item): ?>
-                                        <?php
-                                        // ตรวจสอบว่าถูกเลือกไว้หรือไม่ (สำหรับ edit mode)
-                                        $is_checked = false;
-                                        if (!$model->isNewRecord) {
-                                            // เช็คจาก array ที่เตรียมไว้
-                                            if (isset($selected_items[$standard['id']]) &&
-                                                in_array($item['id'], $selected_items[$standard['id']])) {
-                                                $is_checked = true;
-                                            }
-                                        }
-                                        ?>
+                                <input type="text" class="form-control line-size" name="line_size[]" readonly>
+                            </td>
+                            <td>
+                                <input type="hidden" class="form-control line-asset-id" name="line_asset_id[]" readonly>
+                                <input type="text" class="form-control line-asset-code" name="line_asset_code[]"
+                                       readonly>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control line-price" name="line_price[]" readonly>
+                                <input type="hidden" class="line-use-status" name="line_use_status[]" value="0">
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="btn-group">
+                                    <div class="btn btn-success line-use-check" data-var="1"
+                                         onclick="checkpaytype2($(this))">ใช้งาน
+                                    </div>
+                                    <div class="btn btn-default line-no-use-check" data-var="0"
+                                         onclick="checkpaytype3($(this))">ไม่ใช้งาน
+                                    </div>
 
-                                        <div class="col-lg-4 col-md-6 col-sm-12" style="margin-bottom: 10px;"><label
-                                                    class="checkbox-inline" style="font-weight: normal;">
-                                                <input type="checkbox"
-                                                       name="standard_items[<?= $standard['id'] ?>][]"
-                                                       value="<?= $item['id'] ?>"
-                                                    <?= $is_checked ? 'checked' : '' ?>
-                                                       class="standard-item-checkbox"
-                                                       data-standard-id="<?= $standard['id'] ?>"
-                                                       data-item-id="<?= $item['id'] ?>"
-                                                       onchange="checkFileAttachment(this, 'photo_<?= $standard['id'] ?>_<?= $item['id'] ?>')">
-                                                <?= Html::encode($item['name']) ?>
-                                            </label>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="btn-group">
+                                    <div class="btn btn-success line-return-check" data-var="1"
+                                         onclick="checkpaytype4($(this))">คืน
+                                    </div>
+                                    <div class="btn btn-default line-no-return-check" data-var="0"
+                                         onclick="checkpaytype5($(this))">ไม่คืน
+                                    </div>
 
-                                            <!-- Photo upload สำหรับแต่ละ item -->
-                                            <div class="photo-upload-section" style="margin-top: 5px;">
-                                                <input type="file"
-                                                       name="photo_<?= $standard['id'] ?>_<?= $item['id'] ?>[]"
-                                                       id="photo_<?= $standard['id'] ?>_<?= $item['id'] ?>"
-                                                       accept="image/*"
-                                                       multiple
-                                                       class="form-control form-control-sm"
-                                                       style="font-size: 12px;"
-                                                       disabled>
+                                </div>
+                            </td>
+                            <td style="text-align: center">
+                                <div class="btn btn-sm btn-danger" onclick="removeline($(this))">ลบ</div>
+                                <input type="hidden" class="line-return-status" name="line_return_status[]" value="0">
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php if ($model_line != null): ?>
+                            <?php $line_no = 0; ?>
+                            <?php foreach ($model_line as $value): ?>
+                                <?php
+                                $css_btn_use_check = 'btn-default';
+                                $css_btn_not_use_check = 'btn-default';
+                                $css_btn_return_check = 'btn-default';
+                                $css_btn_not_return_check = 'btn-default';
 
-                                                <!-- แสดงรูปภาพที่มีอยู่แล้ว (ถ้ามี) -->
-                                                <?php
-                                                // Query existing photos for this combination
-                                                if (!$model->isNewRecord) {
-                                                    $existingPhotos = \Yii::$app->db->createCommand("
-                                                    SELECT p.* FROM cus_req_doc_standard_assign_photo p
-                                                    INNER JOIN cus_req_doc_standard_assign a ON p.cus_req_doc_standard_assign_id = a.id
-                                                    WHERE a.cus_req_id = :cus_req_id 
-                                                    AND a.cus_req_standard_id = :standard_id 
-                                                    AND a.cus_req_standard_item_id = :item_id
-                                                ")
-                                                        ->bindValue(':cus_req_id', $model->id)
-                                                        ->bindValue(':standard_id', $standard['id'])
-                                                        ->bindValue(':item_id', $item['id'])
-                                                        ->queryAll();
-                                                } else {
-                                                    $existingPhotos = [];
-                                                }
-                                                ?>
+                                if ($value->use_status == 1) {
+                                    $css_btn_use_check = 'btn-success';
+                                    $css_btn_not_use_check = 'btn-default';
+                                } else {
+                                    $css_btn_use_check = 'btn-default';
+                                    $css_btn_not_use_check = 'btn-danger';
+                                }
+                                if ($value->return_status == 1) {
+                                    $css_btn_return_check = 'btn-success';
+                                    $css_btn_not_return_check = 'btn-default';
+                                } else {
+                                    $css_btn_return_check = 'btn-default';
+                                    $css_btn_not_return_check = 'btn-danger';
+                                }
 
-                                                <?php if (!empty($existingPhotos)): ?>
-                                                    <div class="existing-photos-container" style="margin-top: 5px;">
-                                                        <small class="text-muted">รูปภาพที่มีอยู่:</small>
-                                                        <div class="photo-gallery"
-                                                             style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px;">
-                                                            <?php foreach ($existingPhotos as $photo): ?>
-                                                                <div class="photo-item" style="position: relative;">
-                                                                    <img src="<?= \Yii::getAlias('@web/uploads/customer-request-photos/' . $photo['photo']) ?>"
-                                                                         alt="Photo"
-                                                                         style="max-width: 60px; max-height: 60px; border: 1px solid #ddd; border-radius: 3px;">
-                                                                    <button type="button"
-                                                                            class="btn btn-danger btn-xs delete-photo"
-                                                                            data-photo-id="<?= $photo['id'] ?>"
-                                                                            style="position: absolute; top: -5px; right: -5px; padding: 1px 4px; font-size: 10px; line-height: 1;">
-                                                                        ×
-                                                                    </button>
-                                                                </div>
-                                                            <?php endforeach; ?>
-                                                        </div>
-                                                    </div>
-                                                <?php endif; ?>
+                                if ($value->use_status == 1) {
+                                    $use_total_count += 1;
+                                    $total_amount += $value->price;
+                                }
+                                if ($value->use_status == 0) {
+                                    $not_use_total_count += 1;
+                                }
+
+
+
+                                ?>
+                                <tr>
+                                    <td style="text-align: center;"><?php echo $line_no += 1; ?></td>
+                                    <td>
+                                        <input type="text" class="form-control line-size" name="line_size[]"
+                                               value="<?= $value->remark ?>" readonly>
+                                    </td>
+                                    <td>
+                                        <input type="hidden" class="form-control line-asset-id" name="line_asset_id[]"
+                                               value="<?= $value->asset_id ?>" readonly>
+                                        <input type="text" class="form-control line-asset-code" name="line_asset_code[]"
+                                               value="<?= \backend\models\Assetsitem::findCode($value->asset_id) ?>"
+                                               readonly>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control line-price" name="line_price[]"
+                                               value="<?= $value->price ?>" readonly>
+                                        <input type="hidden" class="line-use-status" name="line_use_status[]"
+                                               value="<?= $value->use_status ?>">
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <div class="btn-group">
+                                            <div class="btn <?= $css_btn_use_check ?> line-use-check" data-var="1"
+                                                 onclick="checkpaytype2($(this))">ใช้งาน
+                                            </div>
+                                            <div class="btn <?= $css_btn_not_use_check ?> line-no-use-check"
+                                                 data-var="0"
+                                                 onclick="checkpaytype3($(this))">ไม่ใช้งาน
                                             </div>
 
-                                            <script>
-                                                function checkFileAttachment(checkbox, fileInputId) {
-                                                    const fileInput = document.getElementById(fileInputId);
-                                                    if (checkbox.checked) {
-                                                        fileInput.disabled = false;
-                                                        fileInput.setAttribute('required', 'required');
-                                                    } else {
-                                                        fileInput.disabled = true;
-                                                        fileInput.removeAttribute('required');
-                                                    }
-                                                }
-                                            </script>
                                         </div>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <div class="btn-group">
+                                            <div class="btn <?= $css_btn_return_check ?> line-return-check" data-var="1"
+                                                 onclick="checkpaytype4($(this))">คืน
+                                            </div>
+                                            <div class="btn <?= $css_btn_not_return_check ?> line-no-return-check"
+                                                 data-var="0"
+                                                 onclick="checkpaytype5($(this))">ไม่คืน
+                                            </div>
 
-                                        <?php if (($index + 1) % 3 == 0): ?>
-                                            </div><div class="row">
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
-                                    </div>
-                                <?php else: ?>
-                                    <span class="text-muted">ไม่มีรายการ</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: center">
+                                        <div class="btn btn-sm btn-danger" data-var="<?=$value->id?>" onclick="removeline($(this))">ลบ</div>
+                                        <input type="hidden" class="line-return-status" name="line_return_status[]"
+                                               value="<?= $value->return_status ?>">
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    </tbody>
+                    <tfoot>
                     <tr>
-                        <td colspan="2" class="text-center text-muted">
-                            ไม่มีข้อมูลมาตรฐาน
+                        <td>
+                            <div class="btn btn-sm btn-primary" onclick="showfindasset($(this))">เลือกถัง</div>
                         </td>
                     </tr>
-                <?php endif; ?>
-            </table>
+                    </tfoot>
+                </table>
+            </div>
         </div>
+        <br/>
+        <div class="row">
+            <div class="col-lg-3"><h4 style="color: green;">ใช้งาน <span
+                            style="color: black;"><?= number_format($use_total_count, 0) ?></span> ใบ</h4></div>
+            <div class="col-lg-3"><h4 style="color: red;">ไม่ใช้งาน <span
+                            style="color: black;"><?= number_format($not_use_total_count, 0) ?></span> ใบ</h4></div>
+            <div class="col-lg-3"><h4>รวมเงิน <span><?= number_format($total_amount, 2) ?></span></h4></div>
+            <div class="col-lg-3"></div>
+        </div>
+        <?php
+        $asset_by_group = creategroup($model->id);
+        ?>
+        <?php if ($asset_by_group != null): ?>
+        <table style="width: 50%">
+            <tr>
+                <td style="text-align: center;width: 10%"><b>ขนาด</b></td>
+                <td style="text-align: right;width: 10%"><b>จำนวน</b></td>
+                <td style="text-align: center;width: 5%"></td>
+                <td style="text-align: right;right: 10%"><b>จำนวนเงิน</b></td>
+            </tr>
+            <?php for ($g = 0; $g < count($asset_by_group); $g++): ?>
+            <tr>
+                <td  style="text-align: center;width: 10%"><?=$asset_by_group[$g]['code'] ?></td>
+                <td  style="text-align: right;width: 10%"><?= number_format($asset_by_group[$g]['qty'], 0) ?></td>
+                <td  style="text-align: center;width: 5%">ใบ</td>
+                <td  style="text-align: right;width: 10%"><?= number_format($asset_by_group[$g]['total_amount'], 2) ?></td>
+            </tr>
+            <?php endfor; ?>
+        </table>
+        <?php endif; ?>
+
+        <br/>
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
+                </div>
+            </div>
+            <div class="col-lg-3"></div>
+            <div class="col-lg-3"></div>
+            <div class="col-lg-3" style="text-align: right;">
+                <a href="index.php?r=assetrental/print&id=<?= $model->id ?>" class="btn btn-warning">พิมพ์</a>
+            </div>
+        </div>
+
+
+        <?php ActiveForm::end(); ?>
+
     </div>
 
-    <div class="row">
-        <div class="col-lg-2">
-            <?= $form->field($model, 'user_box')->widget(\toxor88\switchery\Switchery::className(), ['options' => ['label' => '', 'class' => 'form-control', 'onchange' => 'checkUserBox($(this))']])->label() ?>
-        </div>
-        <div class="col-lg-3">
-            <label for=""><?= $model->attributeLabels()['marget_emp_id'] ?></label>
-            <input type="text" class="form-control"
-                   value="<?= $model->isNewRecord ? \backend\models\Employee::findNameFromUserId(\Yii::$app->user->id) : \backend\models\Employee::findNameFromUserId($model->marget_emp_id) ?>"
-                   disabled="disabled">
-        </div>
-        <div class="col-lg-3">
-            <?php $model->market_emp_date = $model->isNewRecord ? date('d/m/Y') : date('d/m/Y', strtotime($model->market_emp_date)); ?>
-            <?= $form->field($model, 'market_emp_date')->widget(\kartik\date\DatePicker::className(), ['options' => ['readonly' => 'readonly']])->label() ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <?= $form->field($model, 'use_box_description')->textInput(['maxlength' => true, 'readonly' => 'readonly', 'class' => 'form-control use-box-description']) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <h4><b>เอกสารที่ต้องใช้</b></h4>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <?php if ($attatch_doc_data != null): ?>
-                <?php foreach ($attatch_doc_data as $valuex): ?>
-                    <?php $loop_is_select = ''; ?>
-                    <?php if ($model_attach_select != null): ?>
-                        <?php foreach ($model_attach_select as $valuey) {
-                            if ($valuey->customer_attatch_doc_id == $valuex->id) {
-                                $loop_is_select = 'checked';
-                            }
-                        }
-                        ?>
-                        <input type="checkbox" name="attatch_doc[]" <?= $loop_is_select ?>
-                               value="<?= $valuex->id ?>"> <?= $valuex->name ?>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            <?php endif; ?>
+
+    <div id="findModal" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <b>ค้นหาถัง <span class="checkseleted"></span></b>
+                        </div>
+                    </div>
+                </div>
+                <!--            <div class="modal-body" style="white-space:nowrap;overflow-y: auto">-->
+                <!--            <div class="modal-body" style="white-space:nowrap;overflow-y: auto;scrollbar-x-position: top">-->
+
+                <div class="modal-body">
+                    <div class="row" style="width: 100%">
+                        <div class="col-lg-3">
+                            <input type="text" class="form-control find-asset" name="find_asset" value=""
+                                   placeholder="ค้นหาถัง">
+                        </div>
+                        <div class="col-lg-2">
+                            <button type="submit" class="btn btn-primary btn-search-submit">
+                                <span class="fa fa-search"></span>
+                            </button>
+                        </div>
+                        <div class="col-lg-2">
+                            <!--                        <button type="button" class="close" data-dismiss="modal">&times;</button>-->
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12" style="text-align: right">
+                            <button class="btn btn-outline-success btn-emp-selected" data-dismiss="modalx" disabled><i
+                                        class="fa fa-check"></i> ตกลง
+                            </button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                                        class="fa fa-close text-danger"></i> ปิดหน้าต่าง
+                            </button>
+                        </div>
+                    </div>
+                    <div style="height: 10px;"></div>
+                    <input type="hidden" name="line_qc_product" class="line_qc_product" value="">
+                    <table class="table table-bordered table-striped table-find-list" width="100%">
+                        <thead>
+                        <tr>
+                            <th style="text-align: center">เลือก</th>
+                            <th>ขนาดถัง</th>
+                            <th>รหัสถัง</th>
+
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-success btn-emp-selected" data-dismiss="modalx" disabled><i
+                                class="fa fa-check"></i> ตกลง
+                    </button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal"><i
+                                class="fa fa-close text-danger"></i> ปิดหน้าต่าง
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
     <br/>
-    <div class="row">
-        <div class="col-lg-3">
-            <label for=""><?= $model->attributeLabels()['is_approve'] ?></label>
-            <input type="text"
-                   value="<?= $model->isNewRecord ? '' : ($model->is_approve ? 'อนุมัติ' : 'ยังไม่อนุมัติ') ?>"
-                   class="form-control" readonly>
-        </div>
-        <div class="col-lg-3">
-            <label for=""><?= $model->attributeLabels()['approve_emp_id'] ?></label>
-            <input type="text" class="form-control"
-                   value="<?= $model->isNewRecord ? '' : \backend\models\Employee::findNameFromUserId($model->approve_emp_id) ?>"
-                   readonly>
-        </div>
-        <div class="col-lg-3">
-            <label for=""><?= $model->attributeLabels()['approve_date'] ?></label>
-            <input type="text" class="form-control"
-                   value="<?= $model->isNewRecord ? '' : $model->approve_date != null ? date('d/m/Y', strtotime($model->approve_date)) : '' ?>"
-                   readonly>
-        </div>
-        <div class="col-lg-3">
-
-            <label for=""><?= $model->attributeLabels()['emp_operate_id'] ?></label>
-            <input type="text" class="form-control"
-                   value="<?= $model->isNewRecord ? '' : \backend\models\Employee::findNameFromUserId($model->emp_operate_id) ?>"
-                   readonly>
-        </div>
-    </div>
-    <?= $form->field($model, 'is_approve')->hiddenInput()->label(false) ?>
-    <?= $form->field($model, 'marget_emp_id')->hiddenInput()->label(false) ?>
-    <?= $form->field($model, 'approve_emp_id')->hiddenInput()->label(false) ?>
-    <?= $form->field($model, 'approve_date')->hiddenInput()->label(false) ?>
-    <?= $form->field($model, 'emp_operate_id')->hiddenInput()->label(false) ?>
-    <?= $form->field($model, 'payment_method_id')->hiddenInput(['id' => 'payment-method-id'])->label(false) ?>
-    <?= $form->field($model, 'customer_ref_id')->hiddenInput()->label(false) ?>
-    <div class="form-group">
-        <?php if ($model->isNewRecord || $model->is_approve == 0 || \backend\models\User::findName(\Yii::$app->user->id) == 'iceadmin' || \backend\models\User::findName(\Yii::$app->user->id) == 'mk' || \backend\models\User::findName(\Yii::$app->user->id) == 'adminm'): ?>
-            <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
-        <?php endif; ?>
-        <?php ActiveForm::end(); ?>
-        <?php if (!$model->isNewRecord) { ?>
-            <?php if ($model->is_approve == 0 && \backend\models\User::findName(\Yii::$app->user->id) == 'iceadmin' || \backend\models\User::findName(\Yii::$app->user->id) == 'mk' || \backend\models\User::findName(\Yii::$app->user->id) == 'adminm') { ?>
-                <div class="btn btn-info" onclick="recApprove();">อนุมัติ</div>
-            <?php } ?>
-            <?php if ($model->is_approve == 1) { ?>
-                <!--                <div class="btn btn-warning" onclick="createNewCustomer();">สร้างรหัสลูกค้า</div>-->
-            <?php } ?>
-        <?php } ?>
-        <?php if (!$model->isNewRecord): ?>
-            <a class="btn btn-default" href="index.php?r=customerrequest/print&id=<?= $model->id ?>">พิมพ์</a>
-        <?php endif; ?>
-    </div>
-</div>
-
-<form id="form-convert" action="index.php?r=customerrequest/convertcustomer" method="post">
-    <input type="hidden" class="current-request-id" name="request_id" value="<?= $model->id ?>">
-</form>
-<form action="index.php?r=customerrequest/approve" id="form-customer-approve" method="post">
-    <input type="hidden" name="request_id" class="request-approve-id" value="<?= $model->id ?>">
-</form>
-<?php //echo 'approve is '.$model->is_approve;?>
-<?php if ($model->is_approve == 100): ?>
-    <hr/>
-    <h5>แนบเอกสารสัญญา</h5>
-    <form action="index.php?r=customerrequest/addcontractdoc" method="post" id="form-add-contract-doc" enctype="multipart/form-data">
-        <input type="hidden" name="customer_req_id" value="<?=$model->id?>">
-        <div class="row">
-            <div class="col-lg-3">
-                <input type="file" class="form-control" name="contract_doc">
-            </div>
-            <div class="col-lg-3">
-                <button class="btn btn-primary">แนบเอกสารสัญญา</button>
-            </div>
-            <div class="col-lg-3"></div>
-            <div class="col-lg-3"></div>
-        </div>
-    </form>
-    <br>
-    <?php
-    $contract_data = getShopContract($model->customer_ref_id);
-    ?>
-    <div class="row">
-        <div class="col-lg-12">
-            <table class="table table-bordered">
-                <thead>
-                <tr>
-                    <th style="width: 5%;text-align: center;">#</th>
-                    <th>ไฟล์</th>
-                    <th style="width: 5%;">-</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php if($contract_data!=null):?>
-                    <?php for($i=0;$i<=count($contract_data)-1;$i++):?>
-                        <tr>
-                            <td style="text-align: center;"><?=$i +1?></td>
-                            <td>
-                                <input type="hidden" class="remove-photo" value="<?=$contract_data[$i]['id']?>">
-                                <a href="<?= \Yii::$app->getUrlManager()->getBaseUrl() . '/uploads/files/customers/' . $contract_data[$i]['doc'] ?>"
-                                   target="_blank"><?= $contract_data[$i]['doc'] ?></a>
-                            </td>
-                            <td>
-                                <div class="btn btn-sm btn-danger" data-var="<?=$contract_data[$i]['doc']?>" onclick="removecontactfile($(this))">ลบ</div>
-                            </td>
-                        </tr>
-                    <?php endfor;?>
-                <?php endif;?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <hr>
-    <h5>แนบรูปถังหน้าร้าน</h5>
-    <form action="index.php?r=customerrequest/addshopphoto" method="post" id="form-add-contract-doc" enctype="multipart/form-data">
-        <input type="hidden" name="customer_req_id" value="<?=$model->id?>">
-        <div class="row">
-            <div class="col-lg-3">
-                <input type="file" class="form-control" name="shop_asset_file[]" multiple>
-            </div>
-            <div class="col-lg-3">
-                <button class="btn btn-primary">แนบรูปภาพ</button>
-            </div>
-            <div class="col-lg-3"></div>
-            <div class="col-lg-3"></div>
-        </div>
-    </form>
-
-    <br>
-    <?php
-        $photo_data = getAssetShopPhoto($model->id);
-    ?>
-    <div class="row">
-        <div class="col-lg-12">
-            <table class="table table-bordered">
-                <thead>
-                <tr>
-                    <th style="width: 5%;text-align: center;">#</th>
-                    <th>ไฟล์</th>
-                    <th style="width: 5%;">-</th>
-                </tr>
-                </thead>
-                <tbody>
-                 <?php if($photo_data!=null):?>
-                 <?php for($i=0;$i<=count($photo_data)-1;$i++):?>
-                         <tr>
-                             <td style="text-align: center;"><?=$i +1?></td>
-                             <td>
-                                 <input type="hidden" class="remove-photo" value="<?=$photo_data[$i]['id']?>">
-                                 <a href="<?= \Yii::$app->getUrlManager()->getBaseUrl() . '/uploads/files/customers/' . $photo_data[$i]['photo'] ?>"
-                                    target="_blank"><?= $photo_data[$i]['photo'] ?></a>
-                             </td>
-                             <td>
-                                <div class="btn btn-sm btn-danger" data-var="<?=$photo_data[$i]['id']?>" onclick="removephoto($(this))">ลบ</div>
-                             </td>
-                         </tr>
-                 <?php endfor;?>
-                <?php endif;?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <form id="form-delete-photo" action="<?=\yii\helpers\Url::to(['customerrequest/deleteassetphoto'],true)?>" method="post">
-        <input type="hidden" class="remove-photo-id" name="remove_id" value="">
-        <input type="hidden" name="req_id" value="<?=$model->id;?>">
-    </form>
-
-    <form id="form-delete-contact-file" action="<?=\yii\helpers\Url::to(['customerrequest/deletecontactfile'],true)?>" method="post">
-        <input type="hidden" class="remove-photo-id" name="remove_id" value="">
-        <input type="hidden" name="req_id" value="<?=$model->id;?>">
-        <input type="hidden" class="remove-file-name" name="remove_file_name" value="">
-    </form>
-<?php endif; ?>
 <?php
-function getRequestProductQty($req_id, $product_id)
+function creategroup($model_id)
 {
-    $qty = \common\models\CustomerRequestProduct::find()->where(['customer_req_id' => $req_id, 'product_id' => $product_id])->sum('qty');
-    return $qty;
-}
-
-function getShopContract($id){
     $data = [];
-    $contract_no = \backend\models\Customer::find()->where(['id'=>$id])->one();
-    if($contract_no){
-        array_push($data,['id'=>$contract_no->id,'doc'=>$contract_no->contact_file]);
-    }
-    return $data;
-}
-
-function getAssetShopPhoto($cus_req_id){
-    $data = [];
-    if($cus_req_id){
-        $model = \common\models\CustomerRequestAssetPhoto::find()->where(['customer_req_id'=>$cus_req_id])->all();
-        if($model){
-            foreach ($model as $value){
-                array_push($data,['id'=>$value->id,'photo'=>$value->photo]);
+    if ($model_id) {
+        $sql = "SELECT t1.remark,SUM(t1.price) as amount,COUNT(t1.id) as qty  from asset_rental_line as t1 WHERE t1.asset_rental_id =" . $model_id;
+        $sql .= " AND t1.use_status=1";
+        $sql .= " GROUP BY t1.remark";
+        $sql .= " ORDER BY t1.remark";
+        $query = \Yii::$app->db->createCommand($sql);
+        $model = $query->queryAll();
+        if ($model) {
+            for ($i = 0; $i <= count($model) - 1; $i++) {
+                array_push($data, [
+                    'code' => $model[$i]['remark'],
+                    'qty' => $model[$i]['qty'],
+                    'total_amount' => $model[$i]['amount'],
+                ]);
             }
         }
     }
@@ -703,197 +396,330 @@ function getAssetShopPhoto($cus_req_id){
 }
 
 ?>
-
 <?php
-$url_to_getcity = \yii\helpers\Url::to(['customer/showcity'], true);
-$url_to_getdistrict = \yii\helpers\Url::to(['customer/showdistrict'], true);
-$url_to_getzipcode = \yii\helpers\Url::to(['customer/showzipcode'], true);
-$url_to_getAddress = \yii\helpers\Url::to(['customer/showaddress'], true);
-$url_to_deletephoto = \yii\helpers\Url::to(['customerrequest/delete-photo'],true);
-$csrf = \Yii::$app->request->csrfToken;
-$js = <<< JS
-$(document).ready(function() {
-    // จัดการเมื่อ checkbox ถูกคลิก
-    $('.standard-item-checkbox').on('change', function() {
-        var standardId = $(this).data('standard-id');
-        var itemId = $(this).data('item-id');
-        var isChecked = $(this).is(':checked');
+$url_to_find_asset = \yii\helpers\Url::to(['assetrental/findasset'], true);
+
+$js = <<<JS
+var selecteditem = [];
+var removelist = [];
+$(function(){
+    $(".btn-emp-selected").click(function () {
+        var linenum = 0;
+        var line_count = 0;
+        var emp_qty = $(".selected-emp-qty").val();
+        //alert(emp_qty);
         
-        // สามารถเพิ่ม logic เพิ่มเติมได้ที่นี่
-        console.log('Standard ID:', standardId, 'Item ID:', itemId, 'Checked:', isChecked);
+        $("#table-list tbody tr").each(function () {
+            if($(this).closest('tr').find('.line-car-emp-code').val()  != ''){
+                // alert($(this).closest('tr').find('.line-car-emp-code').val());
+             line_count += 1;   
+            }
+        });
+      // alert(selecteditem.length + line_count);
+      // alert(emp_qty);
+       // if((line_count + selecteditem.length ) > emp_qty){
+       // if((line_count + selecteditem.length ) > 2){
+       //      alert('จำนวนพนักงานเกินกว่าที่กำหนด');
+       //      return false;
+       //  }
+        
+        
+        if (selecteditem.length > 0) {
+            for (var i = 0; i <= selecteditem.length - 1; i++) {
+                var asset_id = selecteditem[i]['id'];
+                var asset_code = selecteditem[i]['code'];
+                var asset_size = selecteditem[i]['asset_size'];
+                var asset_rent_price = selecteditem[i]['asset_rent_price'];
+               // alert(asset_code);
+                //alert(line_prod_id);
+                if(check_dup(asset_id) == 1){
+                        alert("มีรายการ " +asset_code+ " ในรายการแล้ว");
+                        return false;
+                }
+                
+                var tr = $("#table-list tbody tr:last");
+                
+                if (tr.closest("tr").find(".line-asset-id").val() == "") {
+                  //  alert(line_prod_code);
+                    tr.closest("tr").find(".line-asset-id").val(asset_id);
+                    tr.closest("tr").find(".line-asset-code").val(asset_code);
+                    tr.closest("tr").find(".line-size").val(asset_size);
+                    tr.closest("tr").find(".line-price").val(asset_rent_price);
+                    //console.log(line_prod_code);
+                } else {
+                    var clone = tr.clone();
+                    //clone.find(":text").val("");
+                    // clone.find("td:eq(1)").text("");
+                    clone.closest("tr").find(".line-asset-id").val(asset_id);
+                    clone.closest("tr").find(".line-asset-code").val(asset_code);
+                    clone.closest("tr").find(".line-size").val(asset_size);
+                    clone.closest("tr").find(".line-price").val(asset_rent_price);
+                    tr.after(clone);
+                    //cal_num();
+                }
+            }
+            
+        //  cal_num();
+        }
+      
+        selecteditem = [];
+      
+
+        $("#table-find-list tbody tr").each(function () {
+            $(this).closest("tr").find(".btn-line-select").removeClass('btn-success');
+            $(this).closest("tr").find(".btn-line-select").addClass('btn-outline-success');
+        });
+        
+       
+        
+        $(".btn-emp-selected").removeClass('btn-success');
+        $(".btn-emp-selected").addClass('btn-outline-success');
+        $("#findModal").modal('hide');
     });
     
-      // ลบรูปภาพ
-    $(document).on('click', '.delete-photo', function() {
-        var photoId = $(this).data('photo-id');
-        var photoItem = $(this).closest('.photo-item');
-        
-        if (confirm('คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?')) {
-            $.ajax({
-                url: '$url_to_deletephoto',
-                method: 'POST',
-                data: {
-                    photo_id: photoId,
-                    _csrf: "$csrf",
-                },
-                success: function(response) {
-                    if (response.success) {
-                        photoItem.fadeOut(300, function() {
-                            $(this).remove();
-                        });
-                    } else {
-                        alert('เกิดข้อผิดพลาดในการลบรูปภาพ');
-                    }
-                },
-                error: function() {
-                    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-                }
-            });
+     $(".btn-search-submit").click(function(){
+       var find_price = $(".find-asset").val();
+        $.ajax({
+          type: 'post',
+          dataType: 'html',
+          url:'$url_to_find_asset',
+          async: false,
+          data: {'find_asset':find_price},
+          success: function(data){
+            //  alert(data);
+              $(".table-find-list tbody").html(data);
+          },
+          error: function(err){
+              alert(err);
+          }
+          
+        });
+    
+   });
+
+   $("#is-paid-switch").on('change', function() {
+        if ($(this).is(':checked')) {
+            $(".payment-info").show();
+        } else {
+            $(".payment-info").hide();
         }
     });
 
-    // Preview รูปภาพก่อนอัพโหลด
-    $(document).on('change', 'input[type="file"]', function() {
-        var files = this.files;
-        var previewContainer = $(this).siblings('.photo-preview');
-        
-        if (previewContainer.length === 0) {
-            previewContainer = $('<div class="photo-preview" style="margin-top: 5px;"></div>');
-            $(this).after(previewContainer);
-        }
-        
-        previewContainer.empty();
-        
-        if (files.length > 0) {
-            previewContainer.append('<small class="text-muted">ตัวอย่างรูปภาพที่จะอัพโหลด:</small><br>');
-            
-            for (var i = 0; i < Math.min(files.length, 5); i++) { // แสดงแค่ 5 รูปแรก
-                if (files[i].type.match('image.*')) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewContainer.append(
-                            '<img src="' + e.target.result + '" style="max-width: 50px; max-height: 50px; margin: 2px; border: 1px solid #ddd; border-radius: 3px;">'
-                        );
-                    };
-                    reader.readAsDataURL(files[i]);
-                }
-            }
-            
-            if (files.length > 5) {
-                previewContainer.append('<small class="text-muted">และอีก ' + (files.length - 5) + ' รูป...</small>');
-            }
-        }
-    });
-
-    // เคลียร์ preview เมื่อ reset form
-    $('form').on('reset', function() {
-        $('.photo-preview').empty();
-    });
 });
-function createNewCustomer(){
-    var request_id = $(".current-request-id").val();
-    if(request_id > 0){
-        if(confirm('คุณมันใจที่จะสร้างรหัสลูกค้าใหม่ใช่หรือไม่ ?')){
-            $("form#form-convert").submit();
+function check_dup(asset_id){
+    var res = 0;
+    if(asset_id > 0){
+       $("#table-list tbody tr").each(function(){
+           if($(this).closest('tr').find('.line-asset-id').val() == asset_id){
+               res = 1;
+           }
+       });
+    }
+    return res;
+}
+// function selectallcash(){
+//     $(".table-list tbody tr").each(function(){
+//         $(this).closest('tr').find('.line-payment-type').val(0);
+//         $(this).closest('tr').find('.line-pay-bank').removeClass('btn-success');
+//         $(this).closest('tr').find('.line-pay-bank').addClass('btn-default');
+//         $(this).closest('tr').find('.line-pay-cash').removeClass('btn-default');
+//         $(this).closest('tr').find('.line-pay-cash').addClass('btn-success');
+//     });
+// }
+// function selectallbank(){
+//     $(".table-list tbody tr").each(function(){
+//         $(this).closest('tr').find('.line-payment-type').val(1);
+//         $(this).closest('tr').find('.line-pay-cash').removeClass('btn-success');
+//         $(this).closest('tr').find('.line-pay-cash').addClass('btn-default');
+//         $(this).closest('tr').find('.line-pay-bank').removeClass('btn-default');
+//         $(this).closest('tr').find('.line-pay-bank').addClass('btn-success');
+//     });
+// }
+
+function checkpaytype2(e){
+    var val = e.attr('data-var');
+        e.closest('tr').find('.line-use-status').val(val);
+        e.closest('tr').find('.line-no-use-check').removeClass('btn-danger');
+        e.closest('tr').find('.line-no-use-check').addClass('btn-default');
+        e.removeClass('btn-default');
+        e.addClass('btn-success');
+}
+function checkpaytype3(e){
+    var val = e.attr('data-var');
+        e.closest('tr').find('.line-use-status').val(val);
+        e.closest('tr').find('.line-use-check').removeClass('btn-success');
+        e.closest('tr').find('.line-use-check').addClass('btn-default');
+        e.removeClass('btn-default');
+        e.addClass('btn-danger');
+}
+function checkpaytype4(e){
+    var val = e.attr('data-var');
+        e.closest('tr').find('.line-return-status').val(val);
+        e.closest('tr').find('.line-no-return-check').removeClass('btn-danger');
+        e.closest('tr').find('.line-no-return-check').addClass('btn-default');
+        e.removeClass('btn-default');
+        e.addClass('btn-success');
+}
+function checkpaytype5(e){
+    var val = e.attr('data-var');
+        e.closest('tr').find('.line-return-status').val(val);
+        e.closest('tr').find('.line-return-check').removeClass('btn-success');
+        e.closest('tr').find('.line-return-check').addClass('btn-default');
+        e.removeClass('btn-default');
+        e.addClass('btn-danger');
+}
+
+function selectallcash(){
+    $("#table-list tbody tr").each(function(){
+        $(this).closest('tr').find('.line-use-status').val(1);
+        $(this).closest('tr').find('.line-no-use-check').removeClass('btn-danger');
+        $(this).closest('tr').find('.line-no-use-check').addClass('btn-default');
+        $(this).closest('tr').find('.line-use-check').removeClass('btn-default');
+        $(this).closest('tr').find('.line-use-check').addClass('btn-success');
+    });
+}
+function selectallbank(){
+    $("#table-list tbody tr").each(function(){
+        $(this).closest('tr').find('.line-return-status').val(1);
+        $(this).closest('tr').find('.line-no-return-check').removeClass('btn-danger');
+        $(this).closest('tr').find('.line-no-return-check').addClass('btn-default');
+        $(this).closest('tr').find('.line-return-check').removeClass('btn-default');
+        $(this).closest('tr').find('.line-return-check').addClass('btn-success');
+    });
+}
+
+function showfindasset(e){
+    //var customer_id = $('.selected-customer-id').val();
+  // alert(customer_id);
+    $.ajax({
+      type: 'post',
+      dataType: 'html',
+      url:'$url_to_find_asset',
+      async: false,
+      data: {'customer_id': ''},
+      success: function(data){
+       //   alert(data);
+          $(".table-find-list tbody").html(data);
+          $("#findModal").modal("show");
+      },
+      error: function(err){
+          alert(err);
+      }
+      
+    });
+}
+function addselecteditem(e) {
+        var id = e.attr('data-var');
+        var asset_id = e.closest('tr').find('.line-find-asset-id').val();
+        var asset_code = e.closest('tr').find('.line-find-asset-code').val();
+        var asset_size = e.closest('tr').find('.line-find-asset-size').val();
+        var asset_rent_price = e.closest('tr').find('.line-find-asset-price').val();
+        ///////
+        if (id) {
+            //alert(asset_rent_price);
+            if(selecteditem!=null){
+                $.each(selecteditem, function (i, el) {
+                    if (this.id == id) {
+                        alert("คุณได้ทำการเลือกรหัสถังนี้ไปแล้ว");
+                        return false;
+                    }
+                });
+            }
+            // if(checkhasempdaily(id)){
+            //     alert("คุณได้ทำการจัดรถให้พนักงานคนนี้ไปแล้ว");
+            //     return false;
+            // }
+            if (e.hasClass('btn-outline-success')) {
+                var obj = {};
+                obj['id'] = asset_id;
+                obj['code'] = asset_code;
+                obj['asset_size'] = asset_size;
+                obj['asset_rent_price'] = asset_rent_price;
+                
+               // alert("OKKK" + asset_code);
+               
+                selecteditem.push(obj);
+                
+                e.removeClass('btn-outline-success');
+                e.addClass('btn-success');
+                disableselectitem();
+                console.log(selecteditem);
+            } else {
+                //selecteditem.pop(id);
+                $.each(selecteditem, function (i, el) {
+                    if (this.id == id) {
+                        selecteditem.splice(i, 1);
+                    }
+                });
+                e.removeClass('btn-success');
+                e.addClass('btn-outline-success');
+                
+                disableselectitem();
+                console.log(selecteditem);
+              
+            }
         }
-    }
+        
 }
-function getCity(e){
-    $.post("$url_to_getcity"+"&id="+e.val(),function(data){
-        $("#selected-city").html(data);
-        $("#selected-city").prop("disabled","");
-    });
+function disableselectitem() {
+        if (selecteditem.length > 0) {
+            $(".btn-emp-selected").prop("disabled", "");
+            $(".btn-emp-selected").removeClass('btn-outline-success');
+            $(".btn-emp-selected").addClass('btn-success');
+        } else {
+            $(".btn-emp-selected").prop("disabled", "disabled");
+            $(".btn-emp-selected").removeClass('btn-success');
+            $(".btn-emp-selected").addClass('btn-outline-success');
+        }
 }
-
-function getDistrict(e){
-    $.post("$url_to_getdistrict"+"&id="+e.val(),function(data){
-                                          $("#selected-district").html(data);
-                                          $("selected-district").prop("disabled","");
-
-                                        });
-//                                           $.post("$url_to_getzipcode"+"&id="+e.val(),function(data){
-//                                                $("#zipcode").val(data);
-//                                              });
-}
-function getPaymentType(checkbox) {
-   // alert(checkbox.val());
-  const checkboxes = document.querySelectorAll('.payment-checkbox');
-  //alert(checkboxes.length);
-  checkboxes.forEach((box) => {
-//  console.log(box.value);
-   if(box.value != checkbox.val()){
-     box.checked = false;
-   }
-  });
-  $("#payment-method-id").val(checkbox.val());
-}
-
-function recApprove(){
-    //e.preventDefault();
-    var request_id = $(".request-approve-id").val();
-    if(request_id =='' || request_id == 0 || typeof(request_id) === "undefined"){
-        return;
-    }
-    swal({
-        title: "ต้องการอนุมัติรายการนี้ใช่หรือไม่",
-        text: "",
-        type: "info",
-        showCancelButton: true,
-        closeOnConfirm: true,
-        showLoaderOnConfirm: true
-    }, function () {
-        $("form#form-customer-approve").submit();
-    });
-}
-
-function removephoto(e){
-    var id = e.attr("data-var");
-    if(id){
-        swal({
-        title: "ต้องการลบรายการนี้ใช่หรือไม่",
-        text: "",
-        type: "info",
-        showCancelButton: true,
-        closeOnConfirm: true,
-        showLoaderOnConfirm: true
-    }, function () {
-        $(".remove-photo-id").val(id);
-        $("form#form-delete-photo").submit();
-    });
-    }
-    
-}
-function removecontactfile(e){
-    var id = e.attr("data-var");
-    if(id != ''){
-        swal({
-        title: "ต้องการลบรายการนี้ใช่หรือไม่",
-        text: "",
-        type: "info",
-        showCancelButton: true,
-        closeOnConfirm: true,
-        showLoaderOnConfirm: true
-    }, function () {
-        $(".remove-photo-id").val(id);
-        $(".remove-file-name").val(id);
-        $("form#form-delete-contact-file").submit();
-    });
-    }
-    
-}
-function checkUserBox(e){
-   if(e.is(":checked")){
-      // alert('chekced');
-       $(".use-box-description").attr("readonly",false);
-       $(".use-box-description").attr("required",true);
-   }else{
-      // alert('unchecked');
-       $(".use-box-description").attr("readonly",true);
-       $(".use-box-description").attr("required",false);
-   }
-}
-
-
+function removeline(e){
+     
+          if(confirm('ต้องการลบรายการนี้ใช่หรือไม่ ?')){
+               if($("#table-list tbody tr").length == 1){
+                   e.closest("tr").find(".line-asset-id").val('');
+                   e.closest("tr").find(".line-asset-code").val('');
+                   e.closest("tr").find(".line-size").val('');
+                   
+                    $(".table-after-list tbody tr").each(function(){
+                        $(this).closest("tr").find("td:eq(0)").html('');
+                        $(this).closest("tr").find("td:eq(1)").html('');
+                        $(this).closest("tr").find("td:eq(2)").html('');
+                        $(this).closest("tr").find("td:eq(3)").html('');
+                        $(this).closest("tr").find("td:eq(4)").html('');
+                        $(this).closest("tr").find(".product-group-line-id").val('');
+                    });
+                   
+                 }else{
+                    var recid = e.attr("data-var");
+                     if(recid > 0){
+                         //alert(recid);
+                         removelist.push(recid);
+                         e.parent().parent().remove();
+                     }
+                     $(".remove-list").val(removelist);
+                  // e.parent().parent().remove();
+               }
+               
+               var line_order_id = e.closest("tr").find(".line-order-selected-id").val();
+               if(line_order_id != ''){
+                   var result = line_order_id.split(',');
+                   for(var x= 0; x<= result.length -1 ;x++){
+                       for(var z=0;z<=selectedorderid.length-1;z++){
+                           if(selectedorderid[z] == result[x]){
+                                selectedorderid.splice(z, 1);
+                           }
+                       }
+                   }
+               }
+          }
+          
+      var linenum = 0;
+       $("#table-list tbody tr").each(function () {
+            linenum += 1;
+       });
+       //$(".selected-emp-qty").val(linenum);
+}  
 JS;
+
 $this->registerJs($js, static::POS_END);
 ?>
