@@ -13,11 +13,12 @@ class CardailySearch extends Cardaily
 {
     public $route_id;
     public $car_name;
+    public $has_driver;
 
     public function rules()
     {
         return [
-            [['id', 'car_id', 'employee_id', 'is_driver', 'status', 'created_at', 'updated_at', 'created_by', 'updated_by'], 'integer'],
+            [['id', 'car_id', 'employee_id', 'is_driver', 'status', 'created_at', 'updated_at', 'created_by', 'updated_by', 'has_driver'], 'integer'],
             [['trans_date'], 'safe'],
             [['route_id'], 'integer'],
             [['car_name'], 'string'],

@@ -216,6 +216,7 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                     //    'useWithAddon'=>true,
                     'convertFormat' => true,
                     'options' => [
+                        'id' => 'cal-date',
                         'class' => 'form-control',
                         'placeholder' => '',
                         //  'onchange' => 'this.form.submit();',
@@ -268,6 +269,7 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
 
     $all_qty = 0;
     $all_cash = 0;
+    $all_cash_transfer = 0;
     $all_credit = 0;
 
     $all_free = 0;
@@ -358,11 +360,13 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
             <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: yellow;">จำนวนรวม</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">คืน</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">ขายสด</td>
+            <td style="text-align: right;padding: 8px;border: 1px solid grey;">ขายสดโอน</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">ขายเชื่อ</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">ชำระหนี้สด</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;">ชำระหนี้โอน</td>
             <td style="text-align: right;padding: 8px;border: 1px solid grey;background-color: mediumseagreen">รวมเงินสด
             </td>
+            <td style="width: 150px;text-align: center;">วันที่สลิป</td>
         </tr>
 
         <?php foreach ($model_line as $value): ?>
@@ -372,37 +376,31 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
 
             $line_credit_amount_total = 0;
             $line_cash_amount_total = 0;
+            $line_cash_transfer_amount_total = 0;
 
-//            $total_line = $value->remain_amount; // \backend\models\Orders::getlineremainsum($value->order_id, $model->customer_id);
-//            $total_all = $total_all + $total_line;
-//
-//            $line_qty = getOrderQty($value->order_id);
-//            $total_all_line_qty = $total_all_line_qty + $line_qty;
-//              $order_product = getOrderQty2($value->order_id);
-//              $total_all_line_qty = 0;
-            $car_data = getCardata($value->route_id, $from_date);
+            $car_data = getCardata($value->route_id, $from_date, $to_date);
             ?>
             <tr>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= \backend\models\Deliveryroute::findName($value->route_id) ?></td>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data != null ? $car_data[0]['car_name'] : '' ?></td>
                 <td style="text-align: left;padding: 8px;border: 1px solid grey"><?= $car_data != null ? $car_data[0]['emp_name'] : '' ?></td>
                 <?php
-                $product_line_free_qty = getFree($value->route_id, $from_date, $to_date);
+                $product_line_free_qty = getFree($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_free = ($all_free + ($product_line_free_qty));
 
                 //                $product_line_receive_cash = getPayment($from_date,$to_date,$value->route_id,$company_id,$branch_id);
-                $product_line_receive_cash = getReceiveCash($value->route_id, $from_date, $to_date);
+                $product_line_receive_cash = getReceiveCash($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_receive_cash = ($all_receive_cash + ($product_line_receive_cash));
 
-                $product_line_receive_transfer = getReceiveTransfer($value->route_id, $from_date, $to_date);
+                $product_line_receive_transfer = getReceiveTransfer($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_receive_transfer = ($all_receive_transfer + ($product_line_receive_transfer));
 
-                $return_line_qty = getReturnCarQty($value->route_id, $from_date, $to_date);
+                $return_line_qty = getReturnCarQty($value->route_id, $from_date, $to_date, $company_id, $branch_id);
                 $all_return_qty = ($all_return_qty + ($return_line_qty));
                 ?>
                 <?php for ($x = 0; $x <= count($product_header) - 1; $x++): ?>
                     <?php
-                    $product_line_qty = getOrderQty2($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_qty = getOrderQty2($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_qty_total = ($line_qty_total + $product_line_qty);
 
                     $all_qty = ($all_qty + $product_line_qty);
@@ -418,11 +416,15 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                     }
 
 
-                    $product_line_cash_amount = getCashAmount($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_cash_amount = getCashAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_cash_amount_total = ($line_cash_amount_total + $product_line_cash_amount);
                     $all_cash = ($all_cash + $product_line_cash_amount);
 
-                    $product_line_credit_amount = getCreditAmount($value->route_id, $product_header[$x], $from_date, $to_date);
+                    $product_line_cash_transfer_amount = getCashTransferAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
+                    $line_cash_transfer_amount_total = ($line_cash_transfer_amount_total + $product_line_cash_transfer_amount);
+                    $all_cash_transfer = ($all_cash_transfer + $product_line_cash_transfer_amount);
+
+                    $product_line_credit_amount = getCreditAmount($value->route_id, $product_header[$x], $from_date, $to_date, $company_id, $branch_id);
                     $line_credit_amount_total = ($line_credit_amount_total + $product_line_credit_amount);
                     $all_credit = ($all_credit + $product_line_credit_amount);
                     ?>
@@ -434,10 +436,12 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: yellow;font-weight: bold;"><?= number_format(($line_qty_total + $product_line_free_qty), 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $return_line_qty == 0 ? "-" : number_format($return_line_qty, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $line_cash_amount_total == 0 ? "-" : number_format($line_cash_amount_total, 2) ?></td>
+                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $line_cash_transfer_amount_total == 0 ? "-" : number_format($line_cash_transfer_amount_total, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $line_credit_amount_total == 0 ? "-" : number_format($line_credit_amount_total, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $product_line_receive_cash == 0 ? "-" : number_format($product_line_receive_cash, 2) ?></td>
                 <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey"><?= $product_line_receive_transfer == 0 ? "-" : number_format($product_line_receive_transfer, 2) ?></td>
-                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen;font-weight: bold;"><?= number_format(($line_cash_amount_total + $line_credit_amount_total), 2) ?></td>
+                <td style="text-align: right;padding: 8px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen;font-weight: bold;"><?= number_format(($line_cash_amount_total + $product_line_receive_cash), 2) ?></td>
+                <td style="width: 10px"></td>
             </tr>
         <?php endforeach; ?>
         <tfoot>
@@ -455,16 +459,13 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                 <b><?= number_format(($all_qty + $all_free), 2) ?></b></td>
             <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey">
                 <b><?= number_format($all_return_qty, 2) ?></b></td>
-            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey">
-                <b><?= number_format($all_cash, 2) ?></b></td>
-            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey">
-                <b><?= number_format($all_credit, 2) ?></b></td>
-            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey">
-                <b><?= number_format($all_receive_cash, 2) ?></b></td>
-            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey">
-                <b><?= number_format($all_receive_transfer, 2) ?></b></td>
-            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen">
-                <b><?= number_format(($all_cash + $all_credit), 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_cash, 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_cash_transfer, 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_credit, 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_receive_cash, 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey"><b><?= number_format($all_receive_transfer, 2) ?></b></td>
+            <td style="text-align: right;padding: 2px;padding-right: 5px;border: 1px solid grey;background-color: mediumseagreen"><b><?= number_format(($all_cash + $all_receive_cash), 2) ?></b></td>
+            <td style="width: 10px"></td>
         </tr>
         </tfoot>
     </table>
@@ -477,27 +478,13 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
         <button id="btn-print" class="btn btn-warning" onclick="printContent('div1')">Print</button>
     </td>
 </table>
-<!--<script src="../web/plugins/jquery/jquery.min.js"></script>-->
-<!--<script>-->
-<!--    $(function(){-->
-<!--       alert('');-->
-<!--    });-->
-<!--   window.print();-->
-<!--</script>-->
 <?php
-//echo '<script src="../web/plugins/jquery/jquery.min.js"></script>';
-//echo '<script type="text/javascript">alert();</script>';
-?>
-</body>
-</html>
-
-<?php
-function getOrderQty2($route_id, $product_id, $from_date, $to_date)
+function getOrderQty2($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id && $product_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_qty) as credit_qty', 'SUM(cash_qty) as cash_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->credit_qty + $model_qty->cash_qty);
         }
@@ -505,12 +492,12 @@ function getOrderQty2($route_id, $product_id, $from_date, $to_date)
     return $data;
 }
 
-function getFree($route_id, $from_date, $to_date)
+function getFree($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(free_qty) as free_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id])->groupBy(['route_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['route_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->free_qty);
         }
@@ -518,23 +505,15 @@ function getFree($route_id, $from_date, $to_date)
     return $data;
 }
 
-function getReturncarQty($route_id, $from_date, $to_date)
+function getReturnCarQty($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
-    $data = 0;
-//    if ($route_id) {
-//        $model_qty = \common\models\TransactionCarSale::find()->select(['return_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-//            ->andFilterWhere(['route_id' => $route_id])->one();
-//        if ($model_qty != null) {
-//            $data = ($model_qty->return_qty);
-//        }
-//    }
-    $model_qty = \common\models\TransactionCarSaleRoutePay::find()
-        ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-        ->andFilterWhere(['route_id' => $route_id])->sum('return_car_qty');
+    $qty = 0;
+    $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(return_qty) as return_qty'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+        ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['route_id'])->one();
     if ($model_qty != null) {
-        $data = ($model_qty);
+        $qty = ($model_qty->return_qty);
     }
-    return $data;
+    return $qty;
 }
 
 function getPayment($f_date, $t_date, $find_user_id, $company_id, $branch_id)
@@ -580,12 +559,12 @@ function getPayment($f_date, $t_date, $find_user_id, $company_id, $branch_id)
 //    return $data;
 //}
 
-function getCashAmount($route_id, $product_id, $from_date, $to_date)
+function getCashAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id && $product_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(cash_amount) as cash_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->cash_amount);
         }
@@ -593,12 +572,23 @@ function getCashAmount($route_id, $product_id, $from_date, $to_date)
     return $data;
 }
 
-function getCreditAmount($route_id, $product_id, $from_date, $to_date)
+function getCashTransferAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id){
+    $data = 0;
+    if ($route_id && $product_id) {
+        $data = \common\models\QuerySaleMobileDataNew::find()
+            ->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])
+            ->sum('line_total_cash_transfer');
+    }
+    return $data;
+}
+
+function getCreditAmount($route_id, $product_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id && $product_id) {
         $model_qty = \common\models\TransactionCarSale::find()->select(['SUM(credit_amount) as credit_amount'])->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id])->groupBy(['product_id'])->one();
+            ->andFilterWhere(['route_id' => $route_id, 'product_id' => $product_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->groupBy(['product_id'])->one();
         if ($model_qty != null) {
             $data = ($model_qty->credit_amount);
         }
@@ -606,7 +596,7 @@ function getCreditAmount($route_id, $product_id, $from_date, $to_date)
     return $data;
 }
 
-function getReceiveCash($route_id, $from_date, $to_date)
+function getReceiveCash($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
     if ($route_id) {
@@ -617,7 +607,7 @@ function getReceiveCash($route_id, $from_date, $to_date)
 //        }
         $model_qty = \common\models\TransactionCarSaleRoutePay::find()
             ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-            ->andFilterWhere(['route_id' => $route_id])->sum('cash_amount');
+            ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->sum('cash_amount');
         if ($model_qty != null) {
             $data = ($model_qty);
         }
@@ -625,7 +615,7 @@ function getReceiveCash($route_id, $from_date, $to_date)
     return $data;
 }
 
-function getReceiveTransfer($route_id, $from_date, $to_date)
+function getReceiveTransfer($route_id, $from_date, $to_date, $company_id, $branch_id)
 {
     $data = 0;
 //    if ($route_id) {
@@ -637,7 +627,7 @@ function getReceiveTransfer($route_id, $from_date, $to_date)
 //    }
     $model_qty = \common\models\TransactionCarSaleRoutePay::find()
         ->where(['BETWEEN', 'date(trans_date)', date('Y-m-d', strtotime($from_date)), date('Y-m-d', strtotime($to_date))])
-        ->andFilterWhere(['route_id' => $route_id])->sum('transfer_amount');
+        ->andFilterWhere(['route_id' => $route_id, 'company_id' => $company_id, 'branch_id' => $branch_id])->sum('transfer_amount');
     if ($model_qty != null) {
         $data = ($model_qty);
     }
@@ -654,15 +644,32 @@ function getReceiveTransfer($route_id, $from_date, $to_date)
 //    return $data;
 }
 
-function getCardata($route_id, $t_date)
+function getCardata($route_id, $f_date, $t_date)
 {
     $data = [];
     if ($route_id) {
-        $model = \common\models\QueryCarEmpData::find()->where(['date(trans_date)' => date('Y-m-d', strtotime($t_date)), 'id' => $route_id])->one();
+        $d1 = date('Y-m-d', strtotime($f_date));
+        $d2 = date('Y-m-d', strtotime($t_date));
+
+        // 1. Try to find the exact login for the day range, prioritizing the driver
+        $model = \common\models\QueryCarEmpData::find()
+            ->where(['BETWEEN', 'date(trans_date)', $d1, $d2])
+            ->andWhere(['id' => $route_id])
+            ->orderBy(['is_driver' => SORT_DESC, 'trans_date' => SORT_DESC])
+            ->one();
+            
+        // 2. Fallback: If no login in range, get any car info for this route (to at least show car name)
+        if (!$model) {
+             $model = \common\models\QueryCarEmpData::find()
+                ->where(['id' => $route_id])
+                ->orderBy(['trans_date' => SORT_DESC, 'is_driver' => SORT_DESC])
+                ->one();
+        }
+
         if ($model) {
             array_push($data, [
                 'car_name' => $model->car_name_,
-                'emp_name' => $model->fname,
+                'emp_name' => ($model->trans_date != null) ? $model->fname : '', 
             ]);
         }
     }
@@ -694,4 +701,26 @@ function printContent(el)
      }
 JS;
 $this->registerJs($js, static::POS_END);
+$url_check = \yii\helpers\Url::to(['adminreport/checkprocessed'], true);
+$js2 = <<<JS
+  $(function(){
+     $("#cal-date").on("change", function(){
+         var cal_date = $(this).val();
+         if(cal_date != ""){
+             $.ajax({
+                 'type': 'post',
+                 'dataType': 'json',
+                 'url': "{$url_check}",
+                 'data': {'cal_date': cal_date},
+                 'success': function(data){
+                     if(data['status'] == 1){
+                         alert(data['msg']);
+                     }
+                 }
+             });
+         }
+     });
+  });
+JS;
+$this->registerJs($js2, static::POS_END);
 ?>

@@ -596,4 +596,31 @@ class AdminreportController extends Controller
             'year'=> $year,
         ]);
     }
+
+    public function actionCheckprocessed()
+    {
+        $cal_date = Yii::$app->request->post('cal_date');
+        $company_id = 1;
+        $branch_id = 1;
+
+        if (!empty(\Yii::$app->user->identity->company_id)) {
+            $company_id = \Yii::$app->user->identity->company_id;
+        }
+        if (!empty(\Yii::$app->user->identity->branch_id)) {
+            $branch_id = \Yii::$app->user->identity->branch_id;
+        }
+
+        if ($cal_date) {
+            $cal_date = date('Y-m-d', strtotime($cal_date));
+            $check = \common\models\TransactionCarSale::find()->where(['date(trans_date)' => $cal_date, 'company_id' => $company_id, 'branch_id' => $branch_id])->one();
+            if ($check) {
+                $processed_time = '';
+                if ($check->created_at) {
+                    $processed_time = ' เมื่อเวลา ' . date('Y-m-d H:i:s', $check->created_at);
+                }
+                return json_encode(['status' => 1, 'msg' => 'วันที่ ' . $cal_date . ' ได้ประมวลผลไปแล้ว' . $processed_time]);
+            }
+        }
+        return json_encode(['status' => 0]);
+    }
 }

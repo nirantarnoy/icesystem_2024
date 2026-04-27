@@ -38,7 +38,7 @@ class AssetRental extends \yii\db\ActiveRecord
             [['trans_date','use_from','use_to', 'payment_date'], 'safe'],
             [['status', 'created_at', 'created_by', 'updated_at', 'updated_by', 'is_paid'], 'integer'],
             [['payment_amount'], 'number'],
-            [['journal_no','work_name'], 'string', 'max' => 255],
+            [['journal_no','work_name', 'remark'], 'string', 'max' => 255],
         ];
     }
 
@@ -57,6 +57,7 @@ class AssetRental extends \yii\db\ActiveRecord
             'is_paid' => 'รับชำระเงิน',
             'payment_date' => 'วันที่รับเงิน',
             'payment_amount' => 'จำนวนเงิน',
+            'remark' => 'หมายเหตุ',
             'status' => 'Status',
             'created_at' => 'Created At',
             'created_by' => 'Created By',

@@ -365,6 +365,46 @@ class PaymentreceiveController extends Controller
         return ['status' => $status, 'data' => $data];
     }
 
+//     public function actionPaymentdaily()
+//     {
+//         $route_id = null;
+//         \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+//         $req_data = \Yii::$app->request->getBodyParams();
+//         $route_id = $req_data['route_id'];
+
+//         $data = [];
+//         $status = false;
+//         if ($route_id != null) {
+//             // $model = \common\models\JournalIssue::find()->one();
+// // old           $model = \common\models\QueryPaymentReceive::find()->where(['route_id' => $route_id, 'payment_method_id' => 2])->andFilterWhere(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['!=','status',100])->sum('payment_amount');
+//             $pay_amount = 0;
+
+//             $sql = "SELECT SUM(t1.payment_amount) as pay_amount";
+//             $sql .= " FROM query_payment_receive as t1 INNER JOIN customer as t2 ON t1.customer_id = t2.id";
+//             $sql .= " WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d') . "'" . " ";
+//             $sql .= " AND t1.payment_method_id = 2";
+//             $sql .= " AND t2.delivery_route_id=" . $route_id;
+//             $sql .= " GROUP BY t2.delivery_route_id";
+//             $query = \Yii::$app->db->createCommand($sql);
+//             $model = $query->queryAll();
+//             if ($model) {
+//                 for ($i = 0; $i <= count($model) - 1; $i++) {
+//                     $pay_amount = $model[$i]['pay_amount'];
+//                 }
+//             }
+//             //return $pay_amount;
+
+
+//             $order_close_count = \backend\models\Orders::find()->where(['order_channel_id' => $route_id, 'date(order_date)' => date('Y-m-d'), 'status' => 100])->count();
+//             array_push($data, [
+//                 'payment_amount' => $pay_amount == null ? 0 : $pay_amount,
+//                 'order_close_status' => 0, //$order_close_count,
+//             ]);
+//         }
+
+//         return ['status' => $status, 'data' => $data];
+//     }
+
     public function actionPaymentdaily()
     {
         $route_id = null;
@@ -377,29 +417,25 @@ class PaymentreceiveController extends Controller
         if ($route_id != null) {
             // $model = \common\models\JournalIssue::find()->one();
 // old           $model = \common\models\QueryPaymentReceive::find()->where(['route_id' => $route_id, 'payment_method_id' => 2])->andFilterWhere(['date(trans_date)' => date('Y-m-d')])->andFilterWhere(['!=','status',100])->sum('payment_amount');
-            $pay_amount = 0;
 
-            $sql = "SELECT SUM(t1.payment_amount) as pay_amount";
+            $sql = "SELECT t1.payment_channel_id,SUM(t1.payment_amount) as pay_amount";
             $sql .= " FROM query_payment_receive as t1 INNER JOIN customer as t2 ON t1.customer_id = t2.id";
             $sql .= " WHERE  date(t1.trans_date) =" . "'" . date('Y-m-d') . "'" . " ";
             $sql .= " AND t1.payment_method_id = 2";
             $sql .= " AND t2.delivery_route_id=" . $route_id;
-            $sql .= " GROUP BY t2.delivery_route_id";
+            $sql .= " GROUP BY t1.payment_channel_id";
             $query = \Yii::$app->db->createCommand($sql);
             $model = $query->queryAll();
             if ($model) {
-                for ($i = 0; $i <= count($model) - 1; $i++) {
-                    $pay_amount = $model[$i]['pay_amount'];
+                $status = true;
+                foreach ($model as $row) {
+                    array_push($data, [
+                        'payment_channel_id' => $row['payment_channel_id'],
+                        'payment_amount' => $row['pay_amount'] == null ? 0 : (float)$row['pay_amount'],
+                        'order_close_status' => 0,
+                    ]);
                 }
             }
-            //return $pay_amount;
-
-
-            $order_close_count = \backend\models\Orders::find()->where(['order_channel_id' => $route_id, 'date(order_date)' => date('Y-m-d'), 'status' => 100])->count();
-            array_push($data, [
-                'payment_amount' => $pay_amount == null ? 0 : $pay_amount,
-                'order_close_status' => 0, //$order_close_count,
-            ]);
         }
 
         return ['status' => $status, 'data' => $data];

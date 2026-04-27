@@ -3,17 +3,13 @@
 use yii\helpers\Html;
 use kartik\grid\GridView;
 use yii\widgets\Pjax;
-use yii\widgets\LinkPager;
 use yii\helpers\Url;
+use yii\bootstrap4\LinkPager;
 
-/* @var $this yii\web\View */
-/* @var $searchModel backend\models\AssetsitemSearch */
-/* @var $dataProvider yii\data\ActiveDataProvider */
-
-$this->title = 'อุปกรณ์';
+$this->title = Yii::t('app', 'ข้อมูลรถ');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="assetsitem-index">
+<div class="car-index">
 
     <?php Pjax::begin(); ?>
     <div class="row">
@@ -23,8 +19,7 @@ $this->params['breadcrumbs'][] = $this->title;
             </p>
         </div>
         <div class="col-lg-2" style="text-align: right">
-            <form id="form-perpage" class="form-inline" action="<?= Url::to(['assetsitem/index'], true) ?>"
-                  method="post">
+            <?= Html::beginForm(['car/index'], 'post', ['id' => 'form-perpage', 'class' => 'form-inline']) ?>
                 <div class="form-group">
                     <label>แสดง </label>
                     <select class="form-control" name="perpage" id="perpage">
@@ -34,54 +29,15 @@ $this->params['breadcrumbs'][] = $this->title;
                     </select>
                     <label> รายการ</label>
                 </div>
-            </form>
+            <?= Html::endForm() ?>
         </div>
     </div>
-    <?php echo $this->render('_search', ['model' => $searchModel, 'viewstatus' => $viewstatus,'viewstatus2' => $viewstatus2]); ?>
-
-    <div class="row" style="margin-top: 10px; margin-bottom: 15px;">
-        <div class="col-lg-12">
-            <div class="card card-body shadow-sm" style="background-color: #f4f6f9; border-left: 5px solid #17a2b8;">
-                <div class="row align-items-center">
-                    <div class="col-md-3 border-right text-center">
-                        <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.75rem; font-weight: bold;">จำนวนทั้งหมด</h6>
-                        <h3 class="font-weight-bold text-info mb-0"><?= number_format($totalCount) ?></h3>
-                        <small class="text-muted">รายการที่เลือก</small>
-                    </div>
-                    <div class="col-md-9">
-                        <div class="d-flex flex-wrap justify-content-start align-items-center">
-                            <h6 class="w-100 text-muted text-uppercase mb-2" style="font-size: 0.75rem; font-weight: bold; padding-left: 10px;">แยกตามรหัสตัวแรก:</h6>
-                            <?php foreach ($prefixGroups as $prefix => $count): ?>
-                                <div class="px-3 py-1 m-1 bg-white border rounded shadow-sm text-center" style="min-width: 100px; position: relative;">
-                                    <span class="d-block text-muted" style="font-size: 0.7rem;">รหัส <strong>"<?= Html::encode($prefix) ?>"</strong></span>
-                                    <span class="d-block font-weight-bold" style="font-size: 1.1rem; color: #333;"><?= number_format($count) ?></span>
-                                    <a href="<?= Url::to(['assetsitem/export-stock-check', 'prefix' => $prefix, 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-xs btn-outline-success mt-1" title="Export เฉพาะกลุ่มนี้">
-                                        <i class="fas fa-file-excel"></i> Export
-                                    </a>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <div class="col-md-1 text-right">
-                         <a href="<?= Url::to(['assetsitem/export-stock-check', 'viewstatus' => $viewstatus, 'viewstatus2' => $viewstatus2]) ?>" class="btn btn-sm btn-success shadow-sm" title="Export ทั้งหมด">
-                            <i class="fas fa-file-excel"></i> Export ทั้งหมด
-                         </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <?php echo $this->render('_search', ['model' => $searchModel,'viewstatus'=>$viewstatus]); ?>
 
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         // 'filterModel' => $searchModel,
         'emptyCell' => '-',
-        'toolbar' => [
-            '{toggleData}',
-            '{export}',
-        ],
-        'panel' => ['type' => 'info', 'heading' => ''],
-        'toggleDataContainer' => ['class' => 'btn-group mr-2'],
         'layout' => "{items}\n{summary}\n<div class='text-center'>{pager}</div>",
         'summary' => "แสดง {begin} - {end} ของทั้งหมด {totalCount} รายการ",
         'showOnEmpty' => false,
@@ -97,9 +53,22 @@ $this->params['breadcrumbs'][] = $this->title;
                 'headerOptions' => ['style' => 'text-align:center;'],
                 'contentOptions' => ['style' => 'text-align: center'],
             ],
-            'asset_no',
-            'asset_name',
+            'code',
+            'name',
             'description',
+            [
+                'attribute' => 'car_type_id',
+                'value' => function ($data) {
+                    return \backend\models\Cartype::findName($data->car_type_id);
+                }
+            ],
+            [
+                'attribute' => 'sale_group_id',
+                'value' => function ($data) {
+                    return \backend\models\Salegroup::findName($data->sale_group_id);
+                }
+            ],
+            //'photo',
             [
                 'attribute' => 'status',
                 'format' => 'raw',
@@ -113,34 +82,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                 }
             ],
-            [
-                'attribute' => 'customer_id',
-                'label' => 'รหัสลูกค้า',
-                'value' => function ($data) {
-                    return \backend\models\Assetsitem::findCustomerCode($data->id);
-                }
-            ],
-            [
-                'attribute' => 'customer_id',
-                'label' => 'ลูกค้า',
-                'value' => function ($data) {
-                    return \backend\models\Assetsitem::findCustomername($data->id);
-                }
-            ],
-            [
-                'attribute' => 'customer_id',
-                'label' => 'ลำดับการส่ง',
-                'value' => function ($data) {
-                    return \backend\models\Assetsitem::findCustomerRouteNum($data->id);
-                }
-            ],
-            [
-                'label' => 'สายส่ง',
-                'value' => function ($data) {
-                    $customer_id = \backend\models\Assetsitem::findCustomerid($data->id);
-                    return \backend\models\Customer::findRoute($customer_id);
-                }
-            ],
+
             [
 
                 'header' => 'ตัวเลือก',
@@ -195,20 +137,12 @@ $this->params['breadcrumbs'][] = $this->title;
     ]); ?>
 
     <?php Pjax::end(); ?>
-
 </div>
-<form action="<?= Url::to(['assetsitem/import-asset']) ?>" method="post" enctype="multipart/form-data">
-    <input type="file" name="file_asset">
-    <button class="btn btn-info">import</button>
-</form>
-<br/>
-<form action="<?= Url::to(['assetsitem/import-asset-by-customer']) ?>" method="post" enctype="multipart/form-data">
-    <input type="file" name="file_asset_customer">
-    <button class="btn btn-info">import asset customer</button>
-</form>
-
-<br/>
-<form action="<?= Url::to(['assetsitem/import-asset-updateprice']) ?>" method="post" enctype="multipart/form-data">
-    <input type="file" name="file_asset_update">
-    <button class="btn btn-info">import update rent price</button>
-</form>
+<?php
+$js = <<<JS
+    $("#perpage").on("change", function() {
+        $("#form-perpage").submit();
+    });
+JS;
+$this->registerJs($js, static::POS_END);
+?>

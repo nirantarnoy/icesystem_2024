@@ -139,6 +139,25 @@ class Customer extends \common\models\Customer
         return $model;
     }
 
+    public static function getAssetCodes($id)
+    {
+        $codes = '';
+        $model = \common\models\CustomerAsset::find()->where(['customer_id' => $id])->all();
+        if ($model) {
+            foreach ($model as $value) {
+                $code = \backend\models\Assetsitem::findCode($value->product_id);
+                if ($code != '') {
+                    if ($codes == '') {
+                        $codes = $code;
+                    } else {
+                        $codes .= ', ' . $code;
+                    }
+                }
+            }
+        }
+        return $codes;
+    }
+
     public static function findPayTerm($id)
     {
         $model = Customer::find()->where(['id' => $id])->one();

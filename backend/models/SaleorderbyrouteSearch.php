@@ -100,10 +100,11 @@ class SaleorderbyrouteSearch extends QuerySaleorderByRoute
                 }
             }
 
-            $f_date = date('Y-m-d',strtotime($fdate));
-            $t_date = date('Y-m-d',strtotime($tdate));
+            $f_date = date('Y-m-d 00:00:00', strtotime($fdate));
+            $t_date = date('Y-m-d 23:59:59', strtotime($tdate));
 
-            $query->andFilterWhere(['between','date(order_date)',$f_date, $t_date]);
+            $query->andFilterWhere(['between', 'order_date', $f_date, $t_date]);
+
 
             // $query->andFilterWhere(['<=','date(order_date)',$f_date]);
             // ->andFilterWhere(['<=','date(order_date)',$t_date]);

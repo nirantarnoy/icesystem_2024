@@ -7,7 +7,11 @@ use kartik\daterange\DateRangePicker;
 
 $this->title = 'รายงานยอดขาย';
 
+$payment_methods = \backend\models\Paymentmethod::find()->asArray()->all();
+$payment_method_map = \yii\helpers\ArrayHelper::map($payment_methods, 'id', 'name');
+
 ?>
+
 
 <?php
 echo GridView::widget([
@@ -122,9 +126,10 @@ echo GridView::widget([
         [
             'attribute' => 'payment_method_id',
             'width' => '10%',
-            'value' => function ($model, $key, $index, $widget) {
-                return \backend\models\Paymentmethod::findName($model->payment_method_id);
+            'value' => function ($model) use ($payment_method_map) {
+                return isset($payment_method_map[$model->payment_method_id]) ? $payment_method_map[$model->payment_method_id] : '';
             },
+
             'filterType' => GridView::FILTER_SELECT2,
             'filter' => ArrayHelper::map(\backend\models\Paymentmethod::find()->where(['company_id'=>\Yii::$app->user->identity->company_id,'branch_id'=>\Yii::$app->user->identity->branch_id])->orderBy('name')->asArray()->all(), 'id', 'name'),
             'filterWidgetOptions' => [
@@ -137,9 +142,10 @@ echo GridView::widget([
         [
             'attribute' => 'customer_id',
             'width' => '15%',
-            'value' => function ($model, $key, $index, $widget) {
-                return \backend\models\Customer::findName($model->customer_id);
+            'value' => function ($model) {
+                return $model->cus_name;
             },
+
             'filterType' => GridView::FILTER_SELECT2,
             'filter' => ArrayHelper::map(\backend\models\Customer::find()->where(['company_id'=>\Yii::$app->user->identity->company_id,'branch_id'=>\Yii::$app->user->identity->branch_id,'status'=>1])->orderBy('name')->asArray()->all(), 'id', 'name'),
             'filterWidgetOptions' => [
@@ -163,9 +169,10 @@ echo GridView::widget([
 //        ],
         [
             'attribute' => 'product_id',
-            'value' => function ($model, $key, $index, $widget) {
-                return \backend\models\Product::findName($model->product_id);
+            'value' => function ($model) {
+                return $model->prod_name;
             },
+
             'filterType' => GridView::FILTER_SELECT2,
             'filter' => ArrayHelper::map(\backend\models\Product::find()->where(['company_id'=>\Yii::$app->user->identity->company_id,'branch_id'=>\Yii::$app->user->identity->branch_id])->orderBy('name')->asArray()->all(), 'id', 'name'),
             'filterWidgetOptions' => [

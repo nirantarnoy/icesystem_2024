@@ -33,7 +33,7 @@ class CustomerInvoice extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['trans_date'], 'safe'],
+            [['trans_date', 'close_job_date'], 'safe'],
             [['customer_id', 'created_at', 'created_by', 'updated_at', 'updated_by', 'status','company_id','branch_id'], 'integer'],
             [['journal_no'], 'string', 'max' => 255],
         ];
@@ -54,6 +54,7 @@ class CustomerInvoice extends \yii\db\ActiveRecord
             'updated_at' => 'Updated At',
             'updated_by' => 'Updated By',
             'status' => 'สถานะ',
+            'close_job_date' => 'วันที่จบงาน',
         ];
     }
 }

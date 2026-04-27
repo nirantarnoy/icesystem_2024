@@ -187,7 +187,8 @@ $mpdf->AddPageByArray([
         $total_qty = $total_qty + $value->qty;
         $total_amt = $total_amt + ($value->qty * $value->price);
         $change = $change_amount == null ? 0 : $change_amount;//$value->change_amount;
-    $items_cnt +=1;
+        $items_cnt +=1;
+      //  $items_cnt +=1;
         ?>
         <tr>
             <td><?= \backend\models\Product::findName($value->product_id); ?></td>
@@ -199,7 +200,7 @@ $mpdf->AddPageByArray([
     <tfoot>
     <tr>
         <td style="font-size: 18px;border-top: 1px dotted gray">จำนวนรายการ</td>
-        <td style="font-size: 18px;border-top: 1px dotted gray;text-align: center"><?= number_format($items_cnt) ?></td>
+        <td style="font-size: 18px;border-top: 1px dotted gray;text-align: center"><?= number_format($total_qty,0) ?></td>
         <td style="font-size: 18px;border-top: 1px dotted gray;text-align: center"></td>
         <td style="font-size: 18px;border-top: 1px dotted gray;text-align: right"><?= number_format($total_amt, 2) ?></td>
     </tr>

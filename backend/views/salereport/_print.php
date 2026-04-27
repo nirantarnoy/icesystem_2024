@@ -316,28 +316,28 @@ if ($find_from_date != null) {
         }
     //}
 
-    $model_line =$model_line->groupBy(['id'])->all();
+    $model_line = $model_line->groupBy(['id'])->asArray()->all();
 
-
-    // print_r($product_header);
-
-//    if (count($product_header) > 0) {
-//        for ($a = 0; $a <= count($product_header) - 1; $a++) {
-//            if (checkhassale($product_header[$a], $from_date, $to_date, $find_customer_id, $company_id, $branch_id) > 0) {
-//                array_push($product_header_2, [$product_header[$a]]);
-//            }
-//        }
-//    }
-
-    if($model_product!=null){
-        foreach ($model_product as $value){
-            array_push($product_header_2,[$value->id]);
+    $order_ids = array_column($model_line, 'id');
+    $product_ids = [];
+    foreach ($product_header_2 as $ph) {
+        if (isset($ph[0])) $product_ids[] = (int)$ph[0];
+    }
+    
+    $line_data_map = [];
+    if (!empty($order_ids) && !empty($product_ids)) {
+        $lines = \backend\models\Orderline::find()
+            ->select(['order_id', 'product_id', 'SUM(qty) as sum_qty', 'SUM(line_total) as sum_total'])
+            ->where(['order_id' => $order_ids, 'product_id' => $product_ids])
+            ->groupBy(['order_id', 'product_id'])
+            ->asArray()
+            ->all();
+        foreach ($lines as $line) {
+            $line_data_map[$line['order_id']][$line['product_id']] = $line;
         }
     }
-
-
-
     ?>
+
     <table style="width: 100%" id="table-data">
         <tr>
             <td style="text-align: center;padding: 0px;border: 1px solid grey;width: 5%">ลำดับ</td>
@@ -382,25 +382,27 @@ if ($find_from_date != null) {
                 <tr>
                     <td style="text-align: center;padding: 10px;border: 1px solid grey"><?= $num ?></td>
                     <td style="text-align: center;padding: 0px;border: 1px solid grey"><?= $is_29_02 == 1 ? $to_date_new2 : date('d-m-Y', strtotime($to_date_new2)) ?></td>
-                    <td style="text-align: center;padding: 0px;border: 1px solid grey"><?= $value->order_no ?></td>
+                    <td style="text-align: center;padding: 0px;border: 1px solid grey"><?= $value['order_no'] ?></td>
+
                     <?php for ($x = 0; $x <= count($product_header_2) - 1; $x++): ?>
                         <?php
+                        $p_id = $product_header_2[$x][0];
+                        $order_id = $value['id'];
+                        $product_line_qty = isset($line_data_map[$order_id][$p_id]) ? (float)$line_data_map[$order_id][$p_id]['sum_qty'] : 0;
+                        $product_line_amt = isset($line_data_map[$order_id][$p_id]) ? (float)$line_data_map[$order_id][$p_id]['sum_total'] : 0;
 
-                        $product_line_qty = getOrderQty2($value->id, $product_header_2[$x]);
-                        $product_line_amt = getOrderAmount($value->id, $product_header_2[$x]);
+                        $line_total_qty += $product_line_qty;
+                        $total_all_qty += $product_line_qty;
+                        $line_qty += $product_line_qty;
 
-                        $line_total_qty = ($line_total_qty + $product_line_qty);
-                        $total_all_qty = ($total_all_qty + $product_line_qty);
-                        $line_qty = $line_qty + $product_line_qty;
-
-                        $line_total_amt = ($line_total_amt + $product_line_amt);
-                        $line_all_amt = ($line_all_amt + $product_line_amt);
+                        $line_total_amt += $product_line_amt;
+                        $line_all_amt += $product_line_amt;
 
                         if ($num == 1) {
-                            array_push($total_all_line_qty_data, ['product_id' => $product_header_2[$x], 'qty' => $product_line_qty]);
+                            array_push($total_all_line_qty_data, ['product_id' => $p_id, 'qty' => $product_line_qty]);
                         } else {
                             foreach ($total_all_line_qty_data as $key => $val) {
-                                if ($total_all_line_qty_data[$key]['product_id'] == $product_header_2[$x]) {
+                                if ($total_all_line_qty_data[$key]['product_id'] == $p_id) {
                                     $total_all_line_qty_data[$key]['qty'] = $val['qty'] + $product_line_qty;
                                 }
                             }
@@ -408,6 +410,7 @@ if ($find_from_date != null) {
                         ?>
                         <td style="text-align: center;padding: 0px;padding-right: 5px;border: 1px solid grey"><?= $product_line_qty > 0 ? number_format($product_line_qty, 1) : '-' ?></td>
                     <?php endfor; ?>
+
                     <!--                <td style="text-align: center;padding: 0px;padding-right: 5px;border: 1px solid grey">-->
                     <? //= number_format($line_qty) ?><!--</td>-->
                     <td style="text-align: center;padding: 0px;padding-right: 5px;border: 1px solid grey"><?= number_format($line_total_qty, 2) ?></td>

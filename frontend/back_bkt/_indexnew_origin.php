@@ -287,7 +287,6 @@ $model_line = $dataProvider->getModels();
                         $last_product = '';
                         $total_all_qty_sum = 0;
                         $total_all_cash_transfer = 0;
-                
                         ?>
                         <?php foreach ($model_line as $value): ?>
                             <?php
@@ -356,7 +355,7 @@ $model_line = $dataProvider->getModels();
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายสด</b></td>
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
-                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b>
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])) + $total_all_cash_transfer, 2) ?></b>
                             </td>
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right">
                                 <b>รวมขายเชื่อ</b>
@@ -392,7 +391,7 @@ $model_line = $dataProvider->getModels();
                                 <b>ขายสดเงินสด</b>
                             </td>
                             <td style="text-align: right;border: 1px solid grey;text-align: right">
-                                <b><?= number_format(($total_all_cash - $total_all_cash_transfer - ($discount_data[0]['discount_cash_amount'])), 2) ?></b></td>
+                                <b><?= number_format(($total_all_cash - ($discount_data[0]['discount_cash_amount'])), 2) ?></b></td>
                             <td colspan="2" style="text-align: right;border: 1px solid grey;text-align: right"><b></b>
                             </td>
                             <td style="text-align: right;border: 1px solid grey;text-align: right"><b></b></td>
@@ -463,7 +462,7 @@ $model_line = $dataProvider->getModels();
                         <?php endif; ?>
                         <tr>
                             <td style="text-align: right;border: 1px solid grey" colspan="3">รวมส่งเงิน</td>
-                            <td style="text-align: center;border: 1px solid grey"><?= number_format( $cash_pay + ($total_all_cash - $total_all_cash_transfer)) ?></td>
+                            <td style="text-align: center;border: 1px solid grey"><?= number_format( $cash_pay + $total_all_cash) ?></td>
                         </tr>
                     </table>
                 </div>

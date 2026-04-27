@@ -216,6 +216,7 @@ $model_line = \common\models\QuerySaleMobileDataNew::find()->select(['route_id']
                     //    'useWithAddon'=>true,
                     'convertFormat' => true,
                     'options' => [
+                        'id' => 'cal-date',
                         'class' => 'form-control',
                         'placeholder' => '',
                         //  'onchange' => 'this.form.submit();',
@@ -700,4 +701,26 @@ function printContent(el)
      }
 JS;
 $this->registerJs($js, static::POS_END);
+$url_check = \yii\helpers\Url::to(['adminreport/checkprocessed'], true);
+$js2 = <<<JS
+  $(function(){
+     $("#cal-date").on("change", function(){
+         var cal_date = $(this).val();
+         if(cal_date != ""){
+             $.ajax({
+                 'type': 'post',
+                 'dataType': 'json',
+                 'url': "{$url_check}",
+                 'data': {'cal_date': cal_date},
+                 'success': function(data){
+                     if(data['status'] == 1){
+                         alert(data['msg']);
+                     }
+                 }
+             });
+         }
+     });
+  });
+JS;
+$this->registerJs($js2, static::POS_END);
 ?>

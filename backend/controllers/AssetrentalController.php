@@ -113,7 +113,7 @@ class AssetrentalController extends Controller
             }
 
 
-            $p_date = date('Y-m-d');
+
 
             $post_data = Yii::$app->request->post('Assetrental');
             if($post_data != null){
@@ -202,7 +202,7 @@ class AssetrentalController extends Controller
             }
 
 
-            $p_date = date('Y-m-d');
+
 
             $post_data = Yii::$app->request->post('Assetrental');
             if($post_data != null){

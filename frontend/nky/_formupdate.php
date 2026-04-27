@@ -22,7 +22,7 @@ use yii\helpers\Url;
             echo \kartik\select2\Select2::widget([
                 'name' => 'route_id',
                 'value' => $route_id,
-                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status' => 1, 'branch_id' => 1])->all(), 'id', 'name'),
+                'data' => \yii\helpers\ArrayHelper::map(\backend\models\Deliveryroute::find()->where(['status' => 1, 'branch_id' => 2])->all(), 'id', 'name'),
                 'options' => [
                     'placeholder' => 'เลือกสายส่ง',
                 ],

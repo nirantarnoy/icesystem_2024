@@ -81,7 +81,7 @@ $url_to_get_login_time = \yii\helpers\Url::to(['admintools/findlogintime'], true
             <?php
             echo \kartik\select2\Select2::widget([
                     'name'=>'issue_id',
-                    'data'=> \yii\helpers\ArrayHelper::map(\common\models\JournalIssue::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'status'=>200])->all(),'id','journal_no'),
+                    'data'=> \yii\helpers\ArrayHelper::map(\common\models\JournalIssue::find()->where(['company_id'=>$company_id,'branch_id'=>$branch_id,'status'=>200])->orderBy('journal_no desc')->all(),'id','journal_no'),
                     'options' => [
                         'placeholder'=>'เลือกเลขที่ใบเบิก',
 

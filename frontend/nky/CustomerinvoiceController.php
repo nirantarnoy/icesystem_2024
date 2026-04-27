@@ -716,8 +716,20 @@ class CustomerinvoiceController extends Controller
     {
       //  $id = \Yii::$app->request->post('id');
         if($id){
-            \backend\models\Customerinvoice::updateAll(['status'=>100],['id'=>$id]);
+            \backend\models\Customerinvoice::updateAll(['status'=>100, 'close_job_date' => date('Y-m-d H:i:s')],['id'=>$id]);
         }
-        return $this->redirect(['customerinvoice/index']);
+        return $this->redirect(['index']);
+    }
+
+    public function actionClosejobSelected()
+    {
+        $ids = \Yii::$app->request->post('ids');
+        if ($ids) {
+            foreach ($ids as $id) {
+                \backend\models\Customerinvoice::updateAll(['status' => 100, 'close_job_date' => date('Y-m-d H:i:s')], ['id' => $id]);
+            }
+            \Yii::$app->session->setFlash('success', 'จบงานรายการที่เลือกเรียบร้อยแล้ว');
+        }
+        return $this->redirect(['index']);
     }
 }

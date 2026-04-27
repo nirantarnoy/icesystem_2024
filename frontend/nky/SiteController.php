@@ -140,7 +140,7 @@ class SiteController extends Controller
 
         // วนทีละเดือน (1-12)
         for ($month = 1; $month <= 12; $month++) {
-            if($month !=3)continue;
+            if($month !=4)continue;
             $sql = "
                 INSERT INTO customer_monthly_sum (customer_id, year, month, total_amount)
                 SELECT 
@@ -1015,6 +1015,7 @@ class SiteController extends Controller
                 $model_trans->company_id = $company_id;
                 $model_trans->branch_id = $branch_id;
                 $model_trans->cash_transfer_amount = $value->line_total_cash_transfer;
+                $model_trans->created_at = time();
                 $model_trans->save(false);
             }
         }

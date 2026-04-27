@@ -622,6 +622,14 @@
                                 </a>
                             </li>
                         <?php endif; ?>
+                        <?php if (\Yii::$app->user->can('car/index')): ?>
+                            <li class="nav-item">
+                                <a href="index.php?r=checkroute/index" class="nav-link checkroute">
+                                    <i class="far fa-circlez nav-icon"></i>
+                                    <p>Check Route</p>
+                                </a>
+                            </li>
+                        <?php endif; ?>
                     </ul>
                 </li>
                 <li class="nav-item has-treeview has-sub">
@@ -952,6 +960,12 @@
                                 </a>
                             </li>
                         <?php endif;?>
+                        <li class="nav-item">
+                            <a href="index.php?r=customerroutenumupdate/index" class="nav-link customerroutenumupdate">
+                                <i class="far fa-circlez nav-icon"></i>
+                                <p>รายงานปรับ Route Num</p>
+                            </a>
+                        </li>
                         <!--                        <li class="nav-item">-->
                         <!--                            <a href="index.php?r=report" class="nav-link report">-->
                         <!--                                <i class="far fa-circlez nav-icon"></i>-->

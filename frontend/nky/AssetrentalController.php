@@ -89,6 +89,8 @@ class AssetrentalController extends Controller
             $line_return_status = \Yii::$app->request->post('line_return_status');
 
 
+            $fdate = date('Y-m-d');
+            $tdata = date('Y-m-d');
             $p_date = date('Y-m-d');
 
             $post_data = Yii::$app->request->post('Assetrental');
@@ -105,25 +107,29 @@ class AssetrentalController extends Controller
             }
 
 
-            $xfdate = explode('-',$model->use_from);
-            if($xfdate!=null){
-                if(count($xfdate)>1){
-                    $fdate = $xfdate[2].'-'.$xfdate[1].'-'.$xfdate[0];
-                }
-            }
-            $xtdate = explode('-',$model->use_to);
-            if($xtdate!=null){
-                if(count($xtdate)>1){
-                    $tdata = $xtdate[2].'-'.$xtdate[1].'-'.$xtdate[0];
-                }
-            }
-
-
             $model->journal_no = $model::getLastNo(1,1);
-            $model->trans_date = date('Y-m-d');
-            $model->use_from = date('Y-m-d',strtotime($fdate));
-            $model->use_to = date('Y-m-d',strtotime($tdata));
-            $model->payment_date = date('Y-m-d',strtotime($p_date));
+            $model->trans_date = date('Y-m-d', strtotime(str_replace('-', '/', $model->trans_date)));
+            
+            if ($model->use_from != null) {
+                $xfdate = explode('-', $model->use_from);
+                if (count($xfdate) > 1 && strlen($xfdate[0]) < 4) {
+                    $model->use_from = $xfdate[2] . '-' . $xfdate[1] . '-' . $xfdate[0];
+                }
+            }
+            if ($model->use_to != null) {
+                $xtdate = explode('-', $model->use_to);
+                if (count($xtdate) > 1 && strlen($xtdate[0]) < 4) {
+                    $model->use_to = $xtdate[2] . '-' . $xtdate[1] . '-' . $xtdate[0];
+                }
+            }
+            if ($p_date_raw != null) {
+                $xpdate = explode('-', $p_date_raw);
+                if (count($xpdate) > 1 && strlen($xpdate[0]) < 4) {
+                    $model->payment_date = $xpdate[2] . '-' . $xpdate[1] . '-' . $xpdate[0];
+                } else {
+                    $model->payment_date = $p_date_raw;
+                }
+            }
 
             if($model->save(false)){
                 if($line_asset_id != null){
@@ -168,6 +174,8 @@ class AssetrentalController extends Controller
             $line_use_status = \Yii::$app->request->post('line_use_status');
             $line_return_status = \Yii::$app->request->post('line_return_status');
 
+            $fdate = date('Y-m-d');
+            $tdata = date('Y-m-d');
             $p_date = date('Y-m-d');
 
             $post_data = Yii::$app->request->post('Assetrental');
@@ -183,24 +191,28 @@ class AssetrentalController extends Controller
                 }
             }
 
-            $xfdate = explode('-',$model->use_from);
-            if($xfdate!=null){
-                if(count($xfdate)>1){
-                    $fdate = $xfdate[2].'-'.$xfdate[1].'-'.$xfdate[0];
+            if ($model->use_from != null) {
+                $xfdate = explode('-', $model->use_from);
+                if (count($xfdate) > 1 && strlen($xfdate[0]) < 4) {
+                    $model->use_from = $xfdate[2] . '-' . $xfdate[1] . '-' . $xfdate[0];
                 }
             }
-            $xtdate = explode('-',$model->use_to);
-            if($xtdate!=null){
-                if(count($xtdate)>1){
-                    $tdata = $xtdate[2].'-'.$xtdate[1].'-'.$xtdate[0];
+            if ($model->use_to != null) {
+                $xtdate = explode('-', $model->use_to);
+                if (count($xtdate) > 1 && strlen($xtdate[0]) < 4) {
+                    $model->use_to = $xtdate[2] . '-' . $xtdate[1] . '-' . $xtdate[0];
                 }
             }
-
-
+            if ($p_date_raw != null) {
+                $xpdate = explode('-', $p_date_raw);
+                if (count($xpdate) > 1 && strlen($xpdate[0]) < 4) {
+                    $model->payment_date = $xpdate[2] . '-' . $xpdate[1] . '-' . $xpdate[0];
+                } else {
+                    $model->payment_date = $p_date_raw;
+                }
+            }
+            
             $removelist = \Yii::$app->request->post('removelist');
-            $model->use_from = date('Y-m-d',strtotime($fdate));
-            $model->use_to = date('Y-m-d',strtotime($tdata));
-            $model->payment_date = date('Y-m-d',strtotime($p_date));
 
             if($model->save(false)){
                 if($line_asset_id != null){
