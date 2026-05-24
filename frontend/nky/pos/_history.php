@@ -526,13 +526,11 @@ window.reprintOrder = function(id) {
         success: function(response) {
             if (response.status) {
                 var iframe = document.getElementById('iFramePdf');
-                iframe.src = response.pdf_url;
-                iframe.onload = function() {
-                    setTimeout(function() {
-                        iframe.focus();
-                        iframe.contentWindow.print();
-                    }, 1000);
-                };
+                iframe.src = response.pdf_url + '?v=' + new Date().getTime();
+                setTimeout(function() {
+                    iframe.focus();
+                    iframe.contentWindow.print();
+                }, 1500);
             } else {
                 alert('เกิดข้อผิดพลาดในการพิมพ์');
             }
