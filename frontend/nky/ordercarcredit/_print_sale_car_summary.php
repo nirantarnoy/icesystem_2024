@@ -130,21 +130,17 @@ $mpdf->AddPageByArray([
                         <?php
                         echo DateRangePicker::widget([
                             'name' => 'from_date',
-                            // 'value'=>'2015-10-19 12:00 AM',
-                            // 'value' => $from_date != null ? date('Y-m-d H:i', strtotime($from_date)) : date('Y-m-d H:i'),
-                            'value' => $from_date != null ? date('Y-m-d', strtotime($from_date)) : date('Y-m-d'),
-                            //    'useWithAddon'=>true,
+                            'value' => $from_date != null ? date('Y-m-d H:i', strtotime($from_date)) : date('Y-m-d 00:00'),
                             'convertFormat' => true,
                             'options' => [
                                 'class' => 'form-control',
                                 'placeholder' => 'ถึงวันที่',
-                                //  'onchange' => 'this.form.submit();',
                                 'autocomplete' => 'off',
                             ],
                             'pluginOptions' => [
-                                'timePicker' => false,
+                                'timePicker' => true,
                                 'timePickerIncrement' => 1,
-                                'locale' => ['format' => 'Y-m-d'],
+                                'locale' => ['format' => 'Y-m-d H:i'],
                                 'singleDatePicker' => true,
                                 'showDropdowns' => true,
                                 'timePicker24Hour' => true
@@ -156,20 +152,17 @@ $mpdf->AddPageByArray([
                         <?php
                         echo DateRangePicker::widget([
                             'name' => 'to_date',
-                            // 'value' => $to_date != null ? date('Y-m-d H:i', strtotime($to_date)) : date('Y-m-d H:i'),
-                            'value' => $to_date != null ? date('Y-m-d', strtotime($to_date)) : date('Y-m-d'),
-                            //    'useWithAddon'=>true,
+                            'value' => $to_date != null ? date('Y-m-d H:i', strtotime($to_date)) : date('Y-m-d 23:59'),
                             'convertFormat' => true,
                             'options' => [
                                 'class' => 'form-control',
                                 'placeholder' => 'ถึงวันที่',
-                                //  'onchange' => 'this.form.submit();',
                                 'autocomplete' => 'off',
                             ],
                             'pluginOptions' => [
-                                'timePicker' => false,
+                                'timePicker' => true,
                                 'timePickerIncrement' => 1,
-                                'locale' => ['format' => 'Y-m-d'],
+                                'locale' => ['format' => 'Y-m-d H:i'],
                                 'singleDatePicker' => true,
                                 'showDropdowns' => true,
                                 'timePicker24Hour' => true
@@ -230,8 +223,8 @@ $mpdf->AddPageByArray([
         <table class="table-header" width="100%">
             <tr>
                 <td style="text-align: center; font-size: 20px; font-weight: normal">
-                    จากวันที่ <span style="color: red"><?= date('Y-m-d', strtotime($from_date)) ?></span>
-                    ถึง <span style="color: red"><?= date('Y-m-d', strtotime($to_date)) ?></span></td>
+                    จากวันที่ <span style="color: red"><?= date('Y-m-d H:i', strtotime($from_date)) ?></span>
+                    ถึง <span style="color: red"><?= date('Y-m-d H:i', strtotime($to_date)) ?></span></td>
             </tr>
         </table>
         <br>
@@ -398,20 +391,20 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
     $model = null;
     if($is_admin == 1){
         if ($find_sale_type == 0) {
-            $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+            $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                 ->andFilterWhere(['order_channel_id' => $find_user_id])
                 ->andFilterWhere(['!=', 'order_line_status', 500])
                 ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
         } else {
             if($find_sale_type == 3){
                 $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['price' => 0])
-                    ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                    ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                     ->andFilterWhere(['order_channel_id' => $find_user_id])
                     ->andFilterWhere(['!=', 'order_line_status', 500])
                     ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
             }else{
                 $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['sale_payment_method_id' => $find_sale_type])
-                    ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                    ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                     ->andFilterWhere(['order_channel_id' => $find_user_id])
                     ->andFilterWhere(['!=', 'order_line_status', 500])
                     ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -421,25 +414,25 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
     }else{
         if ($find_sale_type == 0) {
             if ($t_date < $restrict_date) {
-                $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime('1970-01-01')), date('Y-m-d', strtotime('1970-01-01'))])
+                $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime('1970-01-01')), date('Y-m-d H:i:s', strtotime('1970-01-01'))])
                     ->andFilterWhere(['order_channel_id' => $find_user_id])
                     ->andFilterWhere(['!=', 'order_line_status', 500])
                     ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
             }else{
                 if($diff_month >=2){
                     if ($f_date < $restrict_date) {
-                        $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($restrict_date)), date('Y-m-d', strtotime($t_date))])
+                        $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($restrict_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                             ->andFilterWhere(['order_channel_id' => $find_user_id])
                             ->andFilterWhere(['!=', 'order_line_status', 500])
                             ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
                     }else{
-                        $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                        $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                             ->andFilterWhere(['order_channel_id' => $find_user_id])
                             ->andFilterWhere(['!=', 'order_line_status', 500])
                             ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
                     }
                 }else{
-                    $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                    $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                         ->andFilterWhere(['order_channel_id' => $find_user_id])
                         ->andFilterWhere(['!=', 'order_line_status', 500])
                         ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -451,7 +444,7 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
 
                 if ($t_date < $restrict_date) {
                     $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['price' => 0])
-                        ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime('1970-01-01')), date('Y-m-d', strtotime('1970-01-01'))])
+                        ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime('1970-01-01 00:00:00')), date('Y-m-d H:i:s', strtotime('1970-01-01 00:00:00'))])
                         ->andFilterWhere(['order_channel_id' => $find_user_id])
                         ->andFilterWhere(['!=', 'order_line_status', 500])
                         ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -459,13 +452,13 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
                     if($diff_month >=2){
                         if($f_date < $restrict_date){
                             $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['price' => 0])
-                                ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($restrict_date)), date('Y-m-d', strtotime($t_date))])
+                                ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($restrict_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                                 ->andFilterWhere(['order_channel_id' => $find_user_id])
                                 ->andFilterWhere(['!=', 'order_line_status', 500])
                                 ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
                         }else{
                             $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['price' => 0])
-                                ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                                ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                                 ->andFilterWhere(['order_channel_id' => $find_user_id])
                                 ->andFilterWhere(['!=', 'order_line_status', 500])
                                 ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -473,7 +466,7 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
 
                     }else{
                         $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['price' => 0])
-                            ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                            ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                             ->andFilterWhere(['order_channel_id' => $find_user_id])
                             ->andFilterWhere(['!=', 'order_line_status', 500])
                             ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -484,7 +477,7 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
 
                 if ($t_date < $restrict_date) {
                     $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['sale_payment_method_id' => $find_sale_type])
-                        ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime('1970-01-01')), date('Y-m-d', strtotime('1970-01-01'))])
+                        ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime('1970-01-01 00:00:00')), date('Y-m-d H:i:s', strtotime('1970-01-01 00:00:00'))])
                         ->andFilterWhere(['order_channel_id' => $find_user_id])
                         ->andFilterWhere(['!=', 'order_line_status', 500])
                         ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
@@ -492,20 +485,20 @@ function getOrder($f_date, $t_date, $find_sale_type, $find_user_id, $company_id,
                     if($diff_month >=2){
                         if($f_date < $restrict_date){
                             $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['sale_payment_method_id' => $find_sale_type])
-                                ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($restrict_date)), date('Y-m-d', strtotime($t_date))])
+                                ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($restrict_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                                 ->andFilterWhere(['order_channel_id' => $find_user_id])
                                 ->andFilterWhere(['!=', 'order_line_status', 500])
                                 ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
                         }else{
                             $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['sale_payment_method_id' => $find_sale_type])
-                                ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                                ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                                 ->andFilterWhere(['order_channel_id' => $find_user_id])
                                 ->andFilterWhere(['!=', 'order_line_status', 500])
                                 ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
                         }
                     }else{
                         $model = \common\models\QueryApiOrderDailySummaryNew::find()->where(['sale_payment_method_id' => $find_sale_type])
-                            ->andFilterWhere(['BETWEEN', 'date(order_date)', date('Y-m-d', strtotime($f_date)), date('Y-m-d', strtotime($t_date))])
+                            ->andFilterWhere(['BETWEEN', 'order_date', date('Y-m-d H:i:s', strtotime($f_date)), date('Y-m-d H:i:s', strtotime($t_date))])
                             ->andFilterWhere(['order_channel_id' => $find_user_id])
                             ->andFilterWhere(['!=', 'order_line_status', 500])
                             ->orderBy(['order_date'=>SORT_DESC,'price' => SORT_ASC])->all();
