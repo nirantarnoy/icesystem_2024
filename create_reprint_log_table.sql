@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS reprint_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    printed_by INT NOT NULL,
+    printed_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
