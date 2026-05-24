@@ -189,6 +189,19 @@ if (!empty(\Yii::$app->session->getFlash('msg-index')) && !empty(\Yii::$app->ses
                                 '<span class="fas fa-list-alt btn btn-xs btn-default"></span>', 'javascript:void(0)', $options);
                         },
                         'reprinthistory' => function ($url, $data, $index) {
+                            try {
+                                $exists = (new \yii\db\Query())
+                                    ->from('reprint_log')
+                                    ->where(['order_id' => $data->id])
+                                    ->exists();
+                            } catch (\Exception $e) {
+                                $exists = false;
+                            }
+
+                            if (!$exists) {
+                                return '';
+                            }
+
                             $options = [
                                 'title' => Yii::t('yii', 'ประวัติการพิมพ์'),
                                 'aria-label' => Yii::t('yii', 'ประวัติการพิมพ์'),
