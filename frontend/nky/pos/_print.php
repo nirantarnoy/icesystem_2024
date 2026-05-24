@@ -103,6 +103,16 @@ $mpdf->AddPageByArray([
             padding: 2px;
         }
 
+        @media print {
+            @page {
+                size: auto;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+            }
+        }
+
     </style>
     <!--    <script src="vendor/jquery/jquery.min.js"></script>-->
     <!--    <script type="text/javascript" src="js/ThaiBath-master/thaibath.js"></script>-->
@@ -263,15 +273,24 @@ if($model->branch_id == 1){
 
 $html = ob_get_contents(); // ทำการเก็บค่า HTML จากคำสั่ง ob_start()
 $mpdf->WriteHTML($html); // ทำการสร้าง PDF ไฟล์
-//$mpdf->Output( 'Packing02.pdf','F'); // ให้ทำการบันทึกโค้ด HTML เป็น PDF โดยบันทึกเป็นไฟล์ชื่อ MyPDF.pdf
 ob_clean();
-//$mpdf->SetJS('this.print();');
-$mpdf->SetJS('this.print(false);');
-//$mpdf->Output('../web/uploads/slip/slip.pdf', 'F');
 $mpdf->Output($slip_path, 'F');
-ob_end_flush();
 
-//header("location: system_stock/report_pdf/Packing.pdf");
+// Save HTML copy to allow silent printing via iframe (avoiding Chrome PDF silent printing bugs)
+$html_path = str_replace('.pdf', '.html', $slip_path);
+file_put_contents($html_path, $html);
+
+if (\Yii::$app->request->isAjax) {
+    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+    \Yii::$app->response->data = [
+        'status' => true,
+        'pdf_url' => $html_path
+    ];
+    \Yii::$app->response->send();
+    \Yii::$app->end();
+}
+
+ob_end_flush();
 
 ?>
 
