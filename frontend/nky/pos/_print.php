@@ -140,7 +140,7 @@ $mpdf->AddPageByArray([
             <table class="table-header" width="100%">
                 <tr>
                     <td style="font-size: 20px;text-align: center;vertical-align: bottom">
-                        <h2>น้ำแข็ง</h2>
+                        <h2>น้ำแข็ง  ** Reprint **</h2>
                     </td>
                 </tr>
                 <tr>
@@ -151,7 +151,7 @@ $mpdf->AddPageByArray([
             </table>
         </td>
         <td style="width: 20%; text-align: right; vertical-align: top; font-size: 16px; font-weight: bold;">
-            ** Reprint **
+           
         </td>
     </tr>
 </table>
@@ -266,7 +266,7 @@ $mpdf->WriteHTML($html); // ทำการสร้าง PDF ไฟล์
 //$mpdf->Output( 'Packing02.pdf','F'); // ให้ทำการบันทึกโค้ด HTML เป็น PDF โดยบันทึกเป็นไฟล์ชื่อ MyPDF.pdf
 ob_clean();
 //$mpdf->SetJS('this.print();');
-//$mpdf->SetJS('this.print();');
+$mpdf->SetJS('this.print(false);');
 //$mpdf->Output('../web/uploads/slip/slip.pdf', 'F');
 $mpdf->Output($slip_path, 'F');
 ob_end_flush();
