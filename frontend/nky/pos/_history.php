@@ -528,8 +528,10 @@ window.reprintOrder = function(id) {
                 var iframe = document.getElementById('iFramePdf');
                 iframe.src = response.pdf_url;
                 iframe.onload = function() {
-                    iframe.focus();
-                    iframe.contentWindow.print();
+                    setTimeout(function() {
+                        iframe.focus();
+                        iframe.contentWindow.print();
+                    }, 1000);
                 };
             } else {
                 alert('เกิดข้อผิดพลาดในการพิมพ์');

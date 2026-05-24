@@ -103,16 +103,6 @@ $mpdf->AddPageByArray([
             padding: 2px;
         }
 
-        @media print {
-            @page {
-                size: auto;
-                margin: 0;
-            }
-            body {
-                margin: 0;
-            }
-        }
-
     </style>
     <!--    <script src="vendor/jquery/jquery.min.js"></script>-->
     <!--    <script type="text/javascript" src="js/ThaiBath-master/thaibath.js"></script>-->
@@ -150,7 +140,7 @@ $mpdf->AddPageByArray([
             <table class="table-header" width="100%">
                 <tr>
                     <td style="font-size: 20px;text-align: center;vertical-align: bottom">
-                        <h2>น้ำแข็ง  ** Reprint **</h2>
+                        <h2>น้ำแข็ง  ** Re</h2>
                     </td>
                 </tr>
                 <tr>
@@ -274,22 +264,9 @@ if($model->branch_id == 1){
 $html = ob_get_contents(); // ทำการเก็บค่า HTML จากคำสั่ง ob_start()
 $mpdf->WriteHTML($html); // ทำการสร้าง PDF ไฟล์
 ob_clean();
+//$mpdf->SetJS('this.print();');
+//$mpdf->SetJS('this.print(false);');
 $mpdf->Output($slip_path, 'F');
-
-// Save HTML copy to allow silent printing via iframe (avoiding Chrome PDF silent printing bugs)
-$html_path = str_replace('.pdf', '.html', $slip_path);
-file_put_contents($html_path, $html);
-
-if (\Yii::$app->request->isAjax) {
-    \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-    \Yii::$app->response->data = [
-        'status' => true,
-        'pdf_url' => $html_path
-    ];
-    \Yii::$app->response->send();
-    \Yii::$app->end();
-}
-
 ob_end_flush();
 
 ?>
