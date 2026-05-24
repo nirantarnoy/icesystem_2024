@@ -126,18 +126,17 @@ $mpdf->AddPageByArray([
 <!--</table>-->
 <table class="table-header" style="width: 100%">
     <tr>
-        <td style="width: 2%">
-            <div style="height: 20px;width: 20px;">
+        <td style="width: 20%; vertical-align: middle;">
+            <div style="height: 40px;width: 40px;">
                 <?php
                 \Yii::$app->response->format = Response::FORMAT_HTML;
                 $data = $model->order_no;
                 $qr = new QRCode();
                 echo '<img src="' . $qr->render($data) . '" />';
                 ?>
-<!--                <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=--><?//=$model->order_no?><!--&choe=UTF-8" alt="">-->
             </div>
         </td>
-        <td style="width: 98%">
+        <td style="width: 60%; text-align: center; vertical-align: middle;">
             <table class="table-header" width="100%">
                 <tr>
                     <td style="font-size: 20px;text-align: center;vertical-align: bottom">
@@ -150,6 +149,9 @@ $mpdf->AddPageByArray([
                     </td>
                 </tr>
             </table>
+        </td>
+        <td style="width: 20%; text-align: right; vertical-align: top; font-size: 16px; font-weight: bold;">
+            ** Reprint **
         </td>
     </tr>
 </table>
@@ -230,7 +232,7 @@ $mpdf->AddPageByArray([
 </table>
 <table class="table-header">
     <tr>
-        <td style="font-size: 18px;">แคชเชียร์ <?=$user_oper?> ** Reprint **</td>
+        <td style="font-size: 18px;">แคชเชียร์ <?=$user_oper?></td>
     </tr>
 </table>
 <br/>

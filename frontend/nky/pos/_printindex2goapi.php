@@ -251,7 +251,7 @@ $mpdf->WriteHTML($html); // ทำการสร้าง PDF ไฟล์
 //$mpdf->Output( 'Packing02.pdf','F'); // ให้ทำการบันทึกโค้ด HTML เป็น PDF โดยบันทึกเป็นไฟล์ชื่อ MyPDF.pdf
 ob_clean();
 //$mpdf->SetJS('this.print();');
-$mpdf->SetJS('this.print();');
+//$mpdf->SetJS('this.print();');
 //$mpdf->Output('../web/uploads/slip_do/slip_index_do.pdf', 'F');
 $mpdf->Output($slip_path, 'F');
 ob_end_flush();
