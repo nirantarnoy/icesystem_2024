@@ -43,7 +43,7 @@ class PosController extends Controller
                         'actions' => [
                             'logout', 'index', 'indextest', 'indextest2', 'print', 'printindex', 'dailysum', 'getcustomerprice', 'getoriginprice', 'closesale', 'cancelorder', 'manageclose',
                             'salehistory', 'getbasicprice', 'delete', 'orderedit', 'posupdate', 'posttrans', 'saledailyend', 'saledailyend2', 'printdo', 'createissue', 'updatestock', 'listissue', 'updateissue', 'printsummary', 'printpossummary', 'printcarsummary','startcaldailymanager'
-                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','closesaletestnew','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky'
+                            , 'finduserdate', 'editsaleclose', 'createscreenshort', 'print2', 'calcloseshift', 'closesaletest','closesaletestnew','printtestnew','printtestnewdo','printsummarycarnky','printsummaryposnky', 'reprinthistory'
                         ],
                         'allow' => true,
                         'roles' => ['@'],
@@ -1224,15 +1224,86 @@ class PosController extends Controller
         if ($id) {
             $model = \backend\models\Orders::find()->where(['id' => $id])->one();
             $model_line = \backend\models\Orderline::find()->where(['order_id' => $id])->all();
+
+            // Log reprint history
+            $user_id = \Yii::$app->user->id ?? 1;
+            try {
+                \Yii::$app->db->createCommand("CREATE TABLE IF NOT EXISTS reprint_log (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id INT NOT NULL,
+                    printed_by INT NOT NULL,
+                    printed_at DATETIME NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")->execute();
+
+                \Yii::$app->db->createCommand()->insert('reprint_log', [
+                    'order_id' => $id,
+                    'printed_by' => $user_id,
+                    'printed_at' => date('Y-m-d H:i:s')
+                ])->execute();
+            } catch (\Exception $e) {
+                // Ignore DB write errors if any
+            }
+
             $user_oper = \backend\models\User::findName($model->created_by);
             $this->renderPartial('_print', ['model' => $model, 'model_line' => $model_line, 'user_oper' => $user_oper]);
-            //   $content =  $this->renderPartial('_print', ['model' => $model, 'model_line' => $model_line]);
+
+            $f_name = 'slip.pdf';
+            $slip_path = '';
+            if ($model->branch_id == 1) {
+                $slip_path = '../web/uploads/company1/slip/' . $f_name;
+            } else if ($model->branch_id == 2) {
+                $slip_path = '../web/uploads/company2/slip/' . $f_name;
+            }
+
+            if (\Yii::$app->request->isAjax) {
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return [
+                    'status' => true,
+                    'pdf_url' => $slip_path
+                ];
+            }
+
             $session = \Yii::$app->session;
             $session->setFlash('msg-index', 'slip.pdf');
             $session->setFlash('after-print', true);
             $this->redirect(['pos/salehistory']);
         }
 
+    }
+
+    public function actionReprinthistory()
+    {
+        $order_id = \Yii::$app->request->post('order_id');
+        $data = [];
+        if ($order_id) {
+            try {
+                \Yii::$app->db->createCommand("CREATE TABLE IF NOT EXISTS reprint_log (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    order_id INT NOT NULL,
+                    printed_by INT NOT NULL,
+                    printed_at DATETIME NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")->execute();
+
+                $logs = \Yii::$app->db->createCommand("
+                    SELECT r.printed_at, u.username 
+                    FROM reprint_log r 
+                    LEFT JOIN user u ON r.printed_by = u.id 
+                    WHERE r.order_id = :order_id 
+                    ORDER BY r.printed_at DESC
+                ", [':order_id' => $order_id])->queryAll();
+
+                foreach ($logs as $i => $log) {
+                    $data[] = [
+                        'index' => $i + 1,
+                        'username' => $log['username'] ?? 'Unknown User',
+                        'printed_at' => date('d/m/Y H:i:s', strtotime($log['printed_at']))
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Ignore DB errors
+            }
+        }
+        return json_encode($data);
     }
 
     public function printindex($id)
